@@ -9,6 +9,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Payments.Api/Payments.Api.csproj", "Payments.Api/"]
 COPY ["Payments.Model/Payments.Model.csproj", "Payments.Model/"]
+COPY ["RentControl.ServiceDefaults/RentControl.ServiceDefaults.csproj", "RentControl.ServiceDefaults/"]
 RUN dotnet restore "Payments.Api/Payments.Api.csproj"
 COPY . .
 WORKDIR "/src/Payments.Api"

@@ -1,4 +1,4 @@
-﻿FROM mcr.microsoft.com/dotnet/runtime:10.0 AS base
+﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 USER $APP_UID
 WORKDIR /app
 
@@ -6,6 +6,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Main.Worker/Main.Worker.csproj", "Main.Worker/"]
+COPY ["Main.Model/Main.Model.csproj", "Main.Model/"]
+COPY ["RentControl.ServiceDefaults/RentControl.ServiceDefaults.csproj", "RentControl.ServiceDefaults/"]
 RUN dotnet restore "Main.Worker/Main.Worker.csproj"
 COPY . .
 WORKDIR "/src/Main.Worker"

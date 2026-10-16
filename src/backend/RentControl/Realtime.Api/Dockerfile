@@ -8,6 +8,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Realtime.Api/Realtime.Api.csproj", "Realtime.Api/"]
+COPY ["Realtime.Model/Realtime.Model.csproj", "Realtime.Model/"]
+COPY ["RentControl.ServiceDefaults/RentControl.ServiceDefaults.csproj", "RentControl.ServiceDefaults/"]
 RUN dotnet restore "Realtime.Api/Realtime.Api.csproj"
 COPY . .
 WORKDIR "/src/Realtime.Api"

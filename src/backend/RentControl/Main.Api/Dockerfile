@@ -8,6 +8,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY ["Main.Api/Main.Api.csproj", "Main.Api/"]
+COPY ["Main.Model/Main.Model.csproj", "Main.Model/"]
+COPY ["RentControl.ServiceDefaults/RentControl.ServiceDefaults.csproj", "RentControl.ServiceDefaults/"]
 RUN dotnet restore "Main.Api/Main.Api.csproj"
 COPY . .
 WORKDIR "/src/Main.Api"
