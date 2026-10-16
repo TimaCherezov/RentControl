@@ -22,13 +22,15 @@ var rabbitmq = builder.AddRabbitMQ("rabbitmq")
     .WithManagementPlugin()
     .WithLifetime(ContainerLifetime.Persistent);
 
+IResourceBuilder<ProjectResource>? mainApi = null;
+
 if (IsEnabled(ServiceNames.MainApi) || IsEnabled(ServiceNames.MainWorker))
 {
     var mainDb = postgres.AddDatabase("maindb");
 
     if (IsEnabled(ServiceNames.MainApi))
     {
-        builder.AddProject<Projects.Main_Api>(ServiceNames.MainApi)
+        mainApi = builder.AddProject<Projects.Main_Api>(ServiceNames.MainApi)
             .WithReference(mainDb).WaitFor(mainDb);
     }
 
@@ -44,9 +46,14 @@ if (IsEnabled(ServiceNames.PaymentsApi))
 {
     var paymentsDb = postgres.AddDatabase("paymentsdb");
 
-    builder.AddProject<Projects.Payments_Api>(ServiceNames.PaymentsApi)
+    var paymentsApi = builder.AddProject<Projects.Payments_Api>(ServiceNames.PaymentsApi)
         .WithReference(paymentsDb).WaitFor(paymentsDb)
         .WithReference(rabbitmq).WaitFor(rabbitmq);
+
+    if (mainApi is not null)
+    {
+        paymentsApi.WithReference(mainApi);
+    }
 }
 
 if (IsEnabled(ServiceNames.RealtimeApi))
