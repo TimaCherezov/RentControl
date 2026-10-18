@@ -1,6 +1,10 @@
+using Payments.Model;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
+
+builder.AddPaymentsDatabase("paymentsdb");
 
 builder.Services.AddHttpClient("main-api", client =>
     client.BaseAddress = new Uri("https+http://main-api"));
