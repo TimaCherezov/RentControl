@@ -13,6 +13,20 @@ if (unknown.Length > 0)
 var enabled = requested.Length == 0 ? ServiceNames.All : requested;
 bool IsEnabled(string name) => enabled.Contains(name);
 
+var jwtSettings = builder.Configuration.GetSection("Jwt").GetChildren()
+    .Select(child => (Key: $"Jwt__{child.Key}", Value: child.Value ?? ""))
+    .ToArray();
+
+IResourceBuilder<ProjectResource> WithJwtConfig(IResourceBuilder<ProjectResource> resource)
+{
+    foreach (var (key, value) in jwtSettings)
+    {
+        resource = resource.WithEnvironment(key, value);
+    }
+
+    return resource;
+}
+
 var postgres = builder.AddPostgres("postgres")
     .WithDataVolume()
     .WithLifetime(ContainerLifetime.Persistent);
@@ -30,15 +44,15 @@ if (IsEnabled(ServiceNames.MainApi) || IsEnabled(ServiceNames.MainWorker))
 
     if (IsEnabled(ServiceNames.MainApi))
     {
-        mainApi = builder.AddProject<Projects.Main_Api>(ServiceNames.MainApi)
-            .WithReference(mainDb).WaitFor(mainDb);
+        mainApi = WithJwtConfig(builder.AddProject<Projects.Main_Api>(ServiceNames.MainApi)
+            .WithReference(mainDb).WaitFor(mainDb));
     }
 
     if (IsEnabled(ServiceNames.MainWorker))
     {
-        builder.AddProject<Projects.Main_Worker>(ServiceNames.MainWorker)
+        WithJwtConfig(builder.AddProject<Projects.Main_Worker>(ServiceNames.MainWorker)
             .WithReference(mainDb).WaitFor(mainDb)
-            .WithReference(rabbitmq).WaitFor(rabbitmq);
+            .WithReference(rabbitmq).WaitFor(rabbitmq));
     }
 }
 
@@ -46,9 +60,9 @@ if (IsEnabled(ServiceNames.PaymentsApi))
 {
     var paymentsDb = postgres.AddDatabase("paymentsdb");
 
-    var paymentsApi = builder.AddProject<Projects.Payments_Api>(ServiceNames.PaymentsApi)
+    var paymentsApi = WithJwtConfig(builder.AddProject<Projects.Payments_Api>(ServiceNames.PaymentsApi)
         .WithReference(paymentsDb).WaitFor(paymentsDb)
-        .WithReference(rabbitmq).WaitFor(rabbitmq);
+        .WithReference(rabbitmq).WaitFor(rabbitmq));
 
     if (mainApi is not null)
     {

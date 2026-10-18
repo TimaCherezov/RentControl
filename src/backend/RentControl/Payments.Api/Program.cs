@@ -1,19 +1,20 @@
+using RentControl.Auth;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
+builder.Services.AddJwtAuthorization(builder.Configuration);
+
 builder.Services.AddHttpClient("main-api", client =>
     client.BaseAddress = new Uri("https+http://main-api"));
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -21,9 +22,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
 var summaries = new[]
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering"
 };
 
 app.MapGet("/weatherforecast", () =>
@@ -38,7 +42,8 @@ app.MapGet("/weatherforecast", () =>
             .ToArray();
         return forecast;
     })
-    .WithName("GetWeatherForecast");
+    .WithName("GetWeatherForecast")
+    .RequireAuthorization();
 
 app.Run();
 

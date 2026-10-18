@@ -8,8 +8,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.2" />
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.1" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.7">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Scalar.AspNetCore" Version="2.18.0" />
     </ItemGroup>
 
@@ -21,6 +25,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Main.Model\Main.Model.csproj" />
+      <ProjectReference Include="..\RentControl.Auth\RentControl.Auth.csproj" />
       <ProjectReference Include="..\RentControl.ServiceDefaults\RentControl.ServiceDefaults.csproj" />
     </ItemGroup>
 

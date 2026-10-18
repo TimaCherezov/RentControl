@@ -1,21 +1,50 @@
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Main.Api.Auth;
+using Main.Api.Auth.CurrentUser;
+using Main.Api.Auth.Login;
+using Main.Api.Auth.Logout;
+using Main.Api.Auth.Refresh;
+using Main.Api.Auth.Register;
+using Main.Api.Middleware;
 using Main.Model;
+using Main.Model.Models;
+using Microsoft.AspNetCore.Identity;
+using RentControl.Auth;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.AddNpgsqlDbContext<AppDbContext>("maindb");
+builder.Services.AddDataAccess(builder.Configuration);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+if (builder.Configuration.GetSection(JwtSettings.Section).Exists())
+{
+    builder.Services.AddJwtAuthorization(builder.Configuration);
+}
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IRegisterUserService, RegisterUserService>();
+builder.Services.AddScoped<ILoginUserService, LoginUserService>();
+builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
+builder.Services.AddScoped<ILogoutService, LogoutService>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
+
 builder.Services.AddOpenApi();
+builder.Services.AddControllers();
 
 var app = builder.Build();
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.MapDefaultEndpoints();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -24,9 +53,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllers();
+
 var summaries = new[]
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering"
 };
 
 app.MapGet("/weatherforecast", () =>
@@ -41,7 +75,8 @@ app.MapGet("/weatherforecast", () =>
             .ToArray();
         return forecast;
     })
-    .WithName("GetWeatherForecast");
+    .WithName("GetWeatherForecast")
+    .RequireAuthorization();
 
 app.Run();
 
