@@ -10,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
 
+builder.AddMainDatabase("maindb");
 builder.Services.AddDataAccess(builder.Configuration);
 
 builder.Services.AddAuth(builder.Configuration);
