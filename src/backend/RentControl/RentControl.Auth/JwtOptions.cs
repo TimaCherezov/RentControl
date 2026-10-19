@@ -1,12 +1,12 @@
 namespace RentControl.Auth;
 
-public class JwtSettings
+public class JwtOptions
 {
     public const string Section = "Jwt";
 
     public string SecretKey { get; set; } = null!;
     public string? Issuer { get; set; }
     public string? Audience { get; set; }
-    public int ExpiryMinutes { get; set; } = 15;
-    public int RefreshTokenExpiryDays { get; set; } = 7;
+    public TimeSpan Expiry { get; set; } = TimeSpan.FromMinutes(15);
+    public TimeSpan RefreshTokenExpiry { get; set; } = TimeSpan.FromDays(7);
 }

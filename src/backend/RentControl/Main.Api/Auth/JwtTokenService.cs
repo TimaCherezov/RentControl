@@ -2,15 +2,16 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using RentControl.Auth;
 
 namespace Main.Api.Auth;
 
-public class JwtTokenService(IOptions<JwtSettings> jwtSettings) : IJwtTokenService
+public class JwtTokenService(IOptions<JwtOptions> jwtSettings) : IJwtTokenService
 {
-    private readonly JwtSettings _jwtSettings = jwtSettings.Value;
+    private readonly JwtOptions _jwtOptions = jwtSettings.Value;
 
     public string GenerateToken(Guid userId)
     {
@@ -19,13 +20,13 @@ public class JwtTokenService(IOptions<JwtSettings> jwtSettings) : IJwtTokenServi
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.SecretKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecretKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(
-            issuer: string.IsNullOrEmpty(_jwtSettings.Issuer) ? null : _jwtSettings.Issuer,
-            audience: string.IsNullOrEmpty(_jwtSettings.Audience) ? null : _jwtSettings.Audience,
+            issuer: string.IsNullOrEmpty(_jwtOptions.Issuer) ? null : _jwtOptions.Issuer,
+            audience: string.IsNullOrEmpty(_jwtOptions.Audience) ? null : _jwtOptions.Audience,
             claims: claims,
-            expires: DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
+            expires: DateTime.UtcNow.Add(_jwtOptions.Expiry),
             signingCredentials: creds);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
@@ -33,9 +34,8 @@ public class JwtTokenService(IOptions<JwtSettings> jwtSettings) : IJwtTokenServi
 
     public string GenerateRefreshToken()
     {
-        var randomBytes = new byte[32];
-        RandomNumberGenerator.Fill(randomBytes);
-        return Convert.ToBase64String(randomBytes);
+        var randomBytes = RandomNumberGenerator.GetBytes(32);
+        return WebEncoders.Base64UrlEncode(randomBytes);
     }
 
     public string HashRefreshToken(string token)

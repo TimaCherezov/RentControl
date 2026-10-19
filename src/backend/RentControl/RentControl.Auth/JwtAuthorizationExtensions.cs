@@ -14,19 +14,19 @@ public static class JwtAuthorizationExtensions
             IConfiguration configuration)
         {
             var settings = configuration
-                .GetSection(JwtSettings.Section)
-                .Get<JwtSettings>()
+                .GetSection(JwtOptions.Section)
+                .Get<JwtOptions>()
                 ?? throw new InvalidOperationException(
-                    $"Configuration section '{JwtSettings.Section}' is missing.");
+                    $"Configuration section '{JwtOptions.Section}' is missing.");
 
             if (string.IsNullOrWhiteSpace(settings.SecretKey))
             {
                 throw new InvalidOperationException(
-                    $"'{JwtSettings.Section}:SecretKey' is not configured.");
+                    $"'{JwtOptions.Section}:SecretKey' is not configured.");
             }
 
-            services.Configure<JwtSettings>(
-                configuration.GetSection(JwtSettings.Section));
+            services.Configure<JwtOptions>(
+                configuration.GetSection(JwtOptions.Section));
 
             services.AddAuthentication(
                     JwtBearerDefaults.AuthenticationScheme)

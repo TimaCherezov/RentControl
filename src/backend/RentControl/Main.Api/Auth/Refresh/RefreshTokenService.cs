@@ -10,7 +10,7 @@ namespace Main.Api.Auth.Refresh;
 public class RefreshTokenService(
     IUnitOfWork unitOfWork,
     IJwtTokenService jwtTokenService,
-    IOptions<JwtSettings> jwtSettings) : IRefreshTokenService
+    IOptions<JwtOptions> jwtSettings) : IRefreshTokenService
 {
     public async Task<TokenPairResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
@@ -38,7 +38,7 @@ public class RefreshTokenService(
         {
             UserId = user.Id,
             TokenHash = newRefreshHash,
-            ExpiresAt = DateTime.UtcNow.AddDays(jwtSettings.Value.RefreshTokenExpiryDays)
+            ExpiresAt = DateTime.UtcNow.Add(jwtSettings.Value.RefreshTokenExpiry)
         };
         unitOfWork.RefreshTokens.Add(newRefreshToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

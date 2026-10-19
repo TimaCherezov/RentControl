@@ -21,7 +21,7 @@ public class AuthController(
     ILogoutService logoutService,
     ICurrentUserService currentUserService,
     IUnitOfWork unitOfWork,
-    IOptions<JwtSettings> jwtSettings) : ControllerBase
+    IOptions<JwtOptions> jwtSettings) : ControllerBase
 {
     private const string RefreshCookieName = "refresh_token";
     private const string CookiePath = "/api/auth";
@@ -91,6 +91,6 @@ public class AuthController(
             HttpOnly = true,
             SameSite = SameSiteMode.Strict,
             Path = CookiePath,
-            Expires = DateTimeOffset.UtcNow.AddDays(jwtSettings.Value.RefreshTokenExpiryDays)
+            Expires = DateTimeOffset.UtcNow.Add(jwtSettings.Value.RefreshTokenExpiry)
         };
 }

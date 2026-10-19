@@ -10,7 +10,7 @@ public class LoginUserService(
     IUnitOfWork unitOfWork,
     IPasswordHasher<User> passwordHasher,
     IJwtTokenService jwtTokenService,
-    IOptions<JwtSettings> jwtSettings) : ILoginUserService
+    IOptions<JwtOptions> jwtSettings) : ILoginUserService
 {
     public async Task<TokenPairResponse> LoginAsync(LoginUserRequest request, CancellationToken cancellationToken = default)
     {
@@ -34,7 +34,7 @@ public class LoginUserService(
         {
             UserId = user.Id,
             TokenHash = refreshHash,
-            ExpiresAt = DateTime.UtcNow.AddDays(jwtSettings.Value.RefreshTokenExpiryDays)
+            ExpiresAt = DateTime.UtcNow.Add(jwtSettings.Value.RefreshTokenExpiry)
         };
 
         unitOfWork.RefreshTokens.Add(refreshToken);

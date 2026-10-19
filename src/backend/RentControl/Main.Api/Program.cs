@@ -1,16 +1,9 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Main.Api.Auth;
-using Main.Api.Auth.CurrentUser;
-using Main.Api.Auth.Login;
-using Main.Api.Auth.Logout;
-using Main.Api.Auth.Refresh;
 using Main.Api.Auth.Register;
 using Main.Api.Middleware;
 using Main.Model;
-using Main.Model.Models;
-using Microsoft.AspNetCore.Identity;
-using RentControl.Auth;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,19 +12,7 @@ builder.AddServiceDefaults();
 
 builder.Services.AddDataAccess(builder.Configuration);
 
-if (builder.Configuration.GetSection(JwtSettings.Section).Exists())
-{
-    builder.Services.AddJwtAuthorization(builder.Configuration);
-}
-
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-builder.Services.AddScoped<IRegisterUserService, RegisterUserService>();
-builder.Services.AddScoped<ILoginUserService, LoginUserService>();
-builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
-builder.Services.AddScoped<ILogoutService, LogoutService>();
-builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddAuth(builder.Configuration);
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
