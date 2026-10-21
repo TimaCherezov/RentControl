@@ -1,0 +1,3 @@
+namespace Main.Api.Auth;
+
+public record UserResponse(Guid Id, string Name, string Email);
