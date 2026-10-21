@@ -1,10 +1,6 @@
-using RentControl.Auth;
-
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-
-builder.Services.AddJwtAuthorization(builder.Configuration);
 
 builder.Services.AddHttpClient("main-api", client =>
     client.BaseAddress = new Uri("https+http://main-api"));
@@ -21,9 +17,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
-app.UseAuthentication();
-app.UseAuthorization();
 
 var summaries = new[]
 {
@@ -42,8 +35,7 @@ app.MapGet("/weatherforecast", () =>
             .ToArray();
         return forecast;
     })
-    .WithName("GetWeatherForecast")
-    .RequireAuthorization();
+    .WithName("GetWeatherForecast");
 
 app.Run();
 
