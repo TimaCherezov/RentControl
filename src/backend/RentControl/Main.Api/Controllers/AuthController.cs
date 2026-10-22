@@ -4,11 +4,12 @@ using Main.Api.Auth.Login;
 using Main.Api.Auth.Logout;
 using Main.Api.Auth.Refresh;
 using Main.Api.Auth.Register;
-using Main.Model;
+using Main.Model.UnitOfWork;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using RentControl.Auth;
+using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Controllers;
 
@@ -20,7 +21,7 @@ public class AuthController(
     IRefreshTokenService refreshTokenService,
     ILogoutService logoutService,
     ICurrentUserService currentUserService,
-    IUnitOfWork unitOfWork,
+    IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
     IOptions<JwtOptions> jwtSettings) : ControllerBase
 {
     private const string RefreshCookieName = "refresh_token";
@@ -73,7 +74,11 @@ public class AuthController(
     public async Task<IActionResult> CurrentUser(CancellationToken cancellationToken)
     {
         var userId = currentUserService.GetUserId();
-        var user = await unitOfWork.Users.GetByIdAsync(userId, cancellationToken);
+        var user = await uowFactory.ExecuteAsync(async uow =>
+        {
+            return await uow.Users.GetByIdAsync(userId, cancellationToken);
+        }, cancellationToken);
+
         if (user == null)
         {
             return Unauthorized(new { error = "User not found" });

@@ -1,20 +1,23 @@
-using Main.Model;
+using Main.Model.UnitOfWork;
+using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Auth.Logout;
 
-public class LogoutService(IUnitOfWork unitOfWork, IJwtTokenService jwtTokenService) : ILogoutService
+public class LogoutService(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IJwtTokenService jwtTokenService) : ILogoutService
 {
-    public async Task LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
+    public Task LogoutAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
-        var tokenHash = jwtTokenService.HashRefreshToken(refreshToken);
-        var token = await unitOfWork.RefreshTokens.GetByTokenHashAsync(tokenHash, cancellationToken);
-        if (token is not { RevokedAt: null })
+        return uowFactory.ExecuteAsync(async uow =>
         {
-            return;
-        }
+            var tokenHash = jwtTokenService.HashRefreshToken(refreshToken);
+            var token = await uow.RefreshTokens.GetByTokenHashAsync(tokenHash, cancellationToken);
+            if (token is not { RevokedAt: null })
+            {
+                return;
+            }
 
-        token.RevokedAt = DateTime.UtcNow;
-        unitOfWork.RefreshTokens.Update(token);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+            token.RevokedAt = DateTime.UtcNow;
+            uow.RefreshTokens.Update(token);
+        }, cancellationToken);
     }
 }

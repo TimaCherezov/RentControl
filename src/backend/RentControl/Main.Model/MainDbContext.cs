@@ -5,8 +5,8 @@ namespace Main.Model;
 
 public class MainDbContext(DbContextOptions<MainDbContext> options) : DbContext(options)
 {
-    public DbSet<User> Users { get; set; }
-    public DbSet<RefreshToken> RefreshTokens { get; set; }
+    public DbSet<User> Users => Set<User>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

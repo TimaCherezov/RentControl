@@ -1,6 +1,9 @@
+using Main.Model.Repositories;
+
 namespace Main.Model.UnitOfWork;
 
 public interface IMainUnitOfWork
 {
-    MainDbContext Context { get; }
+    IUserRepository Users { get; }
+    IRefreshTokenRepository RefreshTokens { get; }
 }
