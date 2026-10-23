@@ -8,9 +8,8 @@ public class ProductUnit
     public required State State { get; set; }
     public Guid StateId { get; set; }
     public required string SerialNumber { get; set; }
-    public DateTime PurchaseDate { get; set; }
+    public DateOnly PurchaseDate { get; set; }
     public decimal PurchasePrice { get; set; }
-    public bool IsAvailable { get; set; }
     public required Location Location { get; set; }
     public Guid LocationId { get; set; }
 }
