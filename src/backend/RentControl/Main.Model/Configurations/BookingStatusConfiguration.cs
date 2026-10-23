@@ -9,6 +9,7 @@ public class BookingStatusConfiguration : IEntityTypeConfiguration<BookingStatus
     public void Configure(EntityTypeBuilder<BookingStatus> builder)
     {
         builder.HasIndex(bs => bs.Code).IsUnique();
+        builder.Property(bs => bs.Code).HasMaxLength(50);
         builder.Property(bs => bs.Name).HasMaxLength(50);
     }
 }
