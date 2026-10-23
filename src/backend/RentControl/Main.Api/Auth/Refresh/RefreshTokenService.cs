@@ -1,48 +1,50 @@
-using Main.Api.Auth;
 using Main.Api.Auth.Refresh;
-using Main.Model;
 using Main.Model.Models;
+using Main.Model.UnitOfWork;
 using Microsoft.Extensions.Options;
 using RentControl.Auth;
+using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Auth.Refresh;
 
 public class RefreshTokenService(
-    IUnitOfWork unitOfWork,
+    IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
     IJwtTokenService jwtTokenService,
     IOptions<JwtOptions> jwtSettings) : IRefreshTokenService
 {
-    public async Task<TokenPairResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default)
+    public Task<TokenPairResponse> RefreshAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
-        var tokenHash = jwtTokenService.HashRefreshToken(refreshToken);
-        var currentToken = await unitOfWork.RefreshTokens.GetByTokenHashAsync(tokenHash, cancellationToken);
-        if (currentToken is not { RevokedAt: null } || currentToken.ExpiresAt <= DateTime.UtcNow)
+        return uowFactory.ExecuteAsync(async uow =>
         {
-            throw new UnauthorizedAccessException("Invalid or expired refresh token");
-        }
+            var tokenHash = jwtTokenService.HashRefreshToken(refreshToken);
+            var currentToken = await uow.RefreshTokens.GetByTokenHashAsync(tokenHash, cancellationToken);
+            if (currentToken is not { RevokedAt: null } || currentToken.ExpiresAt <= DateTime.UtcNow)
+            {
+                throw new UnauthorizedAccessException("Invalid or expired refresh token");
+            }
 
-        var user = await unitOfWork.Users.GetByIdAsync(currentToken.UserId, cancellationToken);
-        if (user == null)
-        {
-            throw new UnauthorizedAccessException("User not found");
-        }
+            var user = await uow.Users.GetByIdAsync(currentToken.UserId, cancellationToken);
+            if (user == null)
+            {
+                throw new UnauthorizedAccessException("User not found");
+            }
 
-        var newAccess = jwtTokenService.GenerateToken(user.Id);
-        var newRefresh = jwtTokenService.GenerateRefreshToken();
-        var newRefreshHash = jwtTokenService.HashRefreshToken(newRefresh);
+            var newAccess = jwtTokenService.GenerateToken(user.Id);
+            var newRefresh = jwtTokenService.GenerateRefreshToken();
+            var newRefreshHash = jwtTokenService.HashRefreshToken(newRefresh);
 
-        currentToken.RevokedAt = DateTime.UtcNow;
-        unitOfWork.RefreshTokens.Update(currentToken);
+            currentToken.RevokedAt = DateTime.UtcNow;
+            uow.RefreshTokens.Update(currentToken);
 
-        var newRefreshToken = new RefreshToken
-        {
-            UserId = user.Id,
-            TokenHash = newRefreshHash,
-            ExpiresAt = DateTime.UtcNow.Add(jwtSettings.Value.RefreshTokenExpiry)
-        };
-        unitOfWork.RefreshTokens.Add(newRefreshToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+            var newRefreshToken = new RefreshToken
+            {
+                UserId = user.Id,
+                TokenHash = newRefreshHash,
+                ExpiresAt = DateTime.UtcNow.Add(jwtSettings.Value.RefreshTokenExpiry)
+            };
+            uow.RefreshTokens.Add(newRefreshToken);
 
-        return new TokenPairResponse(newAccess, newRefresh);
+            return new TokenPairResponse(newAccess, newRefresh);
+        }, cancellationToken);
     }
 }

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Main.Model.Repositories;
 
-public class RefreshTokenRepository(AppDbContext dbContext) : IRefreshTokenRepository
+public class RefreshTokenRepository(MainDbContext dbContext) : IRefreshTokenRepository
 {
     public Task<RefreshToken?> GetByTokenHashAsync(string tokenHash, CancellationToken cancellationToken = default)
         => dbContext.RefreshTokens.FirstOrDefaultAsync(t => t.TokenHash == tokenHash, cancellationToken);

@@ -7,11 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.2" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Migrations\" />
+        <ProjectReference Include="..\RentControl.Common\RentControl.Common.csproj" />
     </ItemGroup>
 
 </Project>
