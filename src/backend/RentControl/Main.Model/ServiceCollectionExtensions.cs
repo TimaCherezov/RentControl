@@ -23,7 +23,7 @@ public static class ServiceCollectionExtensions
         private IServiceCollection AddDbContext(IConfiguration configuration)
         {
             services.AddDbContext<AppDbContext>(options =>
-                options.UseNpgsql(configuration.GetConnectionString("maindb") ?? string.Empty));
+                options.UseNpgsql(configuration.GetConnectionString("maindb") ?? string.Empty).UseSnakeCaseNamingConvention());
 
             return services;
         }
