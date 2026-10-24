@@ -6,4 +6,5 @@ public interface IMainUnitOfWork
 {
     IUserRepository Users { get; }
     IRefreshTokenRepository RefreshTokens { get; }
+    IRoleRepository Roles { get; }
 }
