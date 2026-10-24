@@ -5,7 +5,7 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.AddNpgsqlDbContext<AppDbContext>("maindb");
+builder.AddMainDatabase("maindb");
 
 builder.Services.AddHostedService<Worker>();
 

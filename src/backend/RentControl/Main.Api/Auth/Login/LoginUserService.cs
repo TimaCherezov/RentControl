@@ -1,45 +1,48 @@
-using Main.Model;
 using Main.Model.Models;
+using Main.Model.UnitOfWork;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using RentControl.Auth;
+using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Auth.Login;
 
 public class LoginUserService(
-    IUnitOfWork unitOfWork,
+    IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
     IPasswordHasher<User> passwordHasher,
     IJwtTokenService jwtTokenService,
     IOptions<JwtOptions> jwtSettings) : ILoginUserService
 {
-    public async Task<TokenPairResponse> LoginAsync(LoginUserRequest request, CancellationToken cancellationToken = default)
+    public Task<TokenPairResponse> LoginAsync(LoginUserRequest request, CancellationToken cancellationToken = default)
     {
-        var user = await unitOfWork.Users.GetByEmailAsync(request.Email, cancellationToken);
-        if (user is null)
+        return uowFactory.ExecuteAsync(async uow =>
         {
-            throw new UnauthorizedAccessException("Invalid email");
-        }
+            var user = await uow.Users.GetByEmailAsync(request.Email, cancellationToken);
+            if (user is null)
+            {
+                throw new UnauthorizedAccessException("Invalid email");
+            }
 
-        var result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
-        if (result == PasswordVerificationResult.Failed)
-        {
-            throw new UnauthorizedAccessException("Invalid Password");
-        }
+            var result = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+            if (result == PasswordVerificationResult.Failed)
+            {
+                throw new UnauthorizedAccessException("Invalid Password");
+            }
 
-        var jwt = jwtTokenService.GenerateToken(user.Id);
-        var refresh = jwtTokenService.GenerateRefreshToken();
-        var refreshHash = jwtTokenService.HashRefreshToken(refresh);
+            var jwt = jwtTokenService.GenerateToken(user.Id);
+            var refresh = jwtTokenService.GenerateRefreshToken();
+            var refreshHash = jwtTokenService.HashRefreshToken(refresh);
 
-        var refreshToken = new RefreshToken
-        {
-            UserId = user.Id,
-            TokenHash = refreshHash,
-            ExpiresAt = DateTime.UtcNow.Add(jwtSettings.Value.RefreshTokenExpiry)
-        };
+            var refreshToken = new RefreshToken
+            {
+                UserId = user.Id,
+                TokenHash = refreshHash,
+                ExpiresAt = DateTime.UtcNow.Add(jwtSettings.Value.RefreshTokenExpiry)
+            };
 
-        unitOfWork.RefreshTokens.Add(refreshToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+            uow.RefreshTokens.Add(refreshToken);
 
-        return new TokenPairResponse(jwt, refresh);
+            return new TokenPairResponse(jwt, refresh);
+        }, cancellationToken);
     }
 }

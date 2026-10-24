@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Main.Model.Repositories;
 
-public class UserRepository(AppDbContext dbContext) : IUserRepository
+public class UserRepository(MainDbContext dbContext) : IUserRepository
 {
     public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         => dbContext.Users.FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
