@@ -26,19 +26,17 @@ public class JwtSigningKeyProvider
 
     public SigningCredentials Credentials { get; }
 
-    public object ToJwk()
+    public JwkDto ToJwk()
     {
         var parameters = Key.Rsa!.ExportParameters(false);
 
-        return new Dictionary<string, string>
-        {
-            ["kty"] = "RSA",
-            ["use"] = "sig",
-            ["alg"] = SecurityAlgorithms.RsaSha256,
-            ["kid"] = Key.KeyId,
-            ["n"] = Base64UrlEncoder.Encode(parameters.Modulus!),
-            ["e"] = Base64UrlEncoder.Encode(parameters.Exponent!)
-        };
+        return new JwkDto(
+            Kty: "RSA",
+            Use: "sig",
+            Alg: SecurityAlgorithms.RsaSha256,
+            Kid: Key.KeyId,
+            N: Base64UrlEncoder.Encode(parameters.Modulus!),
+            E: Base64UrlEncoder.Encode(parameters.Exponent!));
     }
 
     private static string ComputeKid(RSA rsa)
