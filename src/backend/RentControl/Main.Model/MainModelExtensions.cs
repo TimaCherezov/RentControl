@@ -13,7 +13,7 @@ public static class MainModelExtensions
         string connectionName = "maindb")
     {
         builder.AddNpgsqlDbContext<MainDbContext>(connectionName);
-        builder.Services.AddDbContextFactory<MainDbContext>();
+        builder.Services.AddDbContextFactory<MainDbContext>(option => option.UseSnakeCaseNamingConvention());
 
         builder.Services.AddSingleton<IUnitOfWorkFactory<IMainUnitOfWork>, MainUnitOfWorkFactory>();
 

@@ -18,11 +18,16 @@ public class RegisterUserService(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
             {
                 throw new InvalidOperationException($"User {email} already exists.");
             }
+    
+            var role = await uow.Roles.GetByCodeAsync("USER") 
+                ?? throw new InvalidOperationException("Критическая ошибка: Базовая роль 'USER' отсутствует в базе данных.");
 
             var user = new User
             {
+                Role = role,
                 Name = request.Name.Trim(),
-                Email = email
+                Email = email,
+                PasswordHash = null!
             };
             user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 

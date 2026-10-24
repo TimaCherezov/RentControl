@@ -38,6 +38,7 @@ public class RefreshTokenService(
 
             var newRefreshToken = new RefreshToken
             {
+                User = user,
                 UserId = user.Id,
                 TokenHash = newRefreshHash,
                 ExpiresAt = DateTime.UtcNow.Add(jwtSettings.Value.RefreshTokenExpiry)
