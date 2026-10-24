@@ -7,14 +7,13 @@ public class MainDbContext(DbContextOptions<MainDbContext> options) : DbContext(
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
-    public DbSet<Booking> Booking => Set<Booking>();
-    public DbSet<BookingStatus> BookingStatus => Set<BookingStatus>();
-    public DbSet<Role> Role => Set<Role>();
-    public DbSet<State> State => Set<State>();
-    public DbSet<Product> Product => Set<Product>();
-    public DbSet<ProductImage> ProductImage => Set<ProductImage>();
-    public DbSet<ProductUnit> ProductUnit => Set<ProductUnit>();
-    public DbSet<Location> Location => Set<Location>();
+    public DbSet<Booking> Bookings => Set<Booking>();
+    public DbSet<BookingStatus> BookingStatuses => Set<BookingStatus>();
+    public DbSet<State> States => Set<State>();
+    public DbSet<Product> Products => Set<Product>();
+    public DbSet<ProductImage> ProductImages => Set<ProductImage>();
+    public DbSet<ProductUnit> ProductUnits => Set<ProductUnit>();
+    public DbSet<Location> Locations => Set<Location>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
