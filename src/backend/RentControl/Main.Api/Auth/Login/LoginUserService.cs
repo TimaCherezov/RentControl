@@ -35,6 +35,7 @@ public class LoginUserService(
 
             var refreshToken = new RefreshToken
             {
+                User = user,
                 UserId = user.Id,
                 TokenHash = refreshHash,
                 ExpiresAt = DateTime.UtcNow.Add(jwtSettings.Value.RefreshTokenExpiry)
