@@ -15,7 +15,7 @@ public static class AuthServiceCollectionExtensions
     {
         public IServiceCollection AddAuth(IConfiguration configuration)
         {
-            services.AddJwtAuthorization(configuration);
+            services.AddJwtSigning(configuration);
 
             services.AddHttpContextAccessor();
 

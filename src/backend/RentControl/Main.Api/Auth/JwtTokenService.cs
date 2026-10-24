@@ -4,14 +4,15 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using RentControl.Auth;
 
 namespace Main.Api.Auth;
 
-public class JwtTokenService(IOptions<JwtOptions> jwtSettings) : IJwtTokenService
+public class JwtTokenService(
+    JwtSigningKeyProvider signingKeys,
+    IOptions<JwtOptions> jwtOptions) : IJwtTokenService
 {
-    private readonly JwtOptions _jwtOptions = jwtSettings.Value;
+    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
 
     public string GenerateToken(Guid userId)
     {
@@ -20,14 +21,12 @@ public class JwtTokenService(IOptions<JwtOptions> jwtSettings) : IJwtTokenServic
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.SecretKey));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var token = new JwtSecurityToken(
             issuer: string.IsNullOrEmpty(_jwtOptions.Issuer) ? null : _jwtOptions.Issuer,
             audience: string.IsNullOrEmpty(_jwtOptions.Audience) ? null : _jwtOptions.Audience,
             claims: claims,
             expires: DateTime.UtcNow.Add(_jwtOptions.Expiry),
-            signingCredentials: creds);
+            signingCredentials: signingKeys.Credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
