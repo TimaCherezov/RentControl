@@ -5,7 +5,7 @@ using Main.Api.Auth.Refresh;
 using Main.Api.Auth.Register;
 using Main.Model.Models;
 using Microsoft.AspNetCore.Identity;
-using RentControl.Auth;
+using RentControl.ServiceDefaults;
 
 namespace Main.Api.Auth;
 
@@ -15,7 +15,7 @@ public static class AuthServiceCollectionExtensions
     {
         public IServiceCollection AddAuth(IConfiguration configuration)
         {
-            services.AddJwtAuthorization(configuration);
+            services.AddJwtSigning(configuration);
 
             services.AddHttpContextAccessor();
 
