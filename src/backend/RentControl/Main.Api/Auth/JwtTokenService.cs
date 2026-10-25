@@ -4,7 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
-using RentControl.Auth;
+using RentControl.ServiceDefaults;
 
 namespace Main.Api.Auth;
 

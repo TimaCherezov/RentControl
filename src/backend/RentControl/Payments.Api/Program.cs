@@ -1,6 +1,6 @@
 using Payments.Model;
 
-using RentControl.Auth;
+using RentControl.ServiceDefaults;
 
 var builder = WebApplication.CreateBuilder(args);
 

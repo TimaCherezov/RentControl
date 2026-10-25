@@ -8,7 +8,7 @@ using Main.Model.UnitOfWork;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using RentControl.Auth;
+using RentControl.ServiceDefaults;
 using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Controllers;

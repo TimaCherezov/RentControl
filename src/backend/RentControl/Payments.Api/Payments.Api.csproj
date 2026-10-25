@@ -13,7 +13,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Payments.Model\Payments.Model.csproj" />
-      <ProjectReference Include="..\RentControl.Auth\RentControl.Auth.csproj" />
       <ProjectReference Include="..\RentControl.ServiceDefaults\RentControl.ServiceDefaults.csproj" />
     </ItemGroup>
 

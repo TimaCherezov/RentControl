@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
-namespace RentControl.Auth;
+namespace RentControl.ServiceDefaults;
 
 public class JwtSigningKeyProvider
 {

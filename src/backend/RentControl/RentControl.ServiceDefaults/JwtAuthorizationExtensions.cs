@@ -5,11 +5,14 @@ using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 
-namespace RentControl.Auth;
+namespace RentControl.ServiceDefaults;
 
 public static class JwtAuthorizationExtensions
 {
     private const string JwksHttpClientName = "jwt-jwks";
+    private const string MainApiUrlConfigurationKey =
+        "ServiceDiscovery:MainApi";
+    private const string JwksPath = "/.well-known/jwks.json";
 
     extension(IServiceCollection services)
     {
@@ -38,14 +41,17 @@ public static class JwtAuthorizationExtensions
             IConfiguration configuration)
         {
             var settings = GetSettings(configuration);
+            var mainApiUrl = configuration[MainApiUrlConfigurationKey];
 
-            if (string.IsNullOrWhiteSpace(settings.MetadataUrl))
+            if (string.IsNullOrWhiteSpace(mainApiUrl))
             {
                 throw new InvalidOperationException(
-                    $"'{JwtOptions.Section}:MetadataUrl' is not configured.");
+                    $"'{MainApiUrlConfigurationKey}' is not configured.");
             }
 
-            services.AddHttpClient(JwksHttpClientName);
+            services.AddHttpClient(
+                JwksHttpClientName,
+                client => client.BaseAddress = new Uri(mainApiUrl));
 
             AddCommonAuthentication(services, settings, configuration);
 
@@ -62,8 +68,8 @@ public static class JwtAuthorizationExtensions
 
                     options.ConfigurationManager =
                         new ConfigurationManager<OpenIdConnectConfiguration>(
-                            settings.MetadataUrl,
-                            new OpenIdConnectConfigurationRetriever(),
+                            JwksPath,
+                            new JwksConfigurationRetriever(),
                             retriever);
                 });
 
@@ -75,24 +81,37 @@ public static class JwtAuthorizationExtensions
         => configuration.GetSection(JwtOptions.Section).Get<JwtOptions>()
             ?? throw new InvalidOperationException(
                 $"Configuration section '{JwtOptions.Section}' is missing.");
-    
+
     private static void AddCommonAuthentication(
         IServiceCollection services,
         JwtOptions settings,
         IConfiguration configuration)
     {
-        services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.Section));
-        
+        if (string.IsNullOrWhiteSpace(settings.Issuer))
+        {
+            throw new InvalidOperationException(
+                $"'{JwtOptions.Section}:Issuer' is not configured.");
+        }
+
+        if (string.IsNullOrWhiteSpace(settings.Audience))
+        {
+            throw new InvalidOperationException(
+                $"'{JwtOptions.Section}:Audience' is not configured.");
+        }
+
+        services.Configure<JwtOptions>(
+            configuration.GetSection(JwtOptions.Section));
+
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options => 
+            .AddJwtBearer(options =>
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
                     ValidAlgorithms = [SecurityAlgorithms.RsaSha256],
-                    ValidateIssuer = !string.IsNullOrEmpty(settings.Issuer),
+                    ValidateIssuer = true,
                     ValidIssuer = settings.Issuer,
-                    ValidateAudience = !string.IsNullOrEmpty(settings.Audience),
+                    ValidateAudience = true,
                     ValidAudience = settings.Audience,
                     ValidateLifetime = true,
                     RequireExpirationTime = true
