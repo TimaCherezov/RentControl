@@ -23,7 +23,8 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
         using var request = new HttpRequestMessage(HttpMethod.Get, ProtectedEndpoint);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        using var response = await fixture.PaymentsApi.SendAsync(request);
+        using var response = await fixture.PaymentsApi.SendAsync(
+            request, TestContext.Current.CancellationToken);
 
         Assert.True(
             response.IsSuccessStatusCode,
@@ -38,7 +39,8 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
         using var request = new HttpRequestMessage(HttpMethod.Get, ProtectedEndpoint);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", forgedToken);
 
-        using var response = await fixture.PaymentsApi.SendAsync(request);
+        using var response = await fixture.PaymentsApi.SendAsync(
+            request, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
