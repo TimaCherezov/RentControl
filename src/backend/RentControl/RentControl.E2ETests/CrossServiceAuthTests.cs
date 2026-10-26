@@ -19,7 +19,7 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
     private const string ProtectedEndpoint = "weatherforecast";
 
     [Fact]
-    public async Task Payments_accepts_token_issued_by_main()
+    public async Task Payments_AcceptsTokenIssuedByMain()
     {
         var accessToken = await GetMainAccessTokenAsync();
 
@@ -34,7 +34,7 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
     }
 
     [Fact]
-    public async Task Payments_rejects_token_signed_by_foreign_key()
+    public async Task Payments_RejectsTokenSignedByForeignKey()
     {
         // Токен оформлен как настоящий (тот же issuer/audience, валидный exp),
         // но подписан ключом, которого нет в JWKS Main.
