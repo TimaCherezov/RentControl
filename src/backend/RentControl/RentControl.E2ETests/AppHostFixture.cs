@@ -8,12 +8,6 @@ using Xunit;
 
 namespace RentControl.E2ETests;
 
-/// <summary>
-/// Поднимает AppHost один раз на тестовый прогон.
-/// Фильтр Services=main-api,payments-api оставляет только то,
-/// что нужно для кросс-сервисного сценария авторизации:
-/// postgres, rabbitmq, main-api, payments-api.
-/// </summary>
 public sealed class AppHostFixture : IAsyncLifetime
 {
     private DistributedApplication? _app;
@@ -24,24 +18,17 @@ public sealed class AppHostFixture : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        // AppHost читает Services из конфигурации при старте (Program.cs выполняется
-        // внутри CreateAsync), поэтому передаём фильтр через переменное окружение.
-        var previous = Environment.GetEnvironmentVariable("Services");
-        Environment.SetEnvironmentVariable("Services", "main-api,payments-api");
-        try
-        {
-            var builder = await DistributedApplicationTestingBuilder
-                .CreateAsync<Projects.RentControl_AppHost>(
-                    [],
-                    (_, settings) => settings.EnvironmentName = Environments.Development);
+        var builder = await DistributedApplicationTestingBuilder
+            .CreateAsync<Projects.RentControl_AppHost>(
+                ["Services=main-api,payments-api"],
+                (_, settings) => settings.EnvironmentName = Environments.Development);
 
-            _app = await builder.BuildAsync();
-            await _app.StartAsync();
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("Services", previous);
-        }
+        Assert.DoesNotContain(
+            builder.Resources,
+            r => r.Name is ServiceNames.MainWorker or ServiceNames.RealtimeApi);
+
+        _app = await builder.BuildAsync();
+        await _app.StartAsync();
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
         var cancellationToken = cts.Token;
@@ -51,8 +38,6 @@ public sealed class AppHostFixture : IAsyncLifetime
         await _app.ResourceNotifications.WaitForResourceHealthyAsync(
             ServiceNames.PaymentsApi, cancellationToken);
 
-        // Тестовый прогон стартует чистую базу (Aspire в тестовом режиме не переиспользует
-        // персистентный том из dev), поэтому схему maindb надо накатить вручную.
         await MigrateMainDatabaseAsync(cancellationToken);
 
         MainApi = CreateClient(_app, ServiceNames.MainApi);
@@ -87,11 +72,9 @@ public sealed class AppHostFixture : IAsyncLifetime
     {
         var handler = new SocketsHttpHandler
         {
-            // Куки управляем вручную: так Set-Cookie остаётся в заголовках ответа.
             UseCookies = false,
             SslOptions = new SslClientAuthenticationOptions
             {
-                // Dev-сертификат Aspire не доверенный в CI — для e2e это не важно.
                 RemoteCertificateValidationCallback = (_, _, _, _) => true
             }
         };

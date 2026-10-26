@@ -1,16 +1,13 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Xunit;
 
 namespace RentControl.E2ETests;
 
-/// <summary>
-/// E2E-сценарии взаимодействия систем: Payments авторизует JWT, выданные Main.
-/// Внутреннее поведение самих сервисов (валидация регистра, ротация refresh-токенов
-/// и т.п.) здесь не тестируется — для этого интеграционные тесты сервисов.
-/// </summary>
 [Collection(AppHostCollection.Name)]
 public sealed class CrossServiceAuthTests(AppHostFixture fixture)
 {
@@ -36,27 +33,18 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
     [Fact]
     public async Task Payments_RejectsTokenSignedByForeignKey()
     {
-        // Токен оформлен как настоящий (тот же issuer/audience, валидный exp),
-        // но подписан ключом, которого нет в JWKS Main.
-        var forgedToken = ForgedJwt.Create(Issuer, Audience);
+        var forgedToken = CreateTokenSignedByForeignKey(Issuer, Audience);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, ProtectedEndpoint);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", forgedToken);
 
         using var response = await fixture.PaymentsApi.SendAsync(request);
 
-        Assert.Equal(
-            HttpStatusCode.Unauthorized,
-            response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    /// <summary>
-    /// Получает access token у Main.Api: register + login.
-    /// Это подготовка данных, а не проверка поведения Main.
-    /// </summary>
     private async Task<string> GetMainAccessTokenAsync()
     {
-        // Уникальный email: том postgres персистентный, данные переживают прогоны.
         var email = $"e2e-{Guid.NewGuid():N}@test.local";
         var password = "e2e-password-123";
 
@@ -78,4 +66,33 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
         Assert.False(string.IsNullOrWhiteSpace(accessToken), "Main не вернул accessToken");
         return accessToken!;
     }
+
+    private static string CreateTokenSignedByForeignKey(string issuer, string audience)
+    {
+        using var rsa = RSA.Create(2048);
+
+        var header = Base64Url(Encoding.UTF8.GetBytes(
+            JsonSerializer.Serialize(new { alg = "RS256", typ = "JWT" })));
+
+        var payload = Base64Url(Encoding.UTF8.GetBytes(
+            JsonSerializer.Serialize(new
+            {
+                sub = Guid.NewGuid().ToString(),
+                iss = issuer,
+                aud = audience,
+                iat = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+                exp = DateTimeOffset.UtcNow.AddMinutes(15).ToUnixTimeSeconds()
+            })));
+
+        var signingInput = $"{header}.{payload}";
+        var signature = Base64Url(rsa.SignData(
+            Encoding.ASCII.GetBytes(signingInput),
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1));
+
+        return $"{signingInput}.{signature}";
+    }
+
+    private static string Base64Url(byte[] bytes) =>
+        Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 }
