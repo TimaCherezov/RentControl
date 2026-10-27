@@ -1,3 +1,4 @@
+using Main.Model.Configurations;
 using Main.Model.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +18,15 @@ public class MainDbContext(DbContextOptions<MainDbContext> options) : DbContext(
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(MainDbContext).Assembly);
+        modelBuilder.ApplyConfiguration(new UserConfiguration());
+        modelBuilder.ApplyConfiguration(new RefreshTokenConfiguration());
+        modelBuilder.ApplyConfiguration(new BookingConfiguration());
+        modelBuilder.ApplyConfiguration(new BookingStatusConfiguration());
+        modelBuilder.ApplyConfiguration(new StateConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductImageConfiguration());
+        modelBuilder.ApplyConfiguration(new ProductUnitConfiguration());
+        modelBuilder.ApplyConfiguration(new LocationConfiguration());
         base.OnModelCreating(modelBuilder);
     }
 }
