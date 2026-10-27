@@ -26,363 +26,383 @@ namespace Main.Model.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset?>("ActualReturnAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("actual_return_at");
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("BookingStatusId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("booking_status_id");
+                    b.Property<int>("BookingStatusId")
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("DepositAmount")
-                        .HasColumnType("numeric")
-                        .HasColumnName("deposit_amount");
+                        .HasColumnType("numeric");
 
                     b.Property<DateTimeOffset>("EndAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("end_at");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("LocationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("location_id");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ProductUnitId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("product_unit_id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTimeOffset>("StartAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("start_at");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTimeOffset>("StatusChangedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("status_changed_at")
                         .HasDefaultValueSql("timezone('utc', now())");
 
                     b.Property<decimal?>("TotalRentalCost")
-                        .HasColumnType("numeric")
-                        .HasColumnName("total_rental_cost");
+                        .HasColumnType("numeric");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
+                        .HasColumnType("uuid");
 
-                    b.HasKey("Id")
-                        .HasName("pk_bookings");
+                    b.HasKey("Id");
 
-                    b.HasIndex("BookingStatusId")
-                        .HasDatabaseName("ix_bookings_booking_status_id");
+                    b.HasIndex("BookingStatusId");
 
-                    b.HasIndex("LocationId")
-                        .HasDatabaseName("ix_bookings_location_id");
+                    b.HasIndex("LocationId");
 
-                    b.HasIndex("ProductUnitId")
-                        .HasDatabaseName("ix_bookings_product_unit_id");
+                    b.HasIndex("ProductUnitId");
 
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_bookings_user_id");
+                    b.HasIndex("UserId");
 
-                    b.ToTable("bookings", (string)null);
+                    b.ToTable("Bookings");
                 });
 
             modelBuilder.Entity("Main.Model.Models.BookingStatus", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("code");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("name");
+                        .HasColumnType("character varying(50)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_booking_statuses");
+                    b.HasKey("Id");
 
                     b.HasIndex("Code")
-                        .IsUnique()
-                        .HasDatabaseName("ix_booking_statuses_code");
+                        .IsUnique();
 
-                    b.ToTable("booking_statuses", (string)null);
+                    b.ToTable("BookingStatuses");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 5,
+                            Code = "ACTIVE",
+                            Name = "Active"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Code = "CANCELLED",
+                            Name = "Cancelled"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Code = "COMPLETED",
+                            Name = "Completed"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Code = "CONFIRMED",
+                            Name = "Confirmed"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Code = "OVERDUE",
+                            Name = "Overdue"
+                        },
+                        new
+                        {
+                            Id = 1,
+                            Code = "PENDING",
+                            Name = "Pending"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Code = "READY_FOR_PICKUP",
+                            Name = "Ready for pickip"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Code = "RETURNED",
+                            Name = "Returned"
+                        });
                 });
 
             modelBuilder.Entity("Main.Model.Models.Location", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Address")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("address");
+                        .HasColumnType("character varying(255)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("name");
+                        .HasColumnType("character varying(50)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_locations");
+                    b.HasKey("Id");
 
-                    b.ToTable("locations", (string)null);
+                    b.ToTable("Locations");
                 });
 
             modelBuilder.Entity("Main.Model.Models.Product", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<decimal>("DailyRate")
-                        .HasColumnType("numeric")
-                        .HasColumnName("daily_rate");
+                        .HasColumnType("numeric");
 
                     b.Property<decimal?>("DepositOverride")
-                        .HasColumnType("numeric")
-                        .HasColumnName("deposit_override");
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Description")
-                        .HasColumnType("text")
-                        .HasColumnName("description");
+                        .HasColumnType("text");
 
                     b.Property<decimal>("HourlyRate")
-                        .HasColumnType("numeric")
-                        .HasColumnName("hourly_rate");
+                        .HasColumnType("numeric");
 
                     b.Property<decimal>("MarketValue")
-                        .HasColumnType("numeric")
-                        .HasColumnName("market_value");
+                        .HasColumnType("numeric");
 
                     b.Property<decimal?>("MonthlyRate")
-                        .HasColumnType("numeric")
-                        .HasColumnName("monthly_rate");
+                        .HasColumnType("numeric");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("ShortDescription")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("short_description");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<decimal?>("WeeklyRate")
-                        .HasColumnType("numeric")
-                        .HasColumnName("weekly_rate");
+                        .HasColumnType("numeric");
 
-                    b.HasKey("Id")
-                        .HasName("pk_products");
+                    b.HasKey("Id");
 
-                    b.ToTable("products", (string)null);
+                    b.ToTable("Products");
                 });
 
             modelBuilder.Entity("Main.Model.Models.ProductImage", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("AltText")
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("alt_text");
+                        .HasColumnType("character varying(255)");
 
                     b.Property<bool>("IsMain")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_main");
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("product_id");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("SortOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("sort_order");
+                        .HasColumnType("integer");
 
                     b.Property<string>("StorageKey")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("storage_key");
+                        .HasColumnType("character varying(255)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_product_images");
+                    b.HasKey("Id");
 
-                    b.HasIndex("ProductId")
-                        .HasDatabaseName("ix_product_images_product_id");
+                    b.HasIndex("ProductId");
 
-                    b.ToTable("product_images", (string)null);
+                    b.ToTable("ProductImages");
                 });
 
             modelBuilder.Entity("Main.Model.Models.ProductUnit", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("LocationId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("location_id");
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ProductId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("product_id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateOnly>("PurchaseDate")
-                        .HasColumnType("date")
-                        .HasColumnName("purchase_date");
+                        .HasColumnType("date");
 
                     b.Property<decimal>("PurchasePrice")
-                        .HasColumnType("numeric")
-                        .HasColumnName("purchase_price");
+                        .HasColumnType("numeric");
 
                     b.Property<string>("SerialNumber")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("serial_number");
+                        .HasColumnType("character varying(255)");
 
-                    b.Property<Guid>("StateId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("state_id");
+                    b.Property<int>("StateId")
+                        .HasColumnType("integer");
 
-                    b.HasKey("Id")
-                        .HasName("pk_product_units");
+                    b.HasKey("Id");
 
-                    b.HasIndex("LocationId")
-                        .HasDatabaseName("ix_product_units_location_id");
+                    b.HasIndex("LocationId");
 
-                    b.HasIndex("StateId")
-                        .HasDatabaseName("ix_product_units_state_id");
+                    b.HasIndex("StateId");
 
                     b.HasIndex("ProductId", "SerialNumber")
-                        .IsUnique()
-                        .HasDatabaseName("ix_product_units_product_id_serial_number");
+                        .IsUnique();
 
-                    b.ToTable("product_units", (string)null);
+                    b.ToTable("ProductUnits");
                 });
 
             modelBuilder.Entity("Main.Model.Models.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("expires_at");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("revoked_at");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("token_hash");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
+                        .HasColumnType("uuid");
 
-                    b.HasKey("Id")
-                        .HasName("pk_refresh_tokens");
+                    b.HasKey("Id");
 
                     b.HasIndex("TokenHash")
-                        .IsUnique()
-                        .HasDatabaseName("ix_refresh_tokens_token_hash");
+                        .IsUnique();
 
-                    b.HasIndex("UserId")
-                        .HasDatabaseName("ix_refresh_tokens_user_id");
+                    b.HasIndex("UserId");
 
-                    b.ToTable("refresh_tokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("Main.Model.Models.State", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("code");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("name");
+                        .HasColumnType("character varying(50)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_states");
+                    b.HasKey("Id");
 
                     b.HasIndex("Code")
-                        .IsUnique()
-                        .HasDatabaseName("ix_states_code");
+                        .IsUnique();
 
-                    b.ToTable("states", (string)null);
+                    b.ToTable("States");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 7,
+                            Code = "BROKEN",
+                            Name = "Broken"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Code = "EXCELLENT",
+                            Name = "Excellent"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Code = "GOOD",
+                            Name = "Good"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Code = "NEEDS_MAINTENANCE",
+                            Name = "Needs maintenance"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Code = "NEEDS_REPAIR",
+                            Name = "Needs repair"
+                        },
+                        new
+                        {
+                            Id = 1,
+                            Code = "NEW",
+                            Name = "New"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Code = "USED",
+                            Name = "Used"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Code = "WRITE_OFF",
+                            Name = "Write off"
+                        });
                 });
 
             modelBuilder.Entity("Main.Model.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("email");
+                        .HasColumnType("character varying(320)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("password_hash");
+                        .HasColumnType("character varying(500)");
 
-                    b.HasKey("Id")
-                        .HasName("pk_users");
+                    b.HasKey("Id");
 
                     b.HasIndex("Email")
-                        .IsUnique()
-                        .HasDatabaseName("ix_users_email");
+                        .IsUnique();
 
-                    b.ToTable("users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("Main.Model.Models.Booking", b =>
@@ -391,29 +411,25 @@ namespace Main.Model.Migrations
                         .WithMany()
                         .HasForeignKey("BookingStatusId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_bookings_booking_statuses_booking_status_id");
+                        .IsRequired();
 
                     b.HasOne("Main.Model.Models.Location", "Location")
                         .WithMany()
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_bookings_locations_location_id");
+                        .IsRequired();
 
                     b.HasOne("Main.Model.Models.ProductUnit", "ProductUnit")
                         .WithMany()
                         .HasForeignKey("ProductUnitId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_bookings_product_units_product_unit_id");
+                        .IsRequired();
 
                     b.HasOne("Main.Model.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_bookings_users_user_id");
+                        .IsRequired();
 
                     b.Navigation("BookingStatus");
 
@@ -430,8 +446,7 @@ namespace Main.Model.Migrations
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_product_images_products_product_id");
+                        .IsRequired();
 
                     b.Navigation("Product");
                 });
@@ -442,22 +457,19 @@ namespace Main.Model.Migrations
                         .WithMany()
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_product_units_locations_location_id");
+                        .IsRequired();
 
                     b.HasOne("Main.Model.Models.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_product_units_products_product_id");
+                        .IsRequired();
 
                     b.HasOne("Main.Model.Models.State", "State")
                         .WithMany()
                         .HasForeignKey("StateId")
                         .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_product_units_states_state_id");
+                        .IsRequired();
 
                     b.Navigation("Location");
 
@@ -472,8 +484,7 @@ namespace Main.Model.Migrations
                         .WithMany("RefreshTokens")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_refresh_tokens_users_user_id");
+                        .IsRequired();
 
                     b.Navigation("User");
                 });
