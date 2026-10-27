@@ -10,6 +10,5 @@ public class Product
     public decimal HourlyRate { get; set; }
     public decimal? WeeklyRate { get; set; }
     public decimal? MonthlyRate { get; set; }
-    public string? ShortDescription { get; set; }
     public string? Description { get; set; }
 }
