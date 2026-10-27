@@ -1,5 +1,8 @@
 namespace Main.Model.Models;
 
+/// <summary>
+/// Место размещения пункта, который занимается выдачей и приемом продуктов.
+/// </summary>
 public class Location
 {
     public Guid Id { get; set; }

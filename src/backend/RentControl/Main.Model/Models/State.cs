@@ -1,5 +1,8 @@
 namespace Main.Model.Models;
 
+/// <summary>
+/// Состояние продукта.
+/// </summary>
 public class State
 {
     public StateEnum Id { get; set; }

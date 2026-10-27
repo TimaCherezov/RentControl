@@ -1,5 +1,8 @@
 namespace Main.Model.Models;
 
+/// <summary>
+/// Статус бронирования.
+/// </summary>
 public class BookingStatus
 {
     public BookingStatusEnum Id { get; set; }
