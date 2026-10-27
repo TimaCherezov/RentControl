@@ -1,8 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using Xunit;
 
@@ -26,15 +24,13 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
         using var response = await fixture.PaymentsApi.SendAsync(
             request, TestContext.Current.CancellationToken);
 
-        Assert.True(
-            response.IsSuccessStatusCode,
-            $"Ожидался 200 от Payments для токена, выданного Main, но пришел {response.StatusCode}");
+        Assert.True(response.IsSuccessStatusCode);
     }
 
     [Fact]
     public async Task Payments_RejectsTokenSignedByForeignKey()
     {
-        var forgedToken = CreateTokenSignedByForeignKey(Issuer, Audience);
+        var forgedToken = JwtTokenCreator.CreateTokenSignedByForeignKey(Issuer, Audience);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, ProtectedEndpoint);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", forgedToken);
@@ -68,33 +64,4 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
         Assert.False(string.IsNullOrWhiteSpace(accessToken), "Main не вернул accessToken");
         return accessToken!;
     }
-
-    private static string CreateTokenSignedByForeignKey(string issuer, string audience)
-    {
-        using var rsa = RSA.Create(2048);
-
-        var header = Base64Url(Encoding.UTF8.GetBytes(
-            JsonSerializer.Serialize(new { alg = "RS256", typ = "JWT" })));
-
-        var payload = Base64Url(Encoding.UTF8.GetBytes(
-            JsonSerializer.Serialize(new
-            {
-                sub = Guid.NewGuid().ToString(),
-                iss = issuer,
-                aud = audience,
-                iat = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                exp = DateTimeOffset.UtcNow.AddMinutes(15).ToUnixTimeSeconds()
-            })));
-
-        var signingInput = $"{header}.{payload}";
-        var signature = Base64Url(rsa.SignData(
-            Encoding.ASCII.GetBytes(signingInput),
-            HashAlgorithmName.SHA256,
-            RSASignaturePadding.Pkcs1));
-
-        return $"{signingInput}.{signature}";
-    }
-
-    private static string Base64Url(byte[] bytes) =>
-        Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 }

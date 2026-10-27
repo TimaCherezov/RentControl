@@ -4,6 +4,7 @@ using Main.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using System.Net.Security;
+using System.Security.Authentication.ExtendedProtection;
 using Xunit;
 
 namespace RentControl.E2ETests;
@@ -20,7 +21,7 @@ public sealed class AppHostFixture : IAsyncLifetime
     {
         var builder = await DistributedApplicationTestingBuilder
             .CreateAsync<Projects.RentControl_AppHost>(
-                ["Services=main-api,payments-api"],
+                [$"Services={string.Join(',', [ServiceNames.MainApi, ServiceNames.PaymentsApi])}"],
                 (_, settings) => settings.EnvironmentName = Environments.Development);
 
         Assert.DoesNotContain(
@@ -33,11 +34,9 @@ public sealed class AppHostFixture : IAsyncLifetime
         using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
         var cancellationToken = cts.Token;
 
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync(
-            ServiceNames.MainApi, cancellationToken);
-        await _app.ResourceNotifications.WaitForResourceHealthyAsync(
-            ServiceNames.PaymentsApi, cancellationToken);
-
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync(ServiceNames.MainApi, cancellationToken);
+        await _app.ResourceNotifications.WaitForResourceHealthyAsync(ServiceNames.PaymentsApi, cancellationToken);
+        
         await MigrateMainDatabaseAsync(cancellationToken);
 
         MainApi = CreateClient(_app, ServiceNames.MainApi);
@@ -58,7 +57,7 @@ public sealed class AppHostFixture : IAsyncLifetime
     private async Task MigrateMainDatabaseAsync(CancellationToken cancellationToken)
     {
         var connectionString = await _app!.GetConnectionStringAsync("maindb", cancellationToken)
-            ?? throw new InvalidOperationException("Не удалось получить строку подключения maindb");
+                               ?? throw new InvalidOperationException("Не удалось получить строку подключения maindb");
 
         var options = new DbContextOptionsBuilder<MainDbContext>()
             .UseNpgsql(connectionString)
