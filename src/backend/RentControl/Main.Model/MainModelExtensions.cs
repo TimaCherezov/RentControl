@@ -1,5 +1,4 @@
 using Main.Model.UnitOfWork;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RentControl.Common.UnitOfWork;
@@ -13,7 +12,7 @@ public static class MainModelExtensions
         string connectionName = "maindb")
     {
         builder.AddNpgsqlDbContext<MainDbContext>(connectionName);
-        builder.Services.AddDbContextFactory<MainDbContext>(option => option.UseSnakeCaseNamingConvention());
+        builder.Services.AddDbContextFactory<MainDbContext>();
 
         builder.Services.AddSingleton<IUnitOfWorkFactory<IMainUnitOfWork>, MainUnitOfWorkFactory>();
 
