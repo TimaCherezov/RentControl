@@ -4,8 +4,8 @@ public class RefreshToken
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
-    public required User User { get; set; }
-    public required string TokenHash { get; set; }
+    public User User { get; set; } = null!;
+    public string TokenHash { get; set; } = null!;
     public DateTime ExpiresAt { get; set; }
     public DateTime? RevokedAt { get; set; }
 

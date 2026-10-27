@@ -3,7 +3,7 @@ namespace Main.Model.Models;
 public class Product
 {
     public Guid Id { get; set; }
-    public required string Name { get; set; }
+    public string Name { get; set; } = null!;
     public decimal MarketValue { get; set; }
     public decimal? DepositOverride { get; set; }
     public decimal DailyRate { get; set; }
