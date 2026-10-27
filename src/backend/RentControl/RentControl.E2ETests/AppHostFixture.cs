@@ -20,7 +20,7 @@ public sealed class AppHostFixture : IAsyncLifetime
     {
         var builder = await DistributedApplicationTestingBuilder
             .CreateAsync<Projects.RentControl_AppHost>(
-                ["DOTNET_LAUNCH_PROFILE=e2e-auth"],
+                ["Services=main-api,payments-api"],
                 (_, settings) => settings.EnvironmentName = Environments.Development);
 
         Assert.DoesNotContain(
