@@ -9,9 +9,6 @@ using RentControl.IntegrationTests.Main.Infrastructure;
 
 namespace RentControl.IntegrationTests.Main;
 
-// Смоук-тесты Main.Api и образец использования MainApiFixture.
-// Тесты создают свои данные с уникальными идентификаторами и не зависят друг от друга.
-
 [Collection(MainApiCollection.Name)]
 public class MainApiSmokeTests(MainApiFixture fixture)
 {

@@ -15,9 +15,6 @@ namespace RentControl.IntegrationTests.Payments.Infrastructure;
 /// Payments.Api целиком в памяти (WebApplicationFactory) + реальный Postgres в контейнере.
 /// Зависимость от Main.Api (JWKS) мокается на HTTP-границе: клиент "jwt-jwks" получает
 /// заглушку с тестовым ключом, токены выпускает <see cref="CreateAccessToken"/>.
-///
-/// Использование: <c>[Collection(PaymentsApiCollection.Name)]</c> — фикстура общая
-/// на коллекцию; либо <c>: IClassFixture&lt;PaymentsApiFixture&gt;</c> — своя на класс.
 /// </summary>
 public sealed class PaymentsApiFixture : IAsyncLifetime
 {

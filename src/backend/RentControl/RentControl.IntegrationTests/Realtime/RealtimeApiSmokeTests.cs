@@ -4,8 +4,6 @@ using RentControl.IntegrationTests.Realtime.Infrastructure;
 
 namespace RentControl.IntegrationTests.Realtime;
 
-// Смоук-тесты Realtime.Api и образец использования RealtimeApiFixture.
-
 [Collection(RealtimeApiCollection.Name)]
 public class RealtimeApiSmokeTests(RealtimeApiFixture fixture)
 {

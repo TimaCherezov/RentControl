@@ -5,8 +5,6 @@ using RentControl.IntegrationTests.Payments.Infrastructure;
 
 namespace RentControl.IntegrationTests.Payments;
 
-// Смоук-тесты Payments.Api и образец использования PaymentsApiFixture.
-
 [Collection(PaymentsApiCollection.Name)]
 public class PaymentsApiSmokeTests(PaymentsApiFixture fixture)
 {

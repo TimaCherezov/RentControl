@@ -1,9 +1,6 @@
 namespace RentControl.IntegrationTests.Infrastructure;
 
-/// <summary>
-/// Образы контейнеров для интеграционных тестов.
-/// Совпадают с образами, которые поднимает AppHost.
-/// </summary>
+/// <summary>Образы контейнеров для интеграционных тестов.</summary>
 internal static class TestImages
 {
     public const string Postgres = "postgres:17.6";

@@ -8,11 +8,8 @@ namespace RentControl.IntegrationTests.Realtime.Infrastructure;
 
 /// <summary>
 /// Realtime.Api целиком в памяти (WebApplicationFactory). Внешних зависимостей у
-/// сервиса пока нет; когда появится RabbitMQ — добавьте в фикстуру контейнер
-/// (см. <see cref="RabbitMqFixture"/>) и пробросьте строку подключения в конфиг.
-///
-/// Использование: <c>[Collection(RealtimeApiCollection.Name)]</c> — фикстура общая
-/// на коллекцию; либо <c>: IClassFixture&lt;RealtimeApiFixture&gt;</c> — своя на класс.
+/// сервиса пока нет; когда появится, например, RabbitMQ — контейнер стартует
+/// в этой фикстуре (образ: TestImages.RabbitMq).
 /// </summary>
 public sealed class RealtimeApiFixture : IAsyncLifetime
 {

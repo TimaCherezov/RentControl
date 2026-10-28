@@ -13,9 +13,6 @@ namespace RentControl.IntegrationTests.Main.Infrastructure;
 /// <summary>
 /// Main.Api целиком в памяти (WebApplicationFactory) + реальный Postgres в контейнере.
 /// Миграции Main.Model накатываются при старте фикстуры.
-///
-/// Использование: <c>[Collection(MainApiCollection.Name)]</c> — фикстура общая
-/// на коллекцию; либо <c>: IClassFixture&lt;MainApiFixture&gt;</c> — своя на класс.
 /// </summary>
 public sealed class MainApiFixture : IAsyncLifetime
 {

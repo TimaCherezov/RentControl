@@ -4,10 +4,6 @@ using RentControl.IntegrationTests.Realtime.Infrastructure;
 
 namespace RentControl.IntegrationTests;
 
-// Коллекции делают фикстуру общей для всех тестовых классов коллекции:
-// контейнер Postgres и фабрика приложения стартуют один раз, классы внутри
-// коллекции выполняются последовательно, разные коллекции — параллельно.
-
 [CollectionDefinition(MainApiCollection.Name)]
 public sealed class MainApiCollection : ICollectionFixture<MainApiFixture>
 {
