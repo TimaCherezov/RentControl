@@ -1,0 +1,107 @@
+name: AI Review
+
+# Ревью пулл-реквестов через OpenCode (скилл `pr-review`) на модели z.ai.
+#
+# Как работает:
+#   1. При каждом пуше в PR задача ждёт 30 минут (debounce).
+#   2. Если за это время пришёл более свежий пуш — запуск отменяется или
+#      завершается без ревью (ревьюить будет запуск свежего коммита).
+#   3. Иначе OpenCode прогоняет скилл pr-review и публикует в PR
+#      сводный комментарий и построчные комментарии.
+#
+# Требуется секрет: ZAI_API_KEY — ключ z.ai (Settings -> Secrets and variables -> Actions).
+# Опционально переменная REVIEW_MODEL — модель в формате `provider/model` (по умолчанию zai/glm-4.7).
+# Если ключ из подписки Z.AI Coding Plan — укажите REVIEW_MODEL=zai-coding-plan/glm-4.7.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  REVIEW_MODEL: ${{ vars.REVIEW_MODEL || 'zai/glm-4.7' }}
+  REVIEW_DELAY_SECONDS: '1800'
+  PR_NUMBER: ${{ github.event.pull_request.number }}
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - name: Debounce — ждём 30 минут после последнего пуша
+        run: sleep "$REVIEW_DELAY_SECONDS"
+
+      - name: Проверка свежести (новый пуш или PR из форка)
+        id: freshness
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+        run: |
+          if [ "$IS_FORK" = "true" ]; then
+            echo "PR из форка: секреты репозитория недоступны, ревью пропускаем."
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          current="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')"
+          if [ "$current" != "$EXPECTED_SHA" ]; then
+            echo "Появился более свежий коммит ${current}, запуск для ${EXPECTED_SHA} устарел."
+            echo "stale=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ---- шаги ниже выполняются только если это по-прежнему свежий коммит ----
+
+      - uses: actions/checkout@v4
+        if: steps.freshness.outputs.stale != 'true'
+        with:
+          # Полная история, чтобы ревьюер мог смотреть контекст файлов.
+          fetch-depth: 0
+
+      - name: Установка OpenCode
+        if: steps.freshness.outputs.stale != 'true'
+        run: npm install --global @opencode/cli
+
+      - name: Выгрузка diff и описания PR
+        if: steps.freshness.outputs.stale != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          gh pr diff "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" > "$RUNNER_TEMP/pr.diff"
+          {
+            printf '## %s\n\n' "$PR_TITLE"
+            printf '%s\n' "$PR_BODY"
+          } > "$RUNNER_TEMP/pr.md"
+
+      - name: Запуск ревью (opencode run + скилл pr-review)
+        if: steps.freshness.outputs.stale != 'true'
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZAI_API_KEY }}
+          REVIEW_DIFF: ${{ runner.temp }}/pr.diff
+          REVIEW_META: ${{ runner.temp }}/pr.md
+          REVIEW_REPORT: ${{ runner.temp }}/review.md
+          REVIEW_COMMENTS: ${{ runner.temp }}/comments.json
+        run: |
+          if [ -z "${ZHIPU_API_KEY:-}" ]; then
+            echo "::error::Секрет ZAI_API_KEY не задан. Добавьте его в Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          opencode run --standalone --auto --model "$REVIEW_MODEL" \
+            "@pr-review Сделай ревью этого пулл-реквеста. Diff — в файле из \$REVIEW_DIFF, описание PR — в файле из \$REVIEW_META. Пройди весь цикл по инструкции скилла."
+
+      - name: Публикация ревью в PR
+        if: steps.freshness.outputs.stale != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          REVIEW_REPORT: ${{ runner.temp }}/review.md
+          REVIEW_COMMENTS: ${{ runner.temp }}/comments.json
+        run: bash .github/scripts/ai-review/publish.sh
