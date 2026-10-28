@@ -1,5 +1,6 @@
-using RentControl.IntegrationTests.Fixtures;
-using Xunit;
+using RentControl.IntegrationTests.Main.Infrastructure;
+using RentControl.IntegrationTests.Payments.Infrastructure;
+using RentControl.IntegrationTests.Realtime.Infrastructure;
 
 namespace RentControl.IntegrationTests;
 
@@ -23,10 +24,4 @@ public sealed class PaymentsApiCollection : ICollectionFixture<PaymentsApiFixtur
 public sealed class RealtimeApiCollection : ICollectionFixture<RealtimeApiFixture>
 {
     public const string Name = "RealtimeApi";
-}
-
-[CollectionDefinition(RabbitMqCollection.Name)]
-public sealed class RabbitMqCollection : ICollectionFixture<RabbitMqFixture>
-{
-    public const string Name = "RabbitMq";
 }

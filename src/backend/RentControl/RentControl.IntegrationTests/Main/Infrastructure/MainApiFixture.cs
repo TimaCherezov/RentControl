@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using RentControl.IntegrationTests.Infrastructure;
 using Testcontainers.PostgreSql;
 
-namespace RentControl.IntegrationTests.Fixtures;
+namespace RentControl.IntegrationTests.Main.Infrastructure;
 
 /// <summary>
 /// Main.Api целиком в памяти (WebApplicationFactory) + реальный Postgres в контейнере.

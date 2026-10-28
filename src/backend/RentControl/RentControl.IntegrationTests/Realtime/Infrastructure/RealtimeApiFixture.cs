@@ -4,7 +4,7 @@ using RealtimeApiProgram = RealtimeApi::Program;
 
 using RentControl.IntegrationTests.Infrastructure;
 
-namespace RentControl.IntegrationTests.Fixtures;
+namespace RentControl.IntegrationTests.Realtime.Infrastructure;
 
 /// <summary>
 /// Realtime.Api целиком в памяти (WebApplicationFactory). Внешних зависимостей у

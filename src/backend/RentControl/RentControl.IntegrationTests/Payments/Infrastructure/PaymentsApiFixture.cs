@@ -9,7 +9,7 @@ using RentControl.IntegrationTests.Infrastructure;
 using RentControl.ServiceDefaults;
 using Testcontainers.PostgreSql;
 
-namespace RentControl.IntegrationTests.Fixtures;
+namespace RentControl.IntegrationTests.Payments.Infrastructure;
 
 /// <summary>
 /// Payments.Api целиком в памяти (WebApplicationFactory) + реальный Postgres в контейнере.
