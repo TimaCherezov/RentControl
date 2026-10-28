@@ -1,5 +1,8 @@
 namespace Main.Model.Models;
 
+/// <summary>
+/// Refresh токен. Необходим для авторизации.
+/// </summary>
 public class RefreshToken
 {
     public Guid Id { get; set; }

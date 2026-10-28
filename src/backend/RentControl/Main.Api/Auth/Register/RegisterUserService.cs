@@ -21,6 +21,7 @@ public class RegisterUserService(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
 
             var user = new User
             {
+                PasswordHash = null!,
                 Name = request.Name.Trim(),
                 Email = email
             };

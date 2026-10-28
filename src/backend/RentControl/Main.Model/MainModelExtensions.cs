@@ -1,5 +1,4 @@
 using Main.Model.UnitOfWork;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RentControl.Common.UnitOfWork;
