@@ -76,7 +76,7 @@ jobs:
           WR_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          pr="" ; sha="" ; reason=""
+          pr="" ; sha="" ; reason="" ; base=""
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             if ! [[ "$INPUT_PR" =~ ^[0-9]+$ ]]; then
@@ -99,11 +99,12 @@ jobs:
 
           if [ -n "$pr" ]; then
             meta="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" \
-              --jq '{sha: .head.sha, fork: (.head.repo.fork // false), draft: .draft, state: .state}')"
+              --jq '{sha: .head.sha, fork: (.head.repo.fork // false), draft: .draft, state: .state, base: .base.ref}')"
             sha="$(jq -r '.sha' <<<"$meta")"
             fork="$(jq -r '.fork' <<<"$meta")"
             draft="$(jq -r '.draft' <<<"$meta")"
             prstate="$(jq -r '.state' <<<"$meta")"
+            base="$(jq -r '.base' <<<"$meta")"
 
             if [ "$fork" != "false" ]; then
               reason="PR из форка"
@@ -137,8 +138,9 @@ jobs:
               {
                 echo "pr=${pr}"
                 echo "sha=${sha}"
+                echo "base=${base}"
               } >> "$GITHUB_OUTPUT"
-              echo "PR #${pr}: коммит ${sha:0:12} — запускаем ревью."
+              echo "PR #${pr}: коммит ${sha:0:12} (база origin/${base}) — запускаем ревью."
             fi
           fi
 
@@ -154,6 +156,7 @@ jobs:
     env:
       PR_NUMBER: ${{ needs.resolve.outputs.pr }}
       HEAD_SHA: ${{ needs.resolve.outputs.sha }}
+      BASE_REF: ${{ needs.resolve.outputs.base }}
     steps:
       - name: "Заявка на ревью (commit status: pending)"
         env:
@@ -184,19 +187,10 @@ jobs:
           echo "/tmp/opencode-cli/node_modules/.bin" >> "$GITHUB_PATH"
           opencode --version
 
-      - name: Выгрузка diff и описания PR
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr diff "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" > "$RUNNER_TEMP/pr.diff"
-          gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json title,body \
-            --jq '"## " + .title + "\n\n" + (.body // "")' > "$RUNNER_TEMP/pr.md"
-
       - name: Запуск ревью (opencode run + скилл pr-review)
         env:
+          GH_TOKEN: ${{ github.token }}
           ZHIPU_API_KEY: ${{ secrets.ZAI_API_KEY }}
-          REVIEW_DIFF: ${{ runner.temp }}/pr.diff
-          REVIEW_META: ${{ runner.temp }}/pr.md
           REVIEW_REPORT: ${{ runner.temp }}/review.md
           REVIEW_COMMENTS: ${{ runner.temp }}/comments.json
         run: |
@@ -205,7 +199,7 @@ jobs:
             exit 1
           fi
           opencode run --standalone --auto --model "$REVIEW_MODEL" \
-            "@pr-review Сделай ревью этого пулл-реквеста. Diff — в файле из \$REVIEW_DIFF, описание PR — в файле из \$REVIEW_META. Пройди весь цикл по инструкции скилла."
+            "@pr-review Сделай ревью пулл-реквеста №${PR_NUMBER}: сам посмотри репозиторий и сравни эту ветку с origin/${BASE_REF} (полная история уже в чекауте). Пройди весь цикл по инструкции скилла; отчёт и комментарии запиши в файлы из \$REVIEW_REPORT и \$REVIEW_COMMENTS."
 
       - name: Публикация ревью в PR
         env:
