@@ -20,7 +20,7 @@ max_comments="${MAX_COMMENTS:-10}"
 
 sha_short="${HEAD_SHA:0:12}"
 footer="---
-<sub>🤖 Автоматическое ревью [OpenCode](https://opencode.ai) · модель \`${REVIEW_MODEL:-zai/glm-4.7}\` · коммит \`${sha_short}\` · запускается через 30 минут после последнего пуша в PR</sub>"
+<sub>🤖 Автоматическое ревью [OpenCode](https://opencode.ai) · модель \`${REVIEW_MODEL:-zai/glm-4.7}\` · коммит \`${sha_short}\` · запускается после успешного билда</sub>"
 
 # 1. Сводный комментарий с отчётом.
 if [ -n "$report" ] && [ -s "$report" ]; then
