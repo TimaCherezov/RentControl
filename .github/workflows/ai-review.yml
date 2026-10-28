@@ -49,6 +49,9 @@ permissions:
 env:
   REVIEW_MODEL: ${{ vars.REVIEW_MODEL || 'zai/glm-4.7' }}
   CLAIM_STALE_MINUTES: '60'
+  # Пин мажорной версии OpenCode; заодно ключ кеша установки.
+  # Поднять при выходе новой мажорной версии (или задать variable OPENCODE_VERSION).
+  OPENCODE_VERSION: ${{ vars.OPENCODE_VERSION || '2' }}
 
 jobs:
   resolve:
@@ -167,8 +170,19 @@ jobs:
           # Полная история, чтобы ревьюер мог смотреть контекст файлов.
           fetch-depth: 0
 
+      - name: Кеш OpenCode (бинарник ~500 МБ — качаем только при смене версии)
+        uses: actions/cache@v4
+        with:
+          path: /tmp/opencode-cli
+          key: opencode-cli-${{ env.OPENCODE_VERSION }}
+
       - name: Установка OpenCode
-        run: npm install --global @opencode/cli
+        run: |
+          if [ ! -x /tmp/opencode-cli/node_modules/.bin/opencode ]; then
+            npm install --prefix /tmp/opencode-cli "@opencode/cli@${OPENCODE_VERSION}"
+          fi
+          echo "/tmp/opencode-cli/node_modules/.bin" >> "$GITHUB_PATH"
+          opencode --version
 
       - name: Выгрузка diff и описания PR
         env:
