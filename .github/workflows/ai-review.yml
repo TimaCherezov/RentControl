@@ -1,123 +1,41 @@
 name: AI Review
 
-# Ревью пулл-реквестов через OpenCode (скилл `pr-review`) на модели z.ai.
-#
-# Когда запускается: после успешного завершения workflow "Build" по пушу в PR
-# (событие workflow_run). Никаких sleep и ожиданий на раннерах — задачи
-# стартуют только под реальную работу.
-#
-# Логика:
-#   1. resolve (лёгкая задача, секунды): находит PR по sha закоммиченного
-#      билда, отбрасывает форки, черновики, устаревшие коммиты и уже
-#      отревьюенное. Состояние ревью — commit status `ai-review`:
-#        pending  = ревью в работе (защита от дублей)
-#        success  = готово (повторно не запускается)
-#        error    = не удалось (повтор: перегон Build (Re-run) или новый пуш)
-#   2. review: OpenCode прогоняет скилл pr-review и публикует в PR сводный
-#      комментарий и построчные комментарии.
-#
-# Ретрай упавшего ревью: перегоните соответствующий Build-раннер (Re-run) —
-# workflow_run сработает снова, либо сделайте новый пуш в PR.
+# AI-ревью пулл-реквестов: OpenCode (скилл `pr-review`) на модели z.ai.
+# Запускается при создании PR и на каждый пуш в него.
+# Вся логика шагов — в .github/scripts/ai-review/.
 #
 # Требуется секрет: ZAI_API_KEY — ключ z.ai (Settings -> Secrets and variables -> Actions).
-# Модель зашита в env REVIEW_MODEL ниже (zai/glm-4.7).
-#
-# Вся логика шагов вынесена в .github/scripts/ai-review/:
-#   resolve.sh  — гейт: найти PR по sha билда, отфильтровать лишние запуски
-#   claim.sh    — заявка на ревью (commit status pending)
-#   install.sh  — установка OpenCode (с кешем)
-#   review.sh   — запуск opencode run со скиллом pr-review
-#   publish.sh  — публикация отчёта и построчных комментариев в PR
-#   finalize.sh — финальный commit status (success/error)
-#
-# Примечание: событие workflow_run срабатывает только для workflow,
-# находящихся в ветке по умолчанию (заработает после мержа).
 
 on:
-  workflow_run:
-    workflows: [Build]
-    types: [completed]
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
   pull-requests: write
-  statuses: write
+
+# Новый пуш отменяет ещё не закончившееся ревью этого же PR.
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 env:
   REVIEW_MODEL: zai/glm-4.7
-  CLAIM_STALE_MINUTES: '60'
   # Пин мажорной версии OpenCode; заодно ключ кеша установки.
-  # Поднять при выходе новой мажорной версии (или задать variable OPENCODE_VERSION).
   OPENCODE_VERSION: ${{ vars.OPENCODE_VERSION || '2' }}
 
 jobs:
-  resolve:
-    # Только успешные билды по пушам в PR.
-    if: >-
-      github.event.workflow_run.conclusion == 'success'
-      && github.event.workflow_run.event == 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      pr: ${{ steps.r.outputs.pr }}
-      sha: ${{ steps.r.outputs.sha }}
-      base: ${{ steps.r.outputs.base }}
-    steps:
-      # Зачем тут что-то искать: раннер этого шага НИЧЕГО не чекаутит.
-      # Событие workflow_run приходит на ЛЮБОЙ завершённый Build — и на пуш
-      # в main, и на упавший билд, и на перегон старого коммита — и не
-      # содержит номера PR. Поэтому по sha билда находим открытый PR и
-      # отфильтровываем лишние запуски ДО дорогой части (checkout + LLM):
-      # форк/черновик/закрыт, устаревший коммит, уже отревьюенное.
-      - name: Гейт — найти PR по sha билда и отфильтровать лишнее
-        id: r
-        env:
-          GH_TOKEN: ${{ github.token }}
-          WR_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: bash .github/scripts/ai-review/resolve.sh
-
   review:
-    needs: resolve
-    if: needs.resolve.outputs.pr != ''
     runs-on: ubuntu-latest
     timeout-minutes: 45
-    concurrency:
-      # Свежий билд того же PR отменяет ещё не закончившееся ревью старого коммита.
-      group: ai-review-pr-${{ needs.resolve.outputs.pr }}
-      cancel-in-progress: true
     env:
-      PR_NUMBER: ${{ needs.resolve.outputs.pr }}
-      HEAD_SHA: ${{ needs.resolve.outputs.sha }}
-      BASE_REF: ${{ needs.resolve.outputs.base }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      BASE_REF: ${{ github.event.pull_request.base.ref }}
     steps:
-      # ── Схема заявок (claim) ─────────────────────────────────────────────
-      # Состояние ревью хранится в commit status контекста `ai-review` на
-      # head-коммите PR — это «замок», видимый всем запускам:
-      #
-      #   claim.sh (этот шаг)  -> pending: «я взял этот коммит в работу».
-      #          Другие запуски по тому же коммиту (например, перегон билда)
-      #          видят pending в resolve и второе ревью не стартуют.
-      #   finalize.sh          -> success: ревью опубликовано. Повторные
-      #          события по этому sha (перегон билда, ручной запуск) молча
-      #          пропускаются — каждый коммит ревьюится ровно один раз.
-      #                        -> error: ревью упало. Перегон Build (Re-run)
-      #          или следующий успешный билд попробуют снова.
-      #
-      # pending не вечный: если раннер умер, не оставив финальный статус,
-      # resolve сочтёт pending старше CLAIM_STALE_MINUTES (60 мин) зависшим
-      # и разрешит перезапуск.
-      # target_url в статусе ведёт в лог конкретного запуска — ссылку видно
-      # в UI коммита и PR.
-      - name: "Заявка на ревью (commit status: pending)"
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: bash .github/scripts/ai-review/claim.sh
-
       - uses: actions/checkout@v4
         with:
-          ref: refs/pull/${{ needs.resolve.outputs.pr }}/head
-          # Полная история, чтобы ревьюер мог смотреть контекст файлов
-          # и сравнивать ветку с origin/<base>.
+          # Полная история: ревьюер сам сравнивает ветку с origin/<base>.
           fetch-depth: 0
 
       - name: Кеш OpenCode (бинарник ~500 МБ — качаем только при смене версии)
@@ -129,7 +47,7 @@ jobs:
       - name: Установка OpenCode
         run: bash .github/scripts/ai-review/install.sh
 
-      - name: Запуск ревью (opencode run + скилл pr-review)
+      - name: Ревью (opencode + скилл pr-review)
         env:
           GH_TOKEN: ${{ github.token }}
           ZHIPU_API_KEY: ${{ secrets.ZAI_API_KEY }}
@@ -143,10 +61,3 @@ jobs:
           REVIEW_REPORT: ${{ runner.temp }}/review.md
           REVIEW_COMMENTS: ${{ runner.temp }}/comments.json
         run: bash .github/scripts/ai-review/publish.sh
-
-      - name: Итоговый статус ревью
-        if: always()
-        env:
-          GH_TOKEN: ${{ github.token }}
-          JOB_STATUS: ${{ job.status }}
-        run: bash .github/scripts/ai-review/finalize.sh
