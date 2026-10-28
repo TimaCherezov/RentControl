@@ -10,8 +10,8 @@
 set -euo pipefail
 
 if [ -z "${ZHIPU_API_KEY:-}" ]; then
-  echo "::error::Секрет ZAI_API_KEY не задан. Добавьте его в Settings -> Secrets and variables -> Actions."
-  exit 1
+  echo "::warning::ZHIPU_API_KEY не задан — ревью пропущено."
+  exit 0
 fi
 opencode run --standalone --auto --model "$REVIEW_MODEL" \
   "@pr-review Сделай ревью пулл-реквеста №${PR_NUMBER}: сам посмотри репозиторий и сравни эту ветку с origin/${BASE_REF} (полная история уже в чекауте). Пройди весь цикл по инструкции скилла; отчёт и комментарии запиши в файлы из \$REVIEW_REPORT и \$REVIEW_COMMENTS."

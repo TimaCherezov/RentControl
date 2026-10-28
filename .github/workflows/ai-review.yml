@@ -5,6 +5,8 @@ name: AI Review
 # Вся логика шагов — в .github/scripts/ai-review/.
 #
 # Требуется секрет: ZAI_API_KEY — ключ z.ai (Settings -> Secrets and variables -> Actions).
+# Нет секрета — job просто пропускается. Любые сбои ревью не блокируют PR
+# (continue-on-error): в merge не встаёт и не горит красным.
 
 on:
   pull_request:
@@ -28,26 +30,43 @@ jobs:
   review:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    # Любые сбои ревью не блокируют пулл-реквест: job не красит PR и не
+    # встаёт в merge. Что именно упало — видно в логе запуска.
+    continue-on-error: true
     env:
       PR_NUMBER: ${{ github.event.pull_request.number }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
       BASE_REF: ${{ github.event.pull_request.base.ref }}
     steps:
+      - name: Проверка ключа z.ai (нет ключа — ревью пропускается)
+        id: key
+        env:
+          ZHIPU_API_KEY: ${{ secrets.ZAI_API_KEY }}
+        run: |
+          if [ -z "${ZHIPU_API_KEY:-}" ]; then
+            echo "::warning::Секрет ZAI_API_KEY не задан (Settings -> Secrets and variables -> Actions) — AI-ревью пропущено."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.key.outputs.skip != 'true'
         with:
           # Полная история: ревьюер сам сравнивает ветку с origin/<base>.
           fetch-depth: 0
 
       - name: Кеш OpenCode (бинарник ~500 МБ — качаем только при смене версии)
+        if: steps.key.outputs.skip != 'true'
         uses: actions/cache@v4
         with:
           path: /tmp/opencode-cli
           key: opencode-cli-${{ env.OPENCODE_VERSION }}
 
       - name: Установка OpenCode
+        if: steps.key.outputs.skip != 'true'
         run: bash .github/scripts/ai-review/install.sh
 
       - name: Ревью (opencode + скилл pr-review)
+        if: steps.key.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           ZHIPU_API_KEY: ${{ secrets.ZAI_API_KEY }}
@@ -56,6 +75,7 @@ jobs:
         run: bash .github/scripts/ai-review/review.sh
 
       - name: Публикация ревью в PR
+        if: steps.key.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REVIEW_REPORT: ${{ runner.temp }}/review.md
