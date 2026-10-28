@@ -9,7 +9,8 @@ namespace RentControl.ServiceDefaults;
 
 public static class JwtAuthorizationExtensions
 {
-    private const string JwksHttpClientName = "jwt-jwks";
+    // Имя клиента публичное: интеграционные тесты Payments.Api подменяют его обработчик заглушкой JWKS.
+    public const string JwksHttpClientName = "jwt-jwks";
     private const string MainApiUrlConfigurationKey =
         "ServiceDiscovery:MainApi";
     private const string JwksPath = "/.well-known/jwks.json";
