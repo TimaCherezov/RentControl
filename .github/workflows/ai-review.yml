@@ -2,87 +2,185 @@ name: AI Review
 
 # Ревью пулл-реквестов через OpenCode (скилл `pr-review`) на модели z.ai.
 #
+# Раннеры НЕ ждут 30 минут: ожидание вынесено из Actions в планировщик.
+#
 # Как работает:
-#   1. При каждом пуше в PR задача ждёт 30 минут (debounce).
-#   2. Если за это время пришёл более свежий пуш — запуск отменяется или
-#      завершается без ревью (ревьюить будет запуск свежего коммита).
-#   3. Иначе OpenCode прогоняет скилл pr-review и публикует в PR
-#      сводный комментарий и построчные комментарии.
+#   1. Раз в 5 минут лёгкая задача `collect` (без checkout, секунды работы)
+#      перебирает открытые PR и отбирает «созревшие»: с последнего пуша
+#      прошло ≥ 30 минут и для этого коммита ещё нет готового ревью.
+#   2. Для каждого созревшего PR запускается `review` (matrix): OpenCode
+#      прогоняет скилл pr-review и публикует в PR сводный комментарий
+#      и построчные комментарии.
+#   3. Состояние ревью — commit status с контекстом `ai-review`:
+#        pending  = заявка на ревью (чужой тик увидит и не дублирует работу)
+#        success  = ревью опубликовано
+#        error    = не удалось — ретрай на следующем тике
+#      pending «старше» CLAIM_STALE_MINUTES считается зависшим и перезапускается.
 #
 # Требуется секрет: ZAI_API_KEY — ключ z.ai (Settings -> Secrets and variables -> Actions).
-# Опционально переменная REVIEW_MODEL — модель в формате `provider/model` (по умолчанию zai/glm-4.7).
-# Если ключ из подписки Z.AI Coding Plan — укажите REVIEW_MODEL=zai-coding-plan/glm-4.7.
+# Опционально переменная REVIEW_MODEL, по умолчанию zai/glm-4.7
+# (для ключа из подписки Z.AI Coding Plan — zai-coding-plan/glm-4.7).
+#
+# Заметки:
+#   - schedule исполняется только из ветки по умолчанию (после мержа).
+#   - cron в часы пик может запаздывать: фактическая задержка 30–35+ минут.
+#   - частота тиков настраивается cron'ом: */10 или */15 режут число запусков
+#     ценой более грубой задержки (30–40 / 30–45 минут).
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: 'Номер PR для внепланового ревью'
+        type: number
+        required: true
+      force:
+        description: 'Игнорировать уже готовое ревью этого коммита'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
   pull-requests: write
-
-concurrency:
-  group: ai-review-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  statuses: write
 
 env:
   REVIEW_MODEL: ${{ vars.REVIEW_MODEL || 'zai/glm-4.7' }}
-  REVIEW_DELAY_SECONDS: '1800'
-  PR_NUMBER: ${{ github.event.pull_request.number }}
+  REVIEW_DELAY_MINUTES: '30'
+  CLAIM_STALE_MINUTES: '60'
 
 jobs:
-  review:
+  collect:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    timeout-minutes: 10
+    outputs:
+      due: ${{ steps.scan.outputs.due }}
     steps:
-      - name: Debounce — ждём 30 минут после последнего пуша
-        run: sleep "$REVIEW_DELAY_SECONDS"
-
-      - name: Проверка свежести (новый пуш или PR из форка)
-        id: freshness
+      - name: Отбор PR, созревших для ревью
+        id: scan
         env:
           GH_TOKEN: ${{ github.token }}
-          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
-          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PR: ${{ inputs.pr }}
+          FORCE: ${{ inputs.force }}
         run: |
-          if [ "$IS_FORK" = "true" ]; then
-            echo "PR из форка: секреты репозитория недоступны, ревью пропускаем."
-            echo "stale=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          current="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')"
-          if [ "$current" != "$EXPECTED_SHA" ]; then
-            echo "Появился более свежий коммит ${current}, запуск для ${EXPECTED_SHA} устарел."
-            echo "stale=true" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          due="[]"
+
+          scan_pr() {
+            local pr="$1" force="$2"
+            local meta sha fork draft
+            meta="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" \
+              --jq '{sha: .head.sha, fork: (.head.repo.fork // false), draft: .draft}')"
+            sha="$(jq -r '.sha' <<<"$meta")"
+            fork="$(jq -r '.fork' <<<"$meta")"
+            draft="$(jq -r '.draft' <<<"$meta")"
+
+            if [ "$fork" != "false" ]; then
+              echo "PR #${pr}: из форка — пропускаем."
+              return
+            fi
+            if [ "$draft" = "true" ]; then
+              echo "PR #${pr}: черновик — пропускаем."
+              return
+            fi
+
+            # Последний по времени статус ревью этого коммита.
+            local latest state
+            latest="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${sha}/statuses" \
+              --jq '[.[] | select(.context == "ai-review")] | sort_by(.created_at) | last // empty')"
+
+            if [ -n "$latest" ]; then
+              state="$(jq -r '.state' <<<"$latest")"
+              case "$state" in
+                success)
+                  echo "PR #${pr}: ревью ${sha:0:12} уже готово."
+                  return ;;
+                pending)
+                  local age
+                  age=$(( ( $(date +%s) - $(date -d "$(jq -r '.created_at' <<<"$latest")" +%s) ) / 60 ))
+                  if [ "$age" -lt "$CLAIM_STALE_MINUTES" ]; then
+                    echo "PR #${pr}: ревью ${sha:0:12} уже в работе (${age} мин)."
+                    return
+                  fi
+                  echo "PR #${pr}: pending завис ${age} мин — перезапускаем." ;;
+                error)
+                  echo "PR #${pr}: прошлый запуск упал — пробуем снова." ;;
+              esac
+            fi
+
+            if [ "$force" != "true" ]; then
+              local pushed age_min
+              pushed="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${sha}" --jq '.commit.committer.date')"
+              age_min=$(( ( $(date +%s) - $(date -d "$pushed" +%s) ) / 60 ))
+              if [ "$age_min" -lt "$REVIEW_DELAY_MINUTES" ]; then
+                echo "PR #${pr}: последний пуш ${age_min} мин назад — ждём тихий период."
+                return
+              fi
+            fi
+
+            echo "PR #${pr}: ${sha:0:12} — готов к ревью."
+            due="$(jq -c --argjson arr "$due" --argjson num "$pr" --arg sha "$sha" \
+              '$arr + [{number: $num, sha: $sha}]' <<<null)"
+          }
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if ! [[ "$INPUT_PR" =~ ^[0-9]+$ ]]; then
+              echo "::error::input 'pr' должен быть номером PR, получено: '${INPUT_PR}'"
+              exit 1
+            fi
+            scan_pr "$INPUT_PR" "$FORCE"
+          else
+            while IFS= read -r pr; do
+              scan_pr "$pr" "false" || echo "::warning::Не удалось проверить PR #${pr}"
+            done < <(gh pr list --repo "$GITHUB_REPOSITORY" --state open --limit 100 --json number --jq '.[].number')
           fi
 
-      # ---- шаги ниже выполняются только если это по-прежнему свежий коммит ----
+          echo "due=${due}" >> "$GITHUB_OUTPUT"
+
+  review:
+    needs: collect
+    if: needs.collect.outputs.due != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        pr: ${{ fromJSON(needs.collect.outputs.due) }}
+    env:
+      PR_NUMBER: ${{ matrix.pr.number }}
+      HEAD_SHA: ${{ matrix.pr.sha }}
+    steps:
+      - name: "Заявка на ревью (commit status: pending)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
+            -f state=pending -f context=ai-review \
+            -f description="OpenCode: ревью запущено" \
+            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
 
       - uses: actions/checkout@v4
-        if: steps.freshness.outputs.stale != 'true'
         with:
+          ref: refs/pull/${{ matrix.pr.number }}/head
           # Полная история, чтобы ревьюер мог смотреть контекст файлов.
           fetch-depth: 0
 
       - name: Установка OpenCode
-        if: steps.freshness.outputs.stale != 'true'
         run: npm install --global @opencode/cli
 
       - name: Выгрузка diff и описания PR
-        if: steps.freshness.outputs.stale != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           gh pr diff "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" > "$RUNNER_TEMP/pr.diff"
-          {
-            printf '## %s\n\n' "$PR_TITLE"
-            printf '%s\n' "$PR_BODY"
-          } > "$RUNNER_TEMP/pr.md"
+          gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json title,body \
+            --jq '"## " + .title + "\n\n" + (.body // "")' > "$RUNNER_TEMP/pr.md"
 
       - name: Запуск ревью (opencode run + скилл pr-review)
-        if: steps.freshness.outputs.stale != 'true'
         env:
           ZHIPU_API_KEY: ${{ secrets.ZAI_API_KEY }}
           REVIEW_DIFF: ${{ runner.temp }}/pr.diff
@@ -98,10 +196,24 @@ jobs:
             "@pr-review Сделай ревью этого пулл-реквеста. Diff — в файле из \$REVIEW_DIFF, описание PR — в файле из \$REVIEW_META. Пройди весь цикл по инструкции скилла."
 
       - name: Публикация ревью в PR
-        if: steps.freshness.outputs.stale != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           REVIEW_REPORT: ${{ runner.temp }}/review.md
           REVIEW_COMMENTS: ${{ runner.temp }}/comments.json
         run: bash .github/scripts/ai-review/publish.sh
+
+      - name: Итоговый статус ревью
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          if [ "$JOB_STATUS" = "success" ]; then
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
+              -f state=success -f context=ai-review -f description="Ревью опубликовано" \
+              -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
+              -f state=error -f context=ai-review -f description="Ревью не удалось — повтор на следующем тике" \
+              -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          fi
