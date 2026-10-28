@@ -12,12 +12,12 @@ name: AI Review
 #      отревьюенное. Состояние ревью — commit status `ai-review`:
 #        pending  = ревью в работе (защита от дублей)
 #        success  = готово (повторно не запускается)
-#        error    = не удалось (повтор при следующей successful-сборке или вручную)
+#        error    = не удалось (повтор: перегон Build (Re-run) или новый пуш)
 #   2. review: OpenCode прогоняет скилл pr-review и публикует в PR сводный
 #      комментарий и построчные комментарии.
 #
-# Ручной запуск: Actions -> AI Review -> Run workflow (номер PR, force —
-# повторить ревью того же коммита), или `gh workflow run ai-review.yml -f pr=10`.
+# Ретрай упавшего ревью: перегоните соответствующий Build-раннер (Re-run) —
+# workflow_run сработает снова, либо сделайте новый пуш в PR.
 #
 # Требуется секрет: ZAI_API_KEY — ключ z.ai (Settings -> Secrets and variables -> Actions).
 # Модель зашита в env REVIEW_MODEL ниже (zai/glm-4.7).
@@ -37,23 +37,6 @@ on:
   workflow_run:
     workflows: [Build]
     types: [completed]
-  # Ручной запуск в обход билда. Как работает: в Actions выбираешь этот
-  # workflow -> Run workflow -> указываешь номер PR (и force при желании),
-  # либо из CLI: `gh workflow run ai-review.yml -f pr=10 -f force=true`.
-  # Случаи: прогнать ревью сразу после добавления секрета ZAI_API_KEY,
-  # повторить упавшее ревью или пересмотреть коммит (force=true игнорирует
-  # уже готовый статус success). Фильтры resolve применяются те же, кроме
-  # проверки "sha билда == голова PR" (её просто нет — sha берётся из PR).
-  workflow_dispatch:
-    inputs:
-      pr:
-        description: 'Номер PR для ревью'
-        type: number
-        required: true
-      force:
-        description: 'Повторить ревью, даже если оно уже готово'
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -69,11 +52,10 @@ env:
 
 jobs:
   resolve:
-    # Только успешные билды по пушам в PR (или ручной запуск).
+    # Только успешные билды по пушам в PR.
     if: >-
-      github.event_name == 'workflow_dispatch'
-      || (github.event.workflow_run.conclusion == 'success'
-          && github.event.workflow_run.event == 'pull_request')
+      github.event.workflow_run.conclusion == 'success'
+      && github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -91,9 +73,6 @@ jobs:
         id: r
         env:
           GH_TOKEN: ${{ github.token }}
-          EVENT_NAME: ${{ github.event_name }}
-          INPUT_PR: ${{ inputs.pr }}
-          FORCE: ${{ inputs.force }}
           WR_SHA: ${{ github.event.workflow_run.head_sha }}
         run: bash .github/scripts/ai-review/resolve.sh
 
@@ -121,8 +100,8 @@ jobs:
       #   finalize.sh          -> success: ревью опубликовано. Повторные
       #          события по этому sha (перегон билда, ручной запуск) молча
       #          пропускаются — каждый коммит ревьюится ровно один раз.
-      #                        -> error: ревью упало. Следующий успешный
-      #          билд или ручной force-запуск попробуют снова.
+      #                        -> error: ревью упало. Перегон Build (Re-run)
+      #          или следующий успешный билд попробуют снова.
       #
       # pending не вечный: если раннер умер, не оставив финальный статус,
       # resolve сочтёт pending старше CLAIM_STALE_MINUTES (60 мин) зависшим

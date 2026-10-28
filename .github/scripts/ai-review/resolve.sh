@@ -9,31 +9,19 @@
 #
 # Входы (env):
 #   GH_TOKEN            - токен для gh api
-#   EVENT_NAME          - workflow_run | workflow_dispatch
-#   INPUT_PR, FORCE     - инпуты ручного запуска
-#   WR_SHA              - head_sha билда (для workflow_run)
+#   WR_SHA              - head_sha билда
 #   CLAIM_STALE_MINUTES - через сколько зависший pending считается мёртвым
 # Выходы: GITHUB_OUTPUT <- pr, sha, base
 set -euo pipefail
 pr="" ; sha="" ; reason="" ; base=""
 
-if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-  if ! [[ "$INPUT_PR" =~ ^[0-9]+$ ]]; then
-    echo "::error::input 'pr' должен быть номером PR, получено: '${INPUT_PR}'"
-    exit 1
-  fi
-  pr="$INPUT_PR"
-  force="$FORCE"
-else
-  force="false"
-  # Только открытые PR; для форк-PR sha может быть недоступен
-  # (gh вернёт ошибку в stdout) — валидируем число и тихо пропускаем.
-  pr="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${WR_SHA}/pulls" \
-    --jq '[.[] | select(.state == "open")][0].number // empty' 2>/dev/null || true)"
-  if ! [[ "$pr" =~ ^[0-9]+$ ]]; then
-    echo "Билд ${WR_SHA:0:12} не связан с открытым PR — ревью не требуется."
-    pr=""
-  fi
+# Только открытые PR; для форк-PR sha может быть недоступен
+# (gh вернёт ошибку в stdout) — валидируем число и тихо пропускаем.
+pr="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${WR_SHA}/pulls" \
+  --jq '[.[] | select(.state == "open")][0].number // empty' 2>/dev/null || true)"
+if ! [[ "$pr" =~ ^[0-9]+$ ]]; then
+  echo "Билд ${WR_SHA:0:12} не связан с открытым PR — ревью не требуется."
+  pr=""
 fi
 
 if [ -n "$pr" ]; then
@@ -51,14 +39,14 @@ if [ -n "$pr" ]; then
     reason="PR ${prstate}"
   elif [ "$draft" = "true" ]; then
     reason="черновик"
-  elif [ "$force" != "true" ] && [ -n "${WR_SHA:-}" ] && [ "$sha" != "$WR_SHA" ]; then
+  elif [ -n "${WR_SHA:-}" ] && [ "$sha" != "$WR_SHA" ]; then
     reason="голова уже ${sha:0:12} — ревью придёт после билда нового коммита"
   fi
 
   if [ -z "$reason" ]; then
     latest="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${sha}/statuses" \
       --jq '[.[] | select(.context == "ai-review")] | sort_by(.created_at) | last // empty')"
-    if [ -n "$latest" ] && [ "$force" != "true" ]; then
+    if [ -n "$latest" ]; then
       state="$(jq -r '.state' <<<"$latest")"
       if [ "$state" = "success" ]; then
         reason="ревью ${sha:0:12} уже готово"
