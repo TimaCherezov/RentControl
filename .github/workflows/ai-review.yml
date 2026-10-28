@@ -20,8 +20,15 @@ name: AI Review
 # повторить ревью того же коммита), или `gh workflow run ai-review.yml -f pr=10`.
 #
 # Требуется секрет: ZAI_API_KEY — ключ z.ai (Settings -> Secrets and variables -> Actions).
-# Опционально переменная REVIEW_MODEL, по умолчанию zai/glm-4.7
-# (для ключа из подписки Z.AI Coding Plan — zai-coding-plan/glm-4.7).
+# Модель зашита в env REVIEW_MODEL ниже (zai/glm-4.7).
+#
+# Вся логика шагов вынесена в .github/scripts/ai-review/:
+#   resolve.sh  — гейт: найти PR по sha билда, отфильтровать лишние запуски
+#   claim.sh    — заявка на ревью (commit status pending)
+#   install.sh  — установка OpenCode (с кешем)
+#   review.sh   — запуск opencode run со скиллом pr-review
+#   publish.sh  — публикация отчёта и построчных комментариев в PR
+#   finalize.sh — финальный commit status (success/error)
 #
 # Примечание: событие workflow_run срабатывает только для workflow,
 # находящихся в ветке по умолчанию (заработает после мержа).
@@ -30,6 +37,13 @@ on:
   workflow_run:
     workflows: [Build]
     types: [completed]
+  # Ручной запуск в обход билда. Как работает: в Actions выбираешь этот
+  # workflow -> Run workflow -> указываешь номер PR (и force при желании),
+  # либо из CLI: `gh workflow run ai-review.yml -f pr=10 -f force=true`.
+  # Случаи: прогнать ревью сразу после добавления секрета ZAI_API_KEY,
+  # повторить упавшее ревью или пересмотреть коммит (force=true игнорирует
+  # уже готовый статус success). Фильтры resolve применяются те же, кроме
+  # проверки "sha билда == голова PR" (её просто нет — sha берётся из PR).
   workflow_dispatch:
     inputs:
       pr:
@@ -47,7 +61,7 @@ permissions:
   statuses: write
 
 env:
-  REVIEW_MODEL: ${{ vars.REVIEW_MODEL || 'zai/glm-4.7' }}
+  REVIEW_MODEL: zai/glm-4.7
   CLAIM_STALE_MINUTES: '60'
   # Пин мажорной версии OpenCode; заодно ключ кеша установки.
   # Поднять при выходе новой мажорной версии (или задать variable OPENCODE_VERSION).
@@ -65,8 +79,15 @@ jobs:
     outputs:
       pr: ${{ steps.r.outputs.pr }}
       sha: ${{ steps.r.outputs.sha }}
+      base: ${{ steps.r.outputs.base }}
     steps:
-      - name: Поиск PR по sha билда и проверки готовности
+      # Зачем тут что-то искать: раннер этого шага НИЧЕГО не чекаутит.
+      # Событие workflow_run приходит на ЛЮБОЙ завершённый Build — и на пуш
+      # в main, и на упавший билд, и на перегон старого коммита — и не
+      # содержит номера PR. Поэтому по sha билда находим открытый PR и
+      # отфильтровываем лишние запуски ДО дорогой части (checkout + LLM):
+      # форк/черновик/закрыт, устаревший коммит, уже отревьюенное.
+      - name: Гейт — найти PR по sha билда и отфильтровать лишнее
         id: r
         env:
           GH_TOKEN: ${{ github.token }}
@@ -74,75 +95,7 @@ jobs:
           INPUT_PR: ${{ inputs.pr }}
           FORCE: ${{ inputs.force }}
           WR_SHA: ${{ github.event.workflow_run.head_sha }}
-        run: |
-          set -euo pipefail
-          pr="" ; sha="" ; reason="" ; base=""
-
-          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            if ! [[ "$INPUT_PR" =~ ^[0-9]+$ ]]; then
-              echo "::error::input 'pr' должен быть номером PR, получено: '${INPUT_PR}'"
-              exit 1
-            fi
-            pr="$INPUT_PR"
-            force="$FORCE"
-          else
-            force="false"
-            # Только открытые PR; для форк-PR sha может быть недоступен
-            # (gh вернёт ошибку в stdout) — валидируем число и тихо пропускаем.
-            pr="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${WR_SHA}/pulls" \
-              --jq '[.[] | select(.state == "open")][0].number // empty' 2>/dev/null || true)"
-            if ! [[ "$pr" =~ ^[0-9]+$ ]]; then
-              echo "Билд ${WR_SHA:0:12} не связан с открытым PR — ревью не требуется."
-              pr=""
-            fi
-          fi
-
-          if [ -n "$pr" ]; then
-            meta="$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${pr}" \
-              --jq '{sha: .head.sha, fork: (.head.repo.fork // false), draft: .draft, state: .state, base: .base.ref}')"
-            sha="$(jq -r '.sha' <<<"$meta")"
-            fork="$(jq -r '.fork' <<<"$meta")"
-            draft="$(jq -r '.draft' <<<"$meta")"
-            prstate="$(jq -r '.state' <<<"$meta")"
-            base="$(jq -r '.base' <<<"$meta")"
-
-            if [ "$fork" != "false" ]; then
-              reason="PR из форка"
-            elif [ "$prstate" != "open" ]; then
-              reason="PR ${prstate}"
-            elif [ "$draft" = "true" ]; then
-              reason="черновик"
-            elif [ "$force" != "true" ] && [ -n "${WR_SHA:-}" ] && [ "$sha" != "$WR_SHA" ]; then
-              reason="голова уже ${sha:0:12} — ревью придёт после билда нового коммита"
-            fi
-
-            if [ -z "$reason" ]; then
-              latest="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${sha}/statuses" \
-                --jq '[.[] | select(.context == "ai-review")] | sort_by(.created_at) | last // empty')"
-              if [ -n "$latest" ] && [ "$force" != "true" ]; then
-                state="$(jq -r '.state' <<<"$latest")"
-                if [ "$state" = "success" ]; then
-                  reason="ревью ${sha:0:12} уже готово"
-                elif [ "$state" = "pending" ]; then
-                  age=$(( ( $(date +%s) - $(date -d "$(jq -r '.created_at' <<<"$latest")" +%s) ) / 60 ))
-                  if [ "$age" -lt "$CLAIM_STALE_MINUTES" ]; then
-                    reason="ревью ${sha:0:12} уже в работе (${age} мин)"
-                  fi
-                fi
-              fi
-            fi
-
-            if [ -n "$reason" ]; then
-              echo "PR #${pr}: ${reason} — пропускаем."
-            else
-              {
-                echo "pr=${pr}"
-                echo "sha=${sha}"
-                echo "base=${base}"
-              } >> "$GITHUB_OUTPUT"
-              echo "PR #${pr}: коммит ${sha:0:12} (база origin/${base}) — запускаем ревью."
-            fi
-          fi
+        run: bash .github/scripts/ai-review/resolve.sh
 
   review:
     needs: resolve
@@ -158,19 +111,34 @@ jobs:
       HEAD_SHA: ${{ needs.resolve.outputs.sha }}
       BASE_REF: ${{ needs.resolve.outputs.base }}
     steps:
+      # ── Схема заявок (claim) ─────────────────────────────────────────────
+      # Состояние ревью хранится в commit status контекста `ai-review` на
+      # head-коммите PR — это «замок», видимый всем запускам:
+      #
+      #   claim.sh (этот шаг)  -> pending: «я взял этот коммит в работу».
+      #          Другие запуски по тому же коммиту (например, перегон билда)
+      #          видят pending в resolve и второе ревью не стартуют.
+      #   finalize.sh          -> success: ревью опубликовано. Повторные
+      #          события по этому sha (перегон билда, ручной запуск) молча
+      #          пропускаются — каждый коммит ревьюится ровно один раз.
+      #                        -> error: ревью упало. Следующий успешный
+      #          билд или ручной force-запуск попробуют снова.
+      #
+      # pending не вечный: если раннер умер, не оставив финальный статус,
+      # resolve сочтёт pending старше CLAIM_STALE_MINUTES (60 мин) зависшим
+      # и разрешит перезапуск.
+      # target_url в статусе ведёт в лог конкретного запуска — ссылку видно
+      # в UI коммита и PR.
       - name: "Заявка на ревью (commit status: pending)"
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
-            -f state=pending -f context=ai-review \
-            -f description="OpenCode: ревью запущено" \
-            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+        run: bash .github/scripts/ai-review/claim.sh
 
       - uses: actions/checkout@v4
         with:
           ref: refs/pull/${{ needs.resolve.outputs.pr }}/head
-          # Полная история, чтобы ревьюер мог смотреть контекст файлов.
+          # Полная история, чтобы ревьюер мог смотреть контекст файлов
+          # и сравнивать ветку с origin/<base>.
           fetch-depth: 0
 
       - name: Кеш OpenCode (бинарник ~500 МБ — качаем только при смене версии)
@@ -180,12 +148,7 @@ jobs:
           key: opencode-cli-${{ env.OPENCODE_VERSION }}
 
       - name: Установка OpenCode
-        run: |
-          if [ ! -x /tmp/opencode-cli/node_modules/.bin/opencode ]; then
-            npm install --prefix /tmp/opencode-cli "@opencode/cli@${OPENCODE_VERSION}"
-          fi
-          echo "/tmp/opencode-cli/node_modules/.bin" >> "$GITHUB_PATH"
-          opencode --version
+        run: bash .github/scripts/ai-review/install.sh
 
       - name: Запуск ревью (opencode run + скилл pr-review)
         env:
@@ -193,13 +156,7 @@ jobs:
           ZHIPU_API_KEY: ${{ secrets.ZAI_API_KEY }}
           REVIEW_REPORT: ${{ runner.temp }}/review.md
           REVIEW_COMMENTS: ${{ runner.temp }}/comments.json
-        run: |
-          if [ -z "${ZHIPU_API_KEY:-}" ]; then
-            echo "::error::Секрет ZAI_API_KEY не задан. Добавьте его в Settings -> Secrets and variables -> Actions."
-            exit 1
-          fi
-          opencode run --standalone --auto --model "$REVIEW_MODEL" \
-            "@pr-review Сделай ревью пулл-реквеста №${PR_NUMBER}: сам посмотри репозиторий и сравни эту ветку с origin/${BASE_REF} (полная история уже в чекауте). Пройди весь цикл по инструкции скилла; отчёт и комментарии запиши в файлы из \$REVIEW_REPORT и \$REVIEW_COMMENTS."
+        run: bash .github/scripts/ai-review/review.sh
 
       - name: Публикация ревью в PR
         env:
@@ -213,13 +170,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           JOB_STATUS: ${{ job.status }}
-        run: |
-          if [ "$JOB_STATUS" = "success" ]; then
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
-              -f state=success -f context=ai-review -f description="Ревью опубликовано" \
-              -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          else
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
-              -f state=error -f context=ai-review -f description="Ревью не удалось — повторится после следующего успешного билда" \
-              -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          fi
+        run: bash .github/scripts/ai-review/finalize.sh
