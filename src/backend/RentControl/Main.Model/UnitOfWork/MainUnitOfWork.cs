@@ -1,6 +1,7 @@
 using Main.Model.Repositories;
 using System.Threading;
 using System.Threading.Tasks;
+using Main.Model.Repositories.Interfaces;
 
 namespace Main.Model.UnitOfWork;
 
