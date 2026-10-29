@@ -5,13 +5,12 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: read
-  pull-requests: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Разрешения выдаём каждому job по минимуму (least-privilege).
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -74,6 +73,9 @@ jobs:
     needs: build
     if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     timeout-minutes: 30
     continue-on-error: true
     # Новый пуш отменяет ещё не закончившееся ревью этого же PR.
@@ -93,7 +95,9 @@ jobs:
 
       - name: AI-ревью (OpenCodeReview, glm-5.3-flash)
         if: steps.key.outputs.skip != 'true'
-        uses: alibaba/open-code-review@v1.13.3
+        # Пин на полный commit SHA (теги мутабельны): action получает секрет
+        # ZAI_API_KEY, поэтому компрометация ссылки = утечка ключа.
+        uses: alibaba/open-code-review@375f64cd6f67a48a135da83cfcf59c52669a09cb # v1.13.3
         with:
           # GLM Coding Plan ходит через отдельный OpenAI-совместимый эндпоинт
           # (не общий https://api.z.ai/api/paas/v4).
