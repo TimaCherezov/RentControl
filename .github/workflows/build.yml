@@ -5,6 +5,10 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -56,3 +60,47 @@ jobs:
         env:
           SERVICE: ${{ matrix.service }}
         run: docker build -f src/backend/RentControl/$SERVICE/Dockerfile -t "rentcontrol-${SERVICE,,}:ci" src/backend/RentControl
+
+  # AI-ревью PR через OpenCodeReview (https://github.com/alibaba/open-code-review).
+  # Запускается при создании PR в main и на каждый пуш в него — только после
+  # успешного билда (needs: build). Action сам ставит OCR, конфигурирует LLM,
+  # сравнивает ветку с main и публикует inline-комментарии + summary в PR.
+  #
+  # Требуется секрет: ZAI_API_KEY — API-ключ GLM Coding Plan от z.ai
+  # (Settings -> Secrets and variables -> Actions). Нет секрета — ревью
+  # пропускается. Любые сбои ревью не блокируют PR (continue-on-error):
+  # в merge не встаёт и не горит красным.
+  ai-review:
+    needs: build
+    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    # Новый пуш отменяет ещё не закончившееся ревью этого же PR.
+    concurrency:
+      group: ai-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - name: Проверка ключа z.ai (нет ключа — ревью пропускается)
+        id: key
+        env:
+          ZAI_API_KEY: ${{ secrets.ZAI_API_KEY }}
+        run: |
+          if [ -z "${ZAI_API_KEY:-}" ]; then
+            echo "::warning::Секрет ZAI_API_KEY не задан (Settings -> Secrets and variables -> Actions) — AI-ревью пропущено."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: AI-ревью (OpenCodeReview, glm-5.3-flash)
+        if: steps.key.outputs.skip != 'true'
+        uses: alibaba/open-code-review@v1.13.3
+        with:
+          # GLM Coding Plan ходит через отдельный OpenAI-совместимый эндпоинт
+          # (не общий https://api.z.ai/api/paas/v4).
+          llm_url: "https://api.z.ai/api/coding/paas/v4/chat/completions"
+          llm_auth_token: ${{ secrets.ZAI_API_KEY }}
+          llm_model: glm-5.3-flash
+          llm_use_anthropic: 'false'
+          # CLI пиним тем же тегом, что и action; при обновлении менять оба.
+          ocr_version: '1.13.3'
+          language: Russian
