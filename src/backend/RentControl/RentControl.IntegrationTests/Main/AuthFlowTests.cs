@@ -112,7 +112,9 @@ public class AuthFlowTests(MainApiFixture fixture)
         using var request = new HttpRequestMessage(HttpMethod.Get, "/api/auth/current-user");
         request.Headers.Authorization = new AuthenticationHeaderValue(
             "Bearer",
-            fixture.CreateAccessToken(Guid.NewGuid(), TimeSpan.FromMinutes(-5)));
+            // Час, а не пять минут: у JwtBearer дефолтный ClockSkew = 5 минут,
+            // на границе токен может быть признан валидным.
+            fixture.CreateAccessToken(Guid.NewGuid(), TimeSpan.FromHours(-1)));
 
         var response = await fixture.Client.SendAsync(request);
 
