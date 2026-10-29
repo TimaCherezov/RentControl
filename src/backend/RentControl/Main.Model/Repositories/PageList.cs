@@ -10,11 +10,11 @@ public class PageList<T> : List<T>
     public bool HasPrevious => CurrentPage > 1;
     public bool HasNext => CurrentPage < TotalPages;
 
-    public PageList(List<T> items, long totalCount, int currentPage, int pageSize)
+    public PageList(List<T> items, long totalCount, int pageNumber, int pageSize)
     {
         TotalCount = totalCount;
         PageSize = pageSize;
-        CurrentPage = currentPage;
+        CurrentPage = pageNumber;
         TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
         AddRange(items);
     }

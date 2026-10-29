@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Main.Model.Repositories;
 
-class StateRepository(MainDbContext dbcontext) : IStateRepository
+public class StateRepository(MainDbContext dbContext) : IStateRepository
 {
     public Task<State?> GetByIdAsync(StateEnum id, CancellationToken cancellationToken = default) =>
-        dbcontext.States.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
+        dbContext.States.FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
 }

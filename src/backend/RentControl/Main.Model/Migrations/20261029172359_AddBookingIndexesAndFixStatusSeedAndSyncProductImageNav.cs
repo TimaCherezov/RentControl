@@ -5,7 +5,7 @@
 namespace Main.Model.Migrations
 {
     /// <inheritdoc />
-    public partial class SyncProductImageNav : Migration
+    public partial class AddBookingIndexesAndFixStatusSeedAndSyncProductImageNav : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

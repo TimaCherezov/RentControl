@@ -18,8 +18,15 @@ public class ProductRepository(MainDbContext dbContext) : IProductRepository
         CancellationToken cancellationToken = default
     )
     {
+        if (pageNumber < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageNumber));
+        if (pageSize < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageSize));
+
         var products = await dbContext
             .Products.Include(p => p.Images)
+            .AsSplitQuery()
+            .AsNoTracking()
             .OrderBy(p => p.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)

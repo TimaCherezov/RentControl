@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Main.Model.Repositories;
 
-public class BookingStatusRepository(MainDbContext dbcontext) : IBookingStatusRepository
+public class BookingStatusRepository(MainDbContext dbContext) : IBookingStatusRepository
 {
     public Task<BookingStatus?> GetByIdAsync(
         BookingStatusEnum id,
         CancellationToken cancellationToken = default
-    ) => dbcontext.BookingStatuses.FirstOrDefaultAsync(bs => bs.Id == id, cancellationToken);
+    ) => dbContext.BookingStatuses.FirstOrDefaultAsync(bs => bs.Id == id, cancellationToken);
 }

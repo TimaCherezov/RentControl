@@ -68,6 +68,8 @@ namespace Main.Model.Migrations
 
                     b.HasIndex("ProductUnitId");
 
+                    b.HasIndex("StartAt");
+
                     b.HasIndex("UserId");
 
                     b.ToTable("Bookings");
@@ -136,7 +138,7 @@ namespace Main.Model.Migrations
                         {
                             Id = 4,
                             Code = "READY_FOR_PICKUP",
-                            Name = "Ready for pickip"
+                            Name = "Ready for pickup"
                         },
                         new
                         {

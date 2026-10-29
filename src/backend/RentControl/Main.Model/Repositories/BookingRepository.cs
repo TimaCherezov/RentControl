@@ -10,11 +10,6 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
             .Include(b => b.BookingStatus)
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
-    public Task<List<Booking>> ListAsync(CancellationToken cancellationToken = default)
-        => dbContext.Bookings
-            .Include(b => b.BookingStatus)
-            .ToListAsync(cancellationToken);
-
     public async Task<List<Booking>> GetByStatusIdAsync(BookingStatusEnum id, CancellationToken cancellationToken = default)
     {
         return await dbContext.Bookings
@@ -34,10 +29,16 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
         CancellationToken cancellationToken = default
     )
     {
+        if (pageNumber < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageNumber));
+        if (pageSize < 1)
+            throw new ArgumentOutOfRangeException(nameof(pageSize));
+
         var query = dbContext
             .Bookings.Include(b => b.BookingStatus)
             .Include(b => b.ProductUnit.Product.Images.Where(i => i.IsMain))
-            .AsQueryable();
+            .AsQueryable()
+            .AsNoTracking();
 
         if (userId is not null)
             query = query.Where(b => b.UserId == userId);
@@ -45,7 +46,7 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
             query = query.Where(b => b.BookingStatusId == statusId);
 
         var bookings = await query
-            .OrderBy(b => b.Id)
+            .OrderBy(b => b.StartAt)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);

@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Main.Model.Migrations
 {
     [DbContext(typeof(MainDbContext))]
-    [Migration("20261029162656_SyncProductImageNav")]
-    partial class SyncProductImageNav
+    [Migration("20261029172359_AddBookingIndexesAndFixStatusSeedAndSyncProductImageNav")]
+    partial class AddBookingIndexesAndFixStatusSeedAndSyncProductImageNav
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -70,6 +70,8 @@ namespace Main.Model.Migrations
                     b.HasIndex("LocationId");
 
                     b.HasIndex("ProductUnitId");
+
+                    b.HasIndex("StartAt");
 
                     b.HasIndex("UserId");
 
@@ -139,7 +141,7 @@ namespace Main.Model.Migrations
                         {
                             Id = 4,
                             Code = "READY_FOR_PICKUP",
-                            Name = "Ready for pickip"
+                            Name = "Ready for pickup"
                         },
                         new
                         {

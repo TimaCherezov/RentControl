@@ -10,6 +10,9 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
     {
         builder.Property(b => b.StatusChangedAt).HasDefaultValueSql("timezone('utc', now())");
 
+        builder.HasIndex(b => b.UserId);
+        builder.HasIndex(b => b.StartAt);
+
         builder
             .HasOne(b => b.ProductUnit)
             .WithMany()
