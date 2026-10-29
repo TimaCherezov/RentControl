@@ -8,7 +8,7 @@ namespace RentControl.IntegrationTests.Realtime;
 public class RealtimeApiSmokeTests(RealtimeApiFixture fixture)
 {
     [Fact]
-    public async Task WeatherForecast_IsAnonymous()
+    public async Task WeatherForecast_ReturnsOk()
     {
         var response = await fixture.Client.GetAsync("/weatherforecast");
 
