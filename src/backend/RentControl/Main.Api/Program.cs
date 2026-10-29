@@ -1,6 +1,7 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Main.Api.Auth;
+using MassTransit;
 using Main.Api.Auth.Register;
 using Main.Api.Middleware;
 using Main.Model;
@@ -19,6 +20,11 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+
+builder.Services.AddMediator(cfg =>
+{
+    cfg.AddConsumers(typeof(Program).Assembly);
+});
 
 var app = builder.Build();
 
