@@ -11,6 +11,6 @@ public class ProductImageConfiguration : IEntityTypeConfiguration<ProductImage>
         builder.Property(pi => pi.StorageKey).HasMaxLength(255);
         builder.Property(pi => pi.AltText).HasMaxLength(255);
 
-        builder.HasOne(pi => pi.Product).WithMany().HasForeignKey(pi => pi.ProductId);
+        builder.HasOne(pi => pi.Product).WithMany(p => p.Images).HasForeignKey(pi => pi.ProductId);
     }
 }

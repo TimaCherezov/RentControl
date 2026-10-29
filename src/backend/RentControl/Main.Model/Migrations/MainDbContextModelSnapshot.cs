@@ -443,7 +443,7 @@ namespace Main.Model.Migrations
             modelBuilder.Entity("Main.Model.Models.ProductImage", b =>
                 {
                     b.HasOne("Main.Model.Models.Product", "Product")
-                        .WithMany()
+                        .WithMany("Images")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -487,6 +487,11 @@ namespace Main.Model.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Main.Model.Models.Product", b =>
+                {
+                    b.Navigation("Images");
                 });
 
             modelBuilder.Entity("Main.Model.Models.User", b =>
