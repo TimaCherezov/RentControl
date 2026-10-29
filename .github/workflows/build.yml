@@ -114,7 +114,7 @@ jobs:
           # ничего не теряется). Inline остаются medium и выше: баги,
           # безопасность, производительность, архитектура.
           route_severity_below: 'low'
-          route_categories: 'style,documentation,test'
+          route_categories: 'style,documentation'
           # CLI пиним тем же тегом, что и action; при обновлении менять оба.
           ocr_version: '1.13.3'
           language: Russian
