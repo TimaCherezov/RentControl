@@ -109,6 +109,12 @@ jobs:
           llm_auth_token: ${{ secrets.ZAI_API_KEY }}
           llm_model: glm-5.3-flash
           llm_use_anthropic: 'false'
+          # Не засорять PR: findings ниже medium и из шумных категорий
+          # публикуются не inline, а в summary-комментарий (fail-open —
+          # ничего не теряется). Inline остаются medium и выше: баги,
+          # безопасность, производительность, архитектура.
+          route_severity_below: 'low'
+          route_categories: 'style,documentation,test'
           # CLI пиним тем же тегом, что и action; при обновлении менять оба.
           ocr_version: '1.13.3'
           language: Russian
