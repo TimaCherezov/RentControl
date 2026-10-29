@@ -49,4 +49,6 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build docker image (${{ matrix.service }})
-        run: docker build -f src/backend/RentControl/${{ matrix.service }}/Dockerfile -t rentcontrol-${{ matrix.service }}:ci src/backend/RentControl
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: docker build -f src/backend/RentControl/$SERVICE/Dockerfile -t "rentcontrol-${SERVICE,,}:ci" src/backend/RentControl
