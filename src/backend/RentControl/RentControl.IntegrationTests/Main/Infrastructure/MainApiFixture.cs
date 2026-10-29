@@ -65,19 +65,26 @@ public sealed class MainApiFixture : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        Client?.Dispose();
-
-        if (_factory is not null)
+        try
         {
-            await _factory.DisposeAsync();
-        }
+            Client?.Dispose();
 
-        if (_postgres is not null)
+            if (_factory is not null)
+            {
+                await _factory.DisposeAsync();
+            }
+        }
+        finally
         {
-            await _postgres.DisposeAsync();
-        }
+            // Контейнер и ключи освобождаем даже при ошибке очистки хоста,
+            // чтобы не утечь в параллельные прогоны.
+            if (_postgres is not null)
+            {
+                await _postgres.DisposeAsync();
+            }
 
-        _jwtKeys.Dispose();
+            _jwtKeys.Dispose();
+        }
     }
 
     /// <summary>Контекст БД — для сидирования данных и проверок состояния. Вызывающий код обязан освободить контекст (await using).</summary>

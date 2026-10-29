@@ -35,11 +35,22 @@ public sealed class RealtimeApiFixture : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        Client?.Dispose();
-
-        if (_factory is not null)
+        try
         {
-            await _factory.DisposeAsync();
+            Client?.Dispose();
+
+            if (_factory is not null)
+            {
+                await _factory.DisposeAsync();
+            }
+        }
+        finally
+        {
+            // Хост освобождаем даже при ошибке очистки клиента.
+            if (_factory is not null)
+            {
+                await _factory.DisposeAsync();
+            }
         }
     }
 }
