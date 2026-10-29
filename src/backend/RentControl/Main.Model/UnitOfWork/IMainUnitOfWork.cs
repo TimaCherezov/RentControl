@@ -11,6 +11,4 @@ public interface IMainUnitOfWork
     IProductRepository Products { get; }
     ILocationRepository Locations { get; }
     IBookingRepository Bookings { get; }
-
-    Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
