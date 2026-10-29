@@ -35,3 +35,7 @@ E2E-тесты живут в `src/backend/RentControl/RentControl.E2ETests`; п�
 ```bash
 dotnet test src/backend/RentControl/RentControl.E2ETests
 ```
+
+## Пул-реквесты
+
+PR в `main` проходит AI-ревью. Если пул-реквест большой — создай его с `[skip-ai-review]` в названии, чтобы не тратить токены на ревью.
