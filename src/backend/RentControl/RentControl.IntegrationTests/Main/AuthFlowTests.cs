@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Main.Api.Auth;
 using Main.Api.Auth.Login;
 using Main.Api.Auth.Register;
@@ -42,9 +41,81 @@ public class AuthFlowTests(MainApiFixture fixture)
 
         var currentUserResponse = await fixture.Client.SendAsync(request);
 
-        Assert.Equal(HttpStatusCode.OK, currentUserResponse.StatusCode);
+        Assert.True(
+            currentUserResponse.StatusCode == HttpStatusCode.OK,
+            $"current-user не удался ({currentUserResponse.StatusCode}): {await currentUserResponse.Content.ReadAsStringAsync()}");
 
-        var user = await currentUserResponse.Content.ReadFromJsonAsync<JsonElement>();
-        Assert.Equal(email, user.GetProperty("email").GetString());
+        var user = await currentUserResponse.Content.ReadFromJsonAsync<UserResponse>();
+        Assert.Equal(email, user?.Email);
+    }
+
+    [Fact]
+    public async Task Register_DuplicateEmail_ReturnsConflict()
+    {
+        var email = $"int-{Guid.NewGuid():N}@test.local";
+
+        var first = await fixture.Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new RegisterUserRequest("Первый", email, "P@ssw0rd-123"));
+        Assert.True(
+            first.StatusCode == HttpStatusCode.OK,
+            $"Первая регистрация не удалась ({first.StatusCode}): {await first.Content.ReadAsStringAsync()}");
+
+        var second = await fixture.Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new RegisterUserRequest("Второй", email, "Другой-пароль-123"));
+
+        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
+    }
+
+    [Fact]
+    public async Task Login_WithWrongPassword_ReturnsUnauthorized()
+    {
+        var email = $"int-{Guid.NewGuid():N}@test.local";
+
+        var register = await fixture.Client.PostAsJsonAsync(
+            "/api/auth/register",
+            new RegisterUserRequest("Интеграционный Тест", email, "P@ssw0rd-123"));
+        Assert.True(
+            register.StatusCode == HttpStatusCode.OK,
+            $"Регистрация не удалась ({register.StatusCode}): {await register.Content.ReadAsStringAsync()}");
+
+        var login = await fixture.Client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginUserRequest(email, "Не-тот-пароль"));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, login.StatusCode);
+    }
+
+    [Fact]
+    public async Task CurrentUser_WithoutToken_ReturnsUnauthorized()
+    {
+        var response = await fixture.Client.GetAsync("/api/auth/current-user");
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CurrentUser_WithInvalidToken_ReturnsUnauthorized()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/auth/current-user");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "не-jwt-строка");
+
+        var response = await fixture.Client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task CurrentUser_WithExpiredToken_ReturnsUnauthorized()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "/api/auth/current-user");
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            fixture.CreateAccessToken(Guid.NewGuid(), TimeSpan.FromMinutes(-5)));
+
+        var response = await fixture.Client.SendAsync(request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

@@ -8,29 +8,33 @@ using RentControl.ServiceDefaults;
 namespace RentControl.IntegrationTests.Infrastructure;
 
 /// <summary>
-/// Эфемерная RSA-пара для одного фикстуры-контекста: PEM уходит в конфиг сервиса
-/// (Jwt:PrivateKeyPem), ключом выпускаются тестовые access-токены и JWKS-документ.
+/// Эфемерная RSA-пара: PEM уходит в конфиг сервиса (Jwt:PrivateKeyPem),
+/// ключом выпускаются тестовые access-токены и JWKS-документ.
 /// </summary>
 public sealed class TestJwtKeys : IDisposable
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-    private readonly RSA _rsa = RSA.Create(2048);
+    private readonly RSA _rsa;
+    private readonly string _privateKeyPem;
     private readonly JwtSigningKeyProvider _signingKeys;
 
     public TestJwtKeys()
     {
+        _rsa = RSA.Create(2048);
+        _privateKeyPem = _rsa.ExportPkcs8PrivateKeyPem();
         _signingKeys = new JwtSigningKeyProvider(
-            Options.Create(new JwtOptions { PrivateKeyPem = PrivateKeyPem }));
+            Options.Create(new JwtOptions { PrivateKeyPem = _privateKeyPem }));
     }
 
-    public string PrivateKeyPem => _rsa.ExportPkcs8PrivateKeyPem();
+    public string PrivateKeyPem => _privateKeyPem;
 
     public void Dispose() => _rsa.Dispose();
 
     /// <summary>
-    /// Выпускает access-токен в том же формате, что и Main.Api:
-    /// RS256, sub = ClaimTypes.NameIdentifier.
+    /// Выпускает access-токен в том же формате, что и Main.Api: RS256,
+    /// идентификатор пользователя в клейме nameid (ClaimTypes.NameIdentifier
+    /// после outbound-маппинга JwtSecurityTokenHandler).
     /// </summary>
     public string CreateAccessToken(
         Guid userId,

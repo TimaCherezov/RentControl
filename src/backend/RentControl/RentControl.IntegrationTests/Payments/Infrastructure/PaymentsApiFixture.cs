@@ -3,6 +3,7 @@ extern alias PaymentsApi;
 using PaymentsApiProgram = PaymentsApi::Program;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Payments.Model;
 using RentControl.IntegrationTests.Infrastructure;
@@ -18,9 +19,6 @@ namespace RentControl.IntegrationTests.Payments.Infrastructure;
 /// </summary>
 public sealed class PaymentsApiFixture : IAsyncLifetime
 {
-    public const string Issuer = "RentControl";
-    public const string Audience = "RentControl";
-
     private const string DatabaseName = "paymentsdb";
 
     // Значение не важно: до сети запрос не доходит, обработчик подменён заглушкой.
@@ -36,28 +34,43 @@ public sealed class PaymentsApiFixture : IAsyncLifetime
     /// <summary>Строка подключения к тестовой базе paymentsdb.</summary>
     public string ConnectionString => _postgres.GetConnectionString();
 
+    /// <summary>Issuer из конфигурации сервиса.</summary>
+    public string Issuer => GetJwtSetting("Issuer");
+
+    /// <summary>Audience из конфигурации сервиса.</summary>
+    public string Audience => GetJwtSetting("Audience");
+
+
     public async Task InitializeAsync()
     {
         _postgres = new PostgreSqlBuilder(TestImages.Postgres)
             .WithDatabase(DatabaseName)
             .Build();
-        await _postgres.StartAsync();
+        try
+        {
+            await _postgres.StartAsync();
+            await CreateDatabaseAsync();
 
-        await CreateDatabaseAsync();
+            _factory = new IntegrationTestFactory<PaymentsApiProgram>(
+                configuration: new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:paymentsdb"] = ConnectionString,
+                    ["ServiceDiscovery:MainApi"] = MainApiStubUrl,
+                },
+                configureServices: services =>
+                {
+                    services.AddHttpClient(JwtAuthorizationExtensions.JwksHttpClientName)
+                        .ConfigurePrimaryHttpMessageHandler(() => new JwksStubHandler(_jwtKeys));
+                });
 
-        _factory = new IntegrationTestFactory<PaymentsApiProgram>(
-            configuration: new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:paymentsdb"] = ConnectionString,
-                ["ServiceDiscovery:MainApi"] = MainApiStubUrl,
-            },
-            configureServices: services =>
-            {
-                services.AddHttpClient(JwtAuthorizationExtensions.JwksHttpClientName)
-                    .ConfigurePrimaryHttpMessageHandler(() => new JwksStubHandler(_jwtKeys));
-            });
-
-        Client = _factory.CreateClient();
+            Client = _factory.CreateClient();
+        }
+        catch
+        {
+            // xUnit не вызывает DisposeAsync, если InitializeAsync упал — чистим сами.
+            await DisposeAsync();
+            throw;
+        }
     }
 
     public async Task DisposeAsync()
@@ -77,15 +90,20 @@ public sealed class PaymentsApiFixture : IAsyncLifetime
         _jwtKeys.Dispose();
     }
 
-    /// <summary>Контекст БД — для сидирования данных и проверок состояния.</summary>
+    /// <summary>Контекст БД — для сидирования данных и проверок состояния. Вызывающий код обязан освободить контекст (await using).</summary>
     public PaymentsDbContext CreateDbContext() =>
         _factory.Services.GetRequiredService<IDbContextFactory<PaymentsDbContext>>().CreateDbContext();
 
     /// <summary>
-    /// Access-токен, который Payments.Api примет: подписан ключом из заглушки JWKS.
+    /// Access-токен, который Payments.Api примет: подписан ключом из заглушки JWKS,
+    /// issuer/audience — из конфигурации сервиса.
     /// </summary>
-    public string CreateAccessToken(Guid userId) =>
-        _jwtKeys.CreateAccessToken(userId, Issuer, Audience);
+    public string CreateAccessToken(Guid userId, TimeSpan? lifetime = null) =>
+        _jwtKeys.CreateAccessToken(userId, Issuer, Audience, lifetime);
+
+    private string GetJwtSetting(string key) =>
+        _factory.Services.GetRequiredService<IConfiguration>()[$"{JwtOptions.Section}:{key}"]
+        ?? throw new InvalidOperationException($"В конфигурации Payments.Api не найден Jwt:{key}");
 
     // TODO: у Payments.Model пока нет миграций — создаём схему по модели.
     // Когда появятся — заменить на Database.MigrateAsync(), как в MainApiFixture.

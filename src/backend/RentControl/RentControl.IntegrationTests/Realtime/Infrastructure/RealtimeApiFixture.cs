@@ -18,12 +18,19 @@ public sealed class RealtimeApiFixture : IAsyncLifetime
     /// <summary>Готовый клиент к Realtime.Api.</summary>
     public HttpClient Client { get; private set; } = null!;
 
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
         _factory = new IntegrationTestFactory<RealtimeApiProgram>();
-        Client = _factory.CreateClient();
-
-        return Task.CompletedTask;
+        try
+        {
+            Client = _factory.CreateClient();
+        }
+        catch
+        {
+            // xUnit не вызывает DisposeAsync, если InitializeAsync упал — чистим сами.
+            await DisposeAsync();
+            throw;
+        }
     }
 
     public async Task DisposeAsync()

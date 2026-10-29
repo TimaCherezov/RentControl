@@ -4,8 +4,10 @@ using MainApiProgram = MainApi::Program;
 
 using Main.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RentControl.IntegrationTests.Infrastructure;
+using RentControl.ServiceDefaults;
 using Testcontainers.PostgreSql;
 
 namespace RentControl.IntegrationTests.Main.Infrastructure;
@@ -16,9 +18,6 @@ namespace RentControl.IntegrationTests.Main.Infrastructure;
 /// </summary>
 public sealed class MainApiFixture : IAsyncLifetime
 {
-    public const string Issuer = "RentControl";
-    public const string Audience = "RentControl";
-
     private const string DatabaseName = "maindb";
 
     private readonly TestJwtKeys _jwtKeys = new();
@@ -31,22 +30,37 @@ public sealed class MainApiFixture : IAsyncLifetime
     /// <summary>Строка подключения к тестовой базе maindb.</summary>
     public string ConnectionString => _postgres.GetConnectionString();
 
+    /// <summary>Issuer из конфигурации сервиса.</summary>
+    public string Issuer => GetJwtSetting("Issuer");
+
+    /// <summary>Audience из конфигурации сервиса.</summary>
+    public string Audience => GetJwtSetting("Audience");
+
+
     public async Task InitializeAsync()
     {
         _postgres = new PostgreSqlBuilder(TestImages.Postgres)
             .WithDatabase(DatabaseName)
             .Build();
-        await _postgres.StartAsync();
-
-        await MigrateAsync();
-
-        _factory = new IntegrationTestFactory<MainApiProgram>(new Dictionary<string, string?>
+        try
         {
-            ["ConnectionStrings:maindb"] = ConnectionString,
-            ["Jwt:PrivateKeyPem"] = _jwtKeys.PrivateKeyPem,
-        });
+            await _postgres.StartAsync();
+            await MigrateAsync();
 
-        Client = _factory.CreateClient();
+            _factory = new IntegrationTestFactory<MainApiProgram>(new Dictionary<string, string?>
+            {
+                ["ConnectionStrings:maindb"] = ConnectionString,
+                ["Jwt:PrivateKeyPem"] = _jwtKeys.PrivateKeyPem,
+            });
+
+            Client = _factory.CreateClient();
+        }
+        catch
+        {
+            // xUnit не вызывает DisposeAsync, если InitializeAsync упал — чистим сами.
+            await DisposeAsync();
+            throw;
+        }
     }
 
     public async Task DisposeAsync()
@@ -66,16 +80,20 @@ public sealed class MainApiFixture : IAsyncLifetime
         _jwtKeys.Dispose();
     }
 
-    /// <summary>Контекст БД — для сидирования данных и проверок состояния.</summary>
+    /// <summary>Контекст БД — для сидирования данных и проверок состояния. Вызывающий код обязан освободить контекст (await using).</summary>
     public MainDbContext CreateDbContext() =>
         _factory.Services.GetRequiredService<IDbContextFactory<MainDbContext>>().CreateDbContext();
 
     /// <summary>
     /// Access-токен, подписанный тем же ключом, что использует сервис,
-    /// — в обход потока register/login.
+    /// issuer/audience — из конфигурации сервиса.
     /// </summary>
-    public string CreateAccessToken(Guid userId) =>
-        _jwtKeys.CreateAccessToken(userId, Issuer, Audience);
+    public string CreateAccessToken(Guid userId, TimeSpan? lifetime = null) =>
+        _jwtKeys.CreateAccessToken(userId, Issuer, Audience, lifetime);
+
+    private string GetJwtSetting(string key) =>
+        _factory.Services.GetRequiredService<IConfiguration>()[$"{JwtOptions.Section}:{key}"]
+        ?? throw new InvalidOperationException($"В конфигурации Main.Api не найден Jwt:{key}");
 
     private async Task MigrateAsync()
     {
