@@ -78,7 +78,9 @@ jobs:
       && !contains(github.event.pull_request.title, '[skip-ai-review]')
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      # write нужен на мутацию «закрыть тред» (resolve_outdated): GitHub
+      # требует write-доступ к репо, pull-requests: write недостаточно.
+      contents: write
       pull-requests: write
     timeout-minutes: 30
     continue-on-error: true
@@ -115,6 +117,12 @@ jobs:
           # безопасность, производительность, архитектура.
           route_severity_below: 'low'
           route_categories: 'style,documentation'
+          # Самообслуживание комментариев: дубль не создаётся, если на этих
+          # строках уже есть коммент бота (тред остаётся открытым = «всё ещё
+          # актуально»), а треды на исправленных строках бот закрывает сам.
+          # Треды с ответом человека не трогаются никогда.
+          incremental: 'true'
+          resolve_outdated: 'true'
           # CLI пиним тем же тегом, что и action; при обновлении менять оба.
           ocr_version: '1.13.3'
           language: Russian
