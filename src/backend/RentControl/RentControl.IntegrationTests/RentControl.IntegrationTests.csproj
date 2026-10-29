@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" Version="6.0.4"/>
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.14" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/>
+        <PackageReference Include="Testcontainers" Version="4.16.0" />
+        <PackageReference Include="Testcontainers.PostgreSql" Version="4.16.0" />
+        <PackageReference Include="xunit" Version="2.9.3"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Using Include="Xunit"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <!--
+        Aliases: сборки остаются в глобальной области ('global'), но дополнительно получают
+        именованный алиас. Program у сервисов конфликтует между собой (у каждого свой
+        public partial Program), поэтому в фикстурах он берётся алиасом: MainApi::Program.
+      -->
+      <ProjectReference Include="..\Main.Api\Main.Api.csproj" Aliases="global,MainApi" />
+      <!--
+        Воркер в глобальную область не пробрасываем: его Program только добавлял бы конфликт.
+        Типы воркера доступны в тестах после 'extern alias MainWorker;' в начале файла.
+      -->
+      <ProjectReference Include="..\Main.Worker\Main.Worker.csproj" Aliases="MainWorker" />
+      <ProjectReference Include="..\Payments.Api\Payments.Api.csproj" Aliases="global,PaymentsApi" />
+      <ProjectReference Include="..\Realtime.Api\Realtime.Api.csproj" Aliases="global,RealtimeApi" />
+    </ItemGroup>
+
+</Project>
