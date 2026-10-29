@@ -22,7 +22,26 @@ jobs:
         run: dotnet build src/backend/RentControl/RentControl.sln --no-restore -c Release
 
   # Неблокирующие проверки: allowed to fail, мерж не запрещают.
+  # Цепочка: build -> docker-build -> e2e-tests.
+  # continue-on-error у docker-build гарантирует, что при его падении e2e-tests не скипнется.
+  docker-build:
+    needs: build
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [Main.Api, Payments.Api, Realtime.Api, Main.Worker]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build docker image (${{ matrix.service }})
+        env:
+          SERVICE: ${{ matrix.service }}
+        run: docker build -f src/backend/RentControl/$SERVICE/Dockerfile -t "rentcontrol-${SERVICE,,}:ci" src/backend/RentControl
+
   e2e-tests:
+    needs: docker-build
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
@@ -37,18 +56,3 @@ jobs:
 
       - name: Run e2e tests
         run: dotnet test src/backend/RentControl/RentControl.E2ETests --no-restore -c Release
-
-  docker-build:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    strategy:
-      fail-fast: false
-      matrix:
-        service: [Main.Api, Payments.Api, Realtime.Api, Main.Worker]
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Build docker image (${{ matrix.service }})
-        env:
-          SERVICE: ${{ matrix.service }}
-        run: docker build -f src/backend/RentControl/$SERVICE/Dockerfile -t "rentcontrol-${SERVICE,,}:ci" src/backend/RentControl
