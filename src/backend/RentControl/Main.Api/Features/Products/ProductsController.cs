@@ -1,7 +1,6 @@
 using Main.Api.Features.Products.Create;
 using Main.Api.Features.Products.Patch;
 using Main.Api.Features.Products.Update;
-using MassTransit;
 using MassTransit.Mediator;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,7 +8,7 @@ namespace Main.Api.Features.Products;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ProductsController(IServiceProvider serviceProvider, IMediator mediator) : ControllerBase
+public class ProductsController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
     public async Task<ActionResult<ProductDto>> Create(
@@ -18,18 +17,18 @@ public class ProductsController(IServiceProvider serviceProvider, IMediator medi
     {
         var command = new CreateProductCommand(
             request.Name!,
-            request.MarketValue ?? 0m,
+            request.MarketValue!.Value,
             request.DepositOverride,
-            request.DailyRate ?? 0m,
-            request.HourlyRate ?? 0m,
+            request.DailyRate!.Value,
+            request.HourlyRate!.Value,
             request.WeeklyRate,
             request.MonthlyRate,
             request.Description);
 
-        var client = serviceProvider.CreateRequestClient<CreateProductCommand>();
+        var client = mediator.CreateRequestClient<CreateProductCommand>();
         var response = await client.GetResponse<ProductDto>(command, cancellationToken: ct);
 
-        return Created($"/api/products/{response.Message.Id}", response.Message);
+        return StatusCode(StatusCodes.Status201Created, response.Message);
     }
 
     [HttpPut("{id:guid}")]
@@ -41,10 +40,10 @@ public class ProductsController(IServiceProvider serviceProvider, IMediator medi
         var command = new UpdateProductCommand(
             id,
             request.Name!,
-            request.MarketValue ?? 0m,
+            request.MarketValue!.Value,
             request.DepositOverride,
-            request.DailyRate ?? 0m,
-            request.HourlyRate ?? 0m,
+            request.DailyRate!.Value,
+            request.HourlyRate!.Value,
             request.WeeklyRate,
             request.MonthlyRate,
             request.Description);
