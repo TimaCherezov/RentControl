@@ -7,14 +7,12 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
 {
     public Task<Booking?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => dbContext.Bookings
-            .Include(b => b.BookingStatus)
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
-    public async Task<List<Booking>> GetByStatusIdAsync(BookingStatusEnum id, CancellationToken cancellationToken = default)
+    public async Task<List<Booking>> GetByStatusAsync(BookingStatusEnum status, CancellationToken cancellationToken = default)
     {
         return await dbContext.Bookings
-            .Include(b => b.BookingStatus)
-            .Where(b => b.BookingStatusId == id)
+            .Where(b => b.BookingStatus == status)
             .ToListAsync(cancellationToken);
     }
 
@@ -25,7 +23,7 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
         int pageNumber,
         int pageSize,
         Guid? userId = null,
-        BookingStatusEnum? statusId = null,
+        BookingStatusEnum? status = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -35,15 +33,14 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
             throw new ArgumentOutOfRangeException(nameof(pageSize));
 
         var query = dbContext
-            .Bookings.Include(b => b.BookingStatus)
-            .Include(b => b.ProductUnit.Product.Images.Where(i => i.IsMain))
+            .Bookings.Include(b => b.ProductUnit.Product.Images.Where(i => i.IsMain))
             .AsQueryable()
             .AsNoTracking();
 
         if (userId is not null)
             query = query.Where(b => b.UserId == userId);
-        if (statusId is not null)
-            query = query.Where(b => b.BookingStatusId == statusId);
+        if (status is not null)
+            query = query.Where(b => b.BookingStatus == status);
 
         var bookings = await query
             .OrderBy(b => b.StartAt)

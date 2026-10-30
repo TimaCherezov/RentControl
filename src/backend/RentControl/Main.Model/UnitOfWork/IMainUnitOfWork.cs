@@ -9,9 +9,7 @@ public interface IMainUnitOfWork
     IProductRepository Products { get; }
     ILocationRepository Locations { get; }
     IBookingRepository Bookings { get; }
-    IBookingStatusRepository BookingStatuses { get; }
     IProductImageRepository ProductImages { get; }
-    IStateRepository States { get; }
     IProductUnitRepository ProductUnits { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

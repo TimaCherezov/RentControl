@@ -31,8 +31,9 @@ namespace Main.Model.Migrations
                     b.Property<DateTimeOffset?>("ActualReturnAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<int>("BookingStatusId")
-                        .HasColumnType("integer");
+                    b.Property<string>("BookingStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<decimal>("DepositAmount")
                         .HasColumnType("numeric");
@@ -62,8 +63,6 @@ namespace Main.Model.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BookingStatusId");
-
                     b.HasIndex("LocationId");
 
                     b.HasIndex("ProductUnitId");
@@ -73,79 +72,6 @@ namespace Main.Model.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Bookings");
-                });
-
-            modelBuilder.Entity("Main.Model.Models.BookingStatus", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("BookingStatuses");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 5,
-                            Code = "ACTIVE",
-                            Name = "Active"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Code = "CANCELLED",
-                            Name = "Cancelled"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Code = "COMPLETED",
-                            Name = "Completed"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Code = "CONFIRMED",
-                            Name = "Confirmed"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Code = "OVERDUE",
-                            Name = "Overdue"
-                        },
-                        new
-                        {
-                            Id = 1,
-                            Code = "PENDING",
-                            Name = "Pending"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Code = "READY_FOR_PICKUP",
-                            Name = "Ready for pickup"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Code = "RETURNED",
-                            Name = "Returned"
-                        });
                 });
 
             modelBuilder.Entity("Main.Model.Models.Location", b =>
@@ -264,14 +190,13 @@ namespace Main.Model.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
-                    b.Property<int>("StateId")
-                        .HasColumnType("integer");
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
 
                     b.HasIndex("LocationId");
-
-                    b.HasIndex("StateId");
 
                     b.HasIndex("ProductId", "SerialNumber")
                         .IsUnique();
@@ -309,79 +234,6 @@ namespace Main.Model.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("Main.Model.Models.State", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Code")
-                        .IsUnique();
-
-                    b.ToTable("States");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 7,
-                            Code = "BROKEN",
-                            Name = "Broken"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Code = "EXCELLENT",
-                            Name = "Excellent"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Code = "GOOD",
-                            Name = "Good"
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Code = "NEEDS_MAINTENANCE",
-                            Name = "Needs maintenance"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Code = "NEEDS_REPAIR",
-                            Name = "Needs repair"
-                        },
-                        new
-                        {
-                            Id = 1,
-                            Code = "NEW",
-                            Name = "New"
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Code = "USED",
-                            Name = "Used"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Code = "WRITE_OFF",
-                            Name = "Write off"
-                        });
-                });
-
             modelBuilder.Entity("Main.Model.Models.User", b =>
                 {
                     b.Property<Guid>("Id")
@@ -413,12 +265,6 @@ namespace Main.Model.Migrations
 
             modelBuilder.Entity("Main.Model.Models.Booking", b =>
                 {
-                    b.HasOne("Main.Model.Models.BookingStatus", "BookingStatus")
-                        .WithMany()
-                        .HasForeignKey("BookingStatusId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Main.Model.Models.Location", "Location")
                         .WithMany()
                         .HasForeignKey("LocationId")
@@ -436,8 +282,6 @@ namespace Main.Model.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("BookingStatus");
 
                     b.Navigation("Location");
 
@@ -471,17 +315,9 @@ namespace Main.Model.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Main.Model.Models.State", "State")
-                        .WithMany()
-                        .HasForeignKey("StateId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Location");
 
                     b.Navigation("Product");
-
-                    b.Navigation("State");
                 });
 
             modelBuilder.Entity("Main.Model.Models.RefreshToken", b =>
