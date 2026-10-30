@@ -7,11 +7,11 @@ public interface IProductImageRepository
     Task<ProductImage?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     void Add(ProductImage productImage);
     void Update(ProductImage productImage);
-    Task<ProductImage?> GetMainForProductByProductIdAsync(
+    Task<ProductImage?> GetMainByProductIdAsync(
         Guid productId,
         CancellationToken cancellationToken = default
     );
-    Task<List<ProductImage>> GetAllForProductByProductIdAsync(
+    Task<List<ProductImage>> GetAllByProductIdAsync(
         Guid productId,
         CancellationToken cancellationToken = default
     );
