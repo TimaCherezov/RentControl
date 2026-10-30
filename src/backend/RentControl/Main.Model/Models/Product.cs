@@ -22,4 +22,7 @@ public class Product
     public decimal? WeeklyRate { get; set; }
     public decimal? MonthlyRate { get; set; }
     public string? Description { get; set; }
+
+    public ProductImage? MainImage => Images.FirstOrDefault(i => i.IsMain);
+    public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
 }

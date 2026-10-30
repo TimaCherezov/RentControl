@@ -10,6 +10,14 @@ public class UserRepository(MainDbContext dbContext) : IUserRepository
 
     public Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         => dbContext.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+    
+    /// <summary>
+    /// Рекомендуется использовать DTO для маппинга результата метода, т.к. передается хеш паролей.
+    /// </summary>
+    public Task<List<User>> GetTenantsAsync(CancellationToken cancellationToken = default)
+        => dbContext.Users
+            .Where(u => dbContext.Bookings.Any(b => b.UserId == u.Id))
+            .ToListAsync(cancellationToken);
 
     public void Add(User user)
         => dbContext.Users.Add(user);

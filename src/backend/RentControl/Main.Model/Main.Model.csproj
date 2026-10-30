@@ -9,6 +9,7 @@
     <ItemGroup>
         <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.1.2" />
         <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
+        <PackageReference Include="Pandatech.EFCore.PostgresExtensions" Version="7.0.2" />
     </ItemGroup>
 
     <ItemGroup>

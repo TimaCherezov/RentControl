@@ -9,8 +9,7 @@ public class ProductUnit
     public Guid Id { get; set; }
     public Product Product { get; set; } = null!;
     public Guid ProductId { get; set; }
-    public State State { get; set; } = null!;
-    public StateEnum StateId { get; set; }
+    public StateEnum State { get; set; }
     public string SerialNumber { get; set; } = null!;
 
     /// <summary>

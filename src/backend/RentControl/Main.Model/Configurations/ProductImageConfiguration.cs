@@ -10,7 +10,10 @@ public class ProductImageConfiguration : IEntityTypeConfiguration<ProductImage>
     {
         builder.Property(pi => pi.StorageKey).HasMaxLength(255);
         builder.Property(pi => pi.AltText).HasMaxLength(255);
+        builder.Property(pi => pi.CreatedAt).HasDefaultValueSql("now()");
 
-        builder.HasOne(pi => pi.Product).WithMany().HasForeignKey(pi => pi.ProductId);
+        builder.HasIndex(pi => new { pi.ProductId, pi.IsMain }).IsUnique().HasFilter("\"IsMain\"=true");
+
+        builder.HasOne(pi => pi.Product).WithMany(p => p.Images).HasForeignKey(pi => pi.ProductId);
     }
 }
