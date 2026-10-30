@@ -8,7 +8,7 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
 {
     public void Configure(EntityTypeBuilder<Booking> builder)
     {
-        builder.Property(b => b.StatusChangedAt).HasDefaultValueSql("timezone('utc', now())");
+        builder.Property(b => b.StatusChangedAt).HasDefaultValueSql("now()");
 
         builder.HasIndex(b => b.UserId);
         builder.HasIndex(b => b.StartAt);
