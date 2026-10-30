@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Main.Model.Migrations
 {
     [DbContext(typeof(MainDbContext))]
-    [Migration("20261029172359_AddBookingIndexesAndFixStatusSeedAndSyncProductImageNav")]
-    partial class AddBookingIndexesAndFixStatusSeedAndSyncProductImageNav
+    [Migration("20261030072540_AddProductImageUniqueConstraintsAndDeleteSortOrder")]
+    partial class AddProductImageUniqueConstraintsAndDeleteSortOrder
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -55,7 +55,7 @@ namespace Main.Model.Migrations
                     b.Property<DateTimeOffset>("StatusChangedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
-                        .HasDefaultValueSql("timezone('utc', now())");
+                        .HasDefaultValueSql("now()");
 
                     b.Property<decimal?>("TotalRentalCost")
                         .HasColumnType("numeric");
@@ -219,14 +219,16 @@ namespace Main.Model.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasDefaultValueSql("now()");
+
                     b.Property<bool>("IsMain")
                         .HasColumnType("boolean");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
-
-                    b.Property<int>("SortOrder")
-                        .HasColumnType("integer");
 
                     b.Property<string>("StorageKey")
                         .IsRequired()
@@ -235,7 +237,9 @@ namespace Main.Model.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("ProductId", "IsMain")
+                        .IsUnique()
+                        .HasFilter("\"IsMain\"=true");
 
                     b.ToTable("ProductImages");
                 });
