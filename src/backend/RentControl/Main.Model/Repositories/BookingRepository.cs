@@ -52,4 +52,7 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
 
         return new PageList<Booking>(bookings, totalCount, pageNumber, pageSize);
     }
+
+    public void Add(Booking booking)
+        => dbContext.Bookings.Add(booking);
 }
