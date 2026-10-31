@@ -136,7 +136,7 @@ namespace Main.Model.Migrations
                         {
                             Id = 4,
                             Code = "READY_FOR_PICKUP",
-                            Name = "Ready for pickip"
+                            Name = "Ready for pickup"
                         },
                         new
                         {

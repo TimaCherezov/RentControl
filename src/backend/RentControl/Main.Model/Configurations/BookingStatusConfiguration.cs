@@ -20,7 +20,7 @@ public class BookingStatusConfiguration : IEntityTypeConfiguration<BookingStatus
                 new BookingStatus { Id = BookingStatusEnum.CONFIRMED, Code = "CONFIRMED", Name = "Confirmed" },
                 new BookingStatus { Id = BookingStatusEnum.OVERDUE, Code = "OVERDUE", Name = "Overdue" },
                 new BookingStatus { Id = BookingStatusEnum.PENDING, Code = "PENDING", Name = "Pending" },
-                new BookingStatus { Id = BookingStatusEnum.READY_FOR_PICKUP, Code = "READY_FOR_PICKUP", Name = "Ready for pickip" },
+                new BookingStatus { Id = BookingStatusEnum.READY_FOR_PICKUP, Code = "READY_FOR_PICKUP", Name = "Ready for pickup" },
                 new BookingStatus { Id = BookingStatusEnum.RETURNED, Code = "RETURNED", Name = "Returned" }
         ]);
     }
