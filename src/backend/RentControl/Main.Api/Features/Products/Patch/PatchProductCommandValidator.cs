@@ -15,7 +15,7 @@ public class PatchProductCommandValidator : AbstractValidator<PatchProductComman
             .WithMessage("At least one field must be provided");
 
         RuleFor(x => x.Name)
-            .Must(name => !string.IsNullOrWhiteSpace(name))
+            .NotEmpty()
             .When(x => x.Name is not null)
             .WithMessage("Name cannot be empty");
 
