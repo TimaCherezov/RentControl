@@ -1,4 +1,5 @@
 using FluentValidation;
+using Main.Api.Features.Validation;
 
 namespace Main.Api.Features.Locations.Update;
 
@@ -6,16 +7,8 @@ public class UpdateLocationRequestValidator : AbstractValidator<UpdateLocationRe
 {
 	public UpdateLocationRequestValidator()
 	{
-		RuleFor(x => x.Name)
-			.NotEmpty()
-			.WithMessage("Name is required")
-			.MaximumLength(50)
-			.WithMessage("Name must be at most 50 characters");
+		this.AddRequiredStringRules(x => x.Name, "Name", 50);
 
-		RuleFor(x => x.Address)
-			.NotEmpty()
-			.WithMessage("Address is required")
-			.MaximumLength(255)
-			.WithMessage("Address must be at most 255 characters");
+		this.AddRequiredStringRules(x => x.Address, "Address", 255);
 	}
 }
