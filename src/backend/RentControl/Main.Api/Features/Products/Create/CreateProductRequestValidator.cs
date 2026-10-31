@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Main.Api.Features.Products.Create;
 
-public class CreateProductValidator : AbstractValidator<CreateProductRequest>
+public class CreateProductRequestValidator : AbstractValidator<CreateProductRequest>
 {
-	public CreateProductValidator()
+	public CreateProductRequestValidator()
 	{
 		RuleFor(x => x.Name)
 			.Must(name => !string.IsNullOrWhiteSpace(name))
