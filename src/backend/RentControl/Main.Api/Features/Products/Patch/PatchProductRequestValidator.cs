@@ -2,9 +2,9 @@ using FluentValidation;
 
 namespace Main.Api.Features.Products.Patch;
 
-public class PatchProductValidator : AbstractValidator<PatchProductRequest>
+public class PatchProductRequestValidator : AbstractValidator<PatchProductRequest>
 {
-    public PatchProductValidator()
+    public PatchProductRequestValidator()
     {
         RuleFor(x => x)
             .Must(HasAtLeastOneField)
