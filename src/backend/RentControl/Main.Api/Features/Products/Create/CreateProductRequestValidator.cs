@@ -7,7 +7,7 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
 	public CreateProductRequestValidator()
 	{
 		RuleFor(x => x.Name)
-			.Must(name => !string.IsNullOrWhiteSpace(name))
+			.NotEmpty()
 			.WithMessage("Name is required")
 			.MaximumLength(50)
 			.WithMessage("Name must be at most 50 characters");
