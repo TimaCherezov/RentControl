@@ -53,6 +53,15 @@ public class ProductsController(IMediator mediator) : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// PATCH обновляет только поля, переданные в запросе.
+    /// В текущей реализации отсутствующее поле и поле со значением null не различаются:
+    /// оба интерпретируются как отсутствие изменения.
+    /// Поэтому сбросить nullable-свойство (например, DepositOverride, WeeklyRate,
+    /// MonthlyRate или Description) в null через PATCH нельзя.
+    /// Для этого надо делать отдельный механизм, позволяющий отличать непереданное поле
+    /// от явно переданного null.
+    /// </summary>
     [HttpPatch("{id:guid}")]
     public async Task<IActionResult> Patch(
         Guid id,
