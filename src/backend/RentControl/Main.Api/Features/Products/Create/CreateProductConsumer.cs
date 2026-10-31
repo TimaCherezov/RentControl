@@ -1,13 +1,11 @@
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using MassTransit;
-using MassTransit.Mediator;
 using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Features.Products.Create;
 
-public class CreateProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
-    : IConsumer<CreateProductCommand>
+public class CreateProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory) : IConsumer<CreateProductCommand>
 {
     public async Task Consume(ConsumeContext<CreateProductCommand> context)
     {
@@ -15,7 +13,7 @@ public class CreateProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactor
 
         var product = await uowFactory.ExecuteAsync(async uow =>
         {
-            var product = new Product
+            var productModel = new Product
             {
                 Name = command.Name,
                 MarketValue = command.MarketValue,
@@ -27,9 +25,9 @@ public class CreateProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactor
                 Description = command.Description
             };
 
-            await uow.Products.AddAsync(product);
+            await uow.Products.AddAsync(productModel);
 
-            return product;
+            return productModel;
         }, context.CancellationToken);
 
         var response = new ProductDto(
