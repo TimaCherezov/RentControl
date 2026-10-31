@@ -28,7 +28,7 @@ public class ProductsController(IMediator mediator) : ControllerBase
         var client = mediator.CreateRequestClient<CreateProductCommand>();
         var response = await client.GetResponse<ProductDto>(command, cancellationToken: ct);
 
-        return StatusCode(StatusCodes.Status201Created, response.Message);
+        return Created($"/api/products/{response.Message.Id}", response.Message);
     }
 
     [HttpPut("{id:guid}")]
