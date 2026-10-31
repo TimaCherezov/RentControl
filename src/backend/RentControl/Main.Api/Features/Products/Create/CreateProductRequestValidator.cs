@@ -1,4 +1,5 @@
 using FluentValidation;
+using Main.Api.Features.Validation;
 
 namespace Main.Api.Features.Products.Create;
 
@@ -6,48 +7,20 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
 {
 	public CreateProductRequestValidator()
 	{
-		RuleFor(x => x.Name)
-			.NotEmpty()
-			.WithMessage("Name is required")
-			.MaximumLength(50)
-			.WithMessage("Name must be at most 50 characters");
+		this.AddRequiredStringRules(x => x.Name, "Name", 50);
 
-		RuleFor(x => x.MarketValue)
-			.NotNull()
-			.WithMessage("MarketValue is required")
-			.GreaterThanOrEqualTo(0)
-			.WithMessage("MarketValue must be non-negative");
+		this.AddRequiredDecimalRules(x => x.MarketValue, "MarketValue");
 
-		RuleFor(x => x.DepositOverride)
-			.GreaterThanOrEqualTo(0)
-			.When(x => x.DepositOverride.HasValue)
-			.WithMessage("DepositOverride must be non-negative");
+		this.AddOptionalDecimalRules(x => x.DepositOverride, "DepositOverride");
 
-		RuleFor(x => x.DailyRate)
-			.NotNull()
-			.WithMessage("DailyRate is required")
-			.GreaterThanOrEqualTo(0)
-			.WithMessage("DailyRate must be non-negative");
+		this.AddRequiredDecimalRules(x => x.DailyRate, "DailyRate");
 
-		RuleFor(x => x.HourlyRate)
-			.NotNull()
-			.WithMessage("HourlyRate is required")
-			.GreaterThanOrEqualTo(0)
-			.WithMessage("HourlyRate must be non-negative");
+		this.AddRequiredDecimalRules(x => x.HourlyRate, "HourlyRate");
 
-		RuleFor(x => x.WeeklyRate)
-			.GreaterThanOrEqualTo(0)
-			.When(x => x.WeeklyRate.HasValue)
-			.WithMessage("WeeklyRate must be non-negative");
+		this.AddOptionalDecimalRules(x => x.WeeklyRate, "WeeklyRate");
 
-		RuleFor(x => x.MonthlyRate)
-			.GreaterThanOrEqualTo(0)
-			.When(x => x.MonthlyRate.HasValue)
-			.WithMessage("MonthlyRate must be non-negative");
+		this.AddOptionalDecimalRules(x => x.MonthlyRate, "MonthlyRate");
 
-		RuleFor(x => x.Description)
-			.MaximumLength(1000)
-			.When(x => x.Description is not null)
-			.WithMessage("Description must be at most 1000 characters");
+		this.AddOptionalStringRules(x => x.Description, "Description", 1000);
 	}
 }

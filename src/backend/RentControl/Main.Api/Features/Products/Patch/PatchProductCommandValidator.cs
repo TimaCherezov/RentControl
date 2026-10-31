@@ -1,4 +1,5 @@
 using FluentValidation;
+using Main.Api.Features.Validation;
 
 namespace Main.Api.Features.Products.Patch;
 
@@ -6,58 +7,27 @@ public class PatchProductCommandValidator : AbstractValidator<PatchProductComman
 {
     public PatchProductCommandValidator()
     {
-        RuleFor(x => x.Id)
-            .NotEmpty()
-            .WithMessage("Id is required");
+        this.AddRequiredIdRules(x => x.Id, "Id");
 
         RuleFor(x => x)
             .Must(HasAtLeastOneField)
             .WithMessage("At least one field must be provided");
 
-        RuleFor(x => x.Name)
-            .NotEmpty()
-            .When(x => x.Name is not null)
-            .WithMessage("Name cannot be empty");
+        this.AddOptionalNonEmptyStringRules(x => x.Name, "Name", 50);
 
-        RuleFor(x => x.Name)
-            .MaximumLength(50)
-            .When(x => x.Name is not null)
-            .WithMessage("Name must be at most 50 characters");
+        this.AddOptionalDecimalRules(x => x.MarketValue, "MarketValue");
 
-        RuleFor(x => x.MarketValue)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.MarketValue.HasValue)
-            .WithMessage("MarketValue must be non-negative");
+        this.AddOptionalDecimalRules(x => x.DepositOverride, "DepositOverride");
 
-        RuleFor(x => x.DepositOverride)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.DepositOverride.HasValue)
-            .WithMessage("DepositOverride must be non-negative");
+        this.AddOptionalDecimalRules(x => x.DailyRate, "DailyRate");
 
-        RuleFor(x => x.DailyRate)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.DailyRate.HasValue)
-            .WithMessage("DailyRate must be non-negative");
+        this.AddOptionalDecimalRules(x => x.HourlyRate, "HourlyRate");
 
-        RuleFor(x => x.HourlyRate)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.HourlyRate.HasValue)
-            .WithMessage("HourlyRate must be non-negative");
+        this.AddOptionalDecimalRules(x => x.WeeklyRate, "WeeklyRate");
 
-        RuleFor(x => x.WeeklyRate)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.WeeklyRate.HasValue)
-            .WithMessage("WeeklyRate must be non-negative");
+        this.AddOptionalDecimalRules(x => x.MonthlyRate, "MonthlyRate");
 
-        RuleFor(x => x.MonthlyRate)
-            .GreaterThanOrEqualTo(0)
-            .When(x => x.MonthlyRate.HasValue)
-            .WithMessage("MonthlyRate must be non-negative");
-
-        RuleFor(x => x.Description)
-            .MaximumLength(1000)
-            .When(x => x.Description is not null)
-            .WithMessage("Description must be at most 1000 characters");
+        this.AddOptionalStringRules(x => x.Description, "Description", 1000);
     }
 
     private static bool HasAtLeastOneField(PatchProductCommand command)
