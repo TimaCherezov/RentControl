@@ -9,35 +9,33 @@ public class PatchLocationCommandValidator : AbstractValidator<PatchLocationComm
 		RuleFor(x => x.Id)
 			.NotEmpty()
 			.WithMessage("Id is required");
-		
+
 		RuleFor(x => x)
 			.Must(HasAtLeastOneField)
 			.WithMessage("At least one field must be provided");
 
-		RuleFor(x => x.Name)
-			.NotEmpty()
-			.When(x => x.Name is not null)
-			.WithMessage("Name cannot be empty");
+		When(x => x.Name is not null, () =>
+		{
+			RuleFor(x => x.Name)
+				.NotEmpty()
+				.WithMessage("Name must not be empty")
+				.MaximumLength(50)
+				.WithMessage("Name must be at most 50 characters");
+		});
 
-		RuleFor(x => x.Name)
-			.MaximumLength(50)
-			.When(x => x.Name is not null)
-			.WithMessage("Name must be at most 50 characters");
-
-		RuleFor(x => x.Address)
-			.NotEmpty()
-			.When(x => x.Address is not null)
-			.WithMessage("Address cannot be empty");
-
-		RuleFor(x => x.Address)
-			.MaximumLength(255)
-			.When(x => x.Address is not null)
-			.WithMessage("Address must be at most 255 characters");
+		When(x => x.Address is not null, () =>
+		{
+			RuleFor(x => x.Address)
+				.NotEmpty()
+				.WithMessage("Address must not be empty")
+				.MaximumLength(255)
+				.WithMessage("Address must be at most 255 characters");
+		});
 	}
-
-	private static bool HasAtLeastOneField(PatchLocationCommand request)
+	
+	private static bool HasAtLeastOneField(PatchLocationCommand command)
 	{
-		return request.Name is not null
-		       || request.Address is not null;
+		return command.Name is not null
+		       || command.Address is not null;
 	}
 }
