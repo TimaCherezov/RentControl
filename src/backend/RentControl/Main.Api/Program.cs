@@ -1,11 +1,14 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Main.Api;
 using Main.Api.Auth;
-using MassTransit;
-using Main.Api.Auth.Register;
+using Main.Api.Features.Products.Create;
+using Main.Api.Features.Products.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
 using Main.Model;
+using MassTransit;
+using Main.Api.Auth.Register;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +18,7 @@ builder.AddServiceDefaults();
 builder.AddMainDatabase("maindb");
 
 builder.Services.AddAuth(builder.Configuration);
+builder.Services.AddMapster();
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
@@ -24,7 +28,9 @@ builder.Services.AddControllers();
 
 builder.Services.AddMediator(cfg =>
 {
-    cfg.AddConsumers(typeof(Program).Assembly);
+    // cfg.AddConsumers(typeof(Program).Assembly);
+    cfg.AddConsumer<CreateProductConsumer>();
+    cfg.AddConsumer<UpdateProductConsumer>();
     
     cfg.ConfigureMediator((context, mediatorCfg) =>
     {
