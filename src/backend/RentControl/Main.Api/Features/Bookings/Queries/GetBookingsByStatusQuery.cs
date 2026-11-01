@@ -1,3 +1,5 @@
+using Main.Model.Models;
+
 namespace Main.Api.Features.Bookings.Queries;
 
-public record GetBookingsByStatusQuery(string Status);
+public record GetBookingsByStatusQuery(BookingStatusEnum Status);

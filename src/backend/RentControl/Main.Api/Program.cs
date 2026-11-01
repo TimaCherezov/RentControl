@@ -6,6 +6,7 @@ using Main.Api.Features.Products.Create;
 using Main.Api.Features.Products.Update;
 using MassTransit;
 using Main.Api.Auth.Register;
+using Main.Api.Features.Bookings.Consumers;
 using Main.Api.Features.Locations.Create;
 using Main.Api.Features.Locations.Update;
 using Main.Api.Features.Validation;
@@ -36,6 +37,10 @@ builder.Services.AddMediator(cfg =>
     
     cfg.AddConsumer<CreateLocationConsumer>();
     cfg.AddConsumer<UpdateLocationConsumer>();
+    
+    cfg.AddConsumer<GetBookingsByStatusConsumer>();
+    cfg.AddConsumer<IssueBookingConsumer>();
+    cfg.AddConsumer<ReturnBookingConsumer>();
     
     cfg.ConfigureMediator((context, mediatorCfg) =>
     {
