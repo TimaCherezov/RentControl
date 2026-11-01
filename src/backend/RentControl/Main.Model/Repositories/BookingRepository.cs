@@ -32,7 +32,4 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
             .Where(b => b.BookingStatusId == status.Id)
             .ToListAsync(cancellationToken);
     }
-
-    public void Update(Booking booking) 
-        => dbContext.Bookings.Update(booking);
 }

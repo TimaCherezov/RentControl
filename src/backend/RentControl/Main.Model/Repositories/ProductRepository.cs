@@ -11,7 +11,4 @@ public class ProductRepository(MainDbContext dbContext) : IProductRepository
 
     public void Add(Product product, CancellationToken cancellationToken = default)
         => dbContext.Products.Add(product);
-
-    public void Update(Product product)
-        => dbContext.Products.Update(product);
 }

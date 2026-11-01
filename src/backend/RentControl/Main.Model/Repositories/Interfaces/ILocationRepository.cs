@@ -6,5 +6,4 @@ public interface ILocationRepository
 {
     Task<Location?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     void Add(Location location, CancellationToken cancellationToken = default);
-    void Update(Location location);
 }

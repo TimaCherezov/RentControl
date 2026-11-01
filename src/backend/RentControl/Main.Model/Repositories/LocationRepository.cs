@@ -11,7 +11,4 @@ public class LocationRepository(MainDbContext dbContext) : ILocationRepository
 
     public void Add(Location location, CancellationToken cancellationToken = default) 
         => dbContext.Locations.Add(location);
-
-    public void Update(Location location)
-        => dbContext.Locations.Update(location);
 }
