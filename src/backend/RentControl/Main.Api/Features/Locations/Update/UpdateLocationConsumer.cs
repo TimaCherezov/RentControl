@@ -16,7 +16,7 @@ public class UpdateLocationConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFacto
 		{
 			var location = await uow.Locations.GetByIdAsync(command.Id, context.CancellationToken);
 			if (location is null)
-				throw new ObjectNotFoundException($"Location with ID:'{command.Id}' not found");
+				throw new ObjectNotFoundException($"Location with ID: {command.Id} not found.");
 
 			command.Adapt(location);
 		}, context.CancellationToken);
