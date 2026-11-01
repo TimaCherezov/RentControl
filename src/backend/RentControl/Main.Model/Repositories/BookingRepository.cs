@@ -34,7 +34,6 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
 
         var query = dbContext
             .Bookings.Include(b => b.ProductUnit.Product.Images.Where(i => i.IsMain))
-            .AsQueryable()
             .AsNoTracking();
 
         if (userId is not null)
