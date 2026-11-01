@@ -1,11 +1,11 @@
 using Main.Api.Exceptions;
-using Main.Api.Features.Bookings.Commands;
+using Main.Api.Features.Bookings.Issue;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using MassTransit;
 using RentControl.Common.UnitOfWork;
 
-namespace Main.Api.Features.Bookings.Consumers;
+namespace Main.Api.Features.Bookings.Issue;
 
 public class IssueBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory) : IConsumer<IssueBookingCommand>
 {

@@ -1,4 +1,4 @@
-using Main.Api.Features.Bookings.Dto;
+using Main.Api.Features.Bookings;
 using Main.Model.Models;
 using Mapster;
 

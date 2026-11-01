@@ -1,11 +1,11 @@
 using Main.Api.Exceptions;
-using Main.Api.Features.Bookings.Commands;
+using Main.Api.Features.Bookings.Return;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using MassTransit;
 using RentControl.Common.UnitOfWork;
 
-namespace Main.Api.Features.Bookings.Consumers;
+namespace Main.Api.Features.Bookings.Return;
 
 public class ReturnBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory) : IConsumer<ReturnBookingCommand>
 {
