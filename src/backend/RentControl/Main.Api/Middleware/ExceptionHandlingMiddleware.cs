@@ -21,9 +21,9 @@ public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<Exception
             logger.LogWarning(ex, "Unauthorized: {Message}", ex.Message);
             await WriteErrorAsync(context, StatusCodes.Status401Unauthorized, ex.Message);
         }
-        catch (NotFoundException ex)
+        catch (ObjectNotFoundException ex)
         {
-            logger.LogWarning(ex, "Not found: {Message}", ex.Message);
+            logger.LogWarning(ex, "Object not found: {Message}", ex.Message);
             await WriteErrorAsync(context, StatusCodes.Status404NotFound, ex.Message);
         }
         catch (InvalidOperationException ex)
