@@ -17,7 +17,6 @@ public class LogoutService(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IJwtT
             }
 
             token.RevokedAt = DateTime.UtcNow;
-            uow.RefreshTokens.Update(token);
         }, cancellationToken);
     }
 }

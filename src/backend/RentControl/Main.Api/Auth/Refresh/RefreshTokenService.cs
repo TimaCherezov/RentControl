@@ -33,7 +33,6 @@ public class RefreshTokenService(
             var newRefreshHash = jwtTokenService.HashRefreshToken(newRefresh);
 
             currentToken.RevokedAt = DateTime.UtcNow;
-            uow.RefreshTokens.Update(currentToken);
 
             var newRefreshToken = new RefreshToken
             {
