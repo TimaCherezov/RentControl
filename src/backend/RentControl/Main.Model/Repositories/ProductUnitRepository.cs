@@ -25,6 +25,4 @@ public class ProductUnitRepository(MainDbContext dbContext) : IProductUnitReposi
             .ProductUnits.Where(pu => pu.Id == id)
             .ForUpdate()
             .FirstOrDefaultAsync(cancellationToken);
-
-    public void Update(ProductUnit productUnit) => dbContext.ProductUnits.Update(productUnit);
 }

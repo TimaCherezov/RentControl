@@ -21,7 +21,4 @@ public class UserRepository(MainDbContext dbContext) : IUserRepository
 
     public void Add(User user)
         => dbContext.Users.Add(user);
-
-    public void Update(User user)
-        => dbContext.Users.Update(user);
 }

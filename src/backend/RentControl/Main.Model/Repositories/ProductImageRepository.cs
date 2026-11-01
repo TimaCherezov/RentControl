@@ -30,6 +30,4 @@ public class ProductImageRepository(MainDbContext dbContext) : IProductImageRepo
             pi => pi.ProductId == productId && pi.IsMain,
             cancellationToken
         );
-
-    public void Update(ProductImage productImage) => dbContext.ProductImages.Update(productImage);
 }

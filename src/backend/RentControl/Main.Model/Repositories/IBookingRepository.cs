@@ -16,6 +16,5 @@ public interface IBookingRepository
         BookingStatusEnum? status = null,
         CancellationToken cancellationToken = default
     );
-    void Update(Booking booking);
     void Add(Booking booking);
 }

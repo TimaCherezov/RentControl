@@ -10,8 +10,6 @@ public class ProductRepository(MainDbContext dbContext) : IProductRepository
 
     public void Add(Product product) => dbContext.Products.Add(product);
 
-    public void Update(Product product) => dbContext.Products.Update(product);
-
     public async Task<PageList<Product>> GetPageAsync(
         int pageNumber,
         int pageSize,

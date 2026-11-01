@@ -16,9 +16,6 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
             .ToListAsync(cancellationToken);
     }
 
-    public void Update(Booking booking)
-        => dbContext.Bookings.Update(booking);
-
     public async Task<PageList<Booking>> GetPageAsync(
         int pageNumber,
         int pageSize,
