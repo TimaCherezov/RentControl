@@ -8,7 +8,11 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
 {
     public void Configure(EntityTypeBuilder<Booking> builder)
     {
-        builder.Property(b => b.StatusChangedAt).HasDefaultValueSql("timezone('utc', now())");
+        builder.Property(b => b.StatusChangedAt).HasDefaultValueSql("now()");
+        builder.Property(b => b.BookingStatus).HasConversion<string>();
+
+        builder.HasIndex(b => b.UserId);
+        builder.HasIndex(b => b.StartAt);
 
         builder
             .HasOne(b => b.ProductUnit)
@@ -19,11 +23,6 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
             .HasOne(b => b.Location)
             .WithMany()
             .HasForeignKey(b => b.LocationId)
-            .OnDelete(DeleteBehavior.Restrict);
-        builder
-            .HasOne(b => b.BookingStatus)
-            .WithMany()
-            .HasForeignKey(b => b.BookingStatusId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(b => b.User).WithMany().HasForeignKey(b => b.UserId);
     }

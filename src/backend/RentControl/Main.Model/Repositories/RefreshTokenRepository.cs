@@ -10,7 +10,4 @@ public class RefreshTokenRepository(MainDbContext dbContext) : IRefreshTokenRepo
 
     public void Add(RefreshToken refreshToken)
         => dbContext.RefreshTokens.Add(refreshToken);
-
-    public void Update(RefreshToken refreshToken)
-        => dbContext.RefreshTokens.Update(refreshToken);
 }
