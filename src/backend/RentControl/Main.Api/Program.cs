@@ -1,14 +1,14 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
+using Main.Api;
 using Main.Api.Auth;
-using MassTransit;
-using Main.Api.Auth.Register;
 using Main.Api.Features.Products.Create;
 using Main.Api.Features.Products.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
 using Main.Model;
-using Microsoft.EntityFrameworkCore;
+using MassTransit;
+using Main.Api.Auth.Register;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +18,7 @@ builder.AddServiceDefaults();
 builder.AddMainDatabase("maindb");
 
 builder.Services.AddAuth(builder.Configuration);
+builder.Services.AddMapster();
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();

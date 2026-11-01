@@ -2,6 +2,7 @@ using Main.Api.Exceptions;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using MassTransit;
+using Mapster;
 using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Features.Products.Update;
@@ -18,19 +19,7 @@ public class UpdateProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactor
 			if (product is null)
 				throw new ObjectNotFoundException($"Product with ID:'{command.Id}' not found");
 
-			AddChangesToModel(product, command);
+			command.Adapt(product);
 		}, context.CancellationToken);
-	}
-
-	private static void AddChangesToModel(Product model, UpdateProductCommand command)
-	{
-		model.Name = command.Name;
-		model.MarketValue = command.MarketValue;
-		model.DepositOverride = command.DepositOverride;
-		model.DailyRate = command.DailyRate;
-		model.HourlyRate = command.HourlyRate;
-		model.WeeklyRate = command.WeeklyRate;
-		model.MonthlyRate = command.MonthlyRate;
-		model.Description = command.Description;
 	}
 }

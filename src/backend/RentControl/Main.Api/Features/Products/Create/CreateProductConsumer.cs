@@ -1,6 +1,7 @@
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using MassTransit;
+using Mapster;
 using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Features.Products.Create;
@@ -13,33 +14,14 @@ public class CreateProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactor
 
 		var product = await uowFactory.ExecuteAsync(uow =>
 		{
-			var productModel = new Product
-			{
-				Name = command.Name,
-				MarketValue = command.MarketValue,
-				DepositOverride = command.DepositOverride,
-				DailyRate = command.DailyRate,
-				HourlyRate = command.HourlyRate,
-				WeeklyRate = command.WeeklyRate,
-				MonthlyRate = command.MonthlyRate,
-				Description = command.Description
-			};
+			var productModel = command.Adapt<Product>();
 
 			uow.Products.Add(productModel);
 
 			return Task.FromResult(productModel);
 		}, context.CancellationToken);
 
-		var response = new ProductDto(
-			product.Id,
-			product.Name,
-			product.MarketValue,
-			product.DepositOverride,
-			product.DailyRate,
-			product.HourlyRate,
-			product.WeeklyRate,
-			product.MonthlyRate,
-			product.Description);
+		var response = product.Adapt<ProductDto>();
 
 		await context.RespondAsync(response);
 	}

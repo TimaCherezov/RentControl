@@ -1,5 +1,6 @@
 using Main.Api.Features.Products.Create;
 using Main.Api.Features.Products.Update;
+using Mapster;
 using MassTransit.Mediator;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,15 +15,7 @@ public class ProductsController(IMediator mediator) : ControllerBase
         [FromBody] CreateProductRequest request,
         CancellationToken ct)
     {
-        var command = new CreateProductCommand(
-            request.Name!,
-            request.MarketValue!.Value,
-            request.DepositOverride,
-            request.DailyRate!.Value,
-            request.HourlyRate!.Value,
-            request.WeeklyRate,
-            request.MonthlyRate,
-            request.Description);
+        var command = request.Adapt<CreateProductCommand>();
 
         var client = mediator.CreateRequestClient<CreateProductCommand>();
         var response = await client.GetResponse<ProductDto>(command, cancellationToken: ct);
@@ -36,20 +29,11 @@ public class ProductsController(IMediator mediator) : ControllerBase
         [FromBody] UpdateProductRequest request,
         CancellationToken ct)
     {
-        var command = new UpdateProductCommand(
-            id,
-            request.Name!,
-            request.MarketValue!.Value,
-            request.DepositOverride,
-            request.DailyRate!.Value,
-            request.HourlyRate!.Value,
-            request.WeeklyRate,
-            request.MonthlyRate,
-            request.Description);
+        var command = request.Adapt<UpdateProductCommand>() with { Id = id };
 
         await mediator.Send(command, ct);
 
         return NoContent();
     }
-    
+
 }
