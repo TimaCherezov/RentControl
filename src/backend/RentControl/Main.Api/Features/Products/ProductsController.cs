@@ -1,5 +1,4 @@
 using Main.Api.Features.Products.Create;
-using Main.Api.Features.Products.Patch;
 using Main.Api.Features.Products.Update;
 using MassTransit.Mediator;
 using Microsoft.AspNetCore.Mvc;
@@ -52,35 +51,5 @@ public class ProductsController(IMediator mediator) : ControllerBase
 
         return NoContent();
     }
-
-    /// <summary>
-    /// PATCH обновляет только поля, переданные в запросе.
-    /// В текущей реализации отсутствующее поле и поле со значением null не различаются:
-    /// оба интерпретируются как отсутствие изменения.
-    /// Поэтому сбросить nullable-свойство (например, DepositOverride, WeeklyRate,
-    /// MonthlyRate или Description) в null через PATCH нельзя.
-    /// Для этого надо делать отдельный механизм, позволяющий отличать непереданное поле
-    /// от явно переданного null.
-    /// </summary>
-    [HttpPatch("{id:guid}")]
-    public async Task<IActionResult> Patch(
-        Guid id,
-        [FromBody] PatchProductRequest request,
-        CancellationToken ct)
-    {
-        var command = new PatchProductCommand(
-            id,
-            request.Name,
-            request.MarketValue,
-            request.DepositOverride,
-            request.DailyRate,
-            request.HourlyRate,
-            request.WeeklyRate,
-            request.MonthlyRate,
-            request.Description);
-
-        await mediator.Send(command, ct);
-
-        return NoContent();
-    }
+    
 }

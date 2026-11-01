@@ -7,20 +7,13 @@ public class CreateProductCommandValidator : AbstractValidator<CreateProductComm
 {
 	public CreateProductCommandValidator()
 	{
-		this.AddRequiredStringRules(x => x.Name, "Name", 50);
-
-		this.AddRequiredDecimalRules(x => x.MarketValue, "MarketValue");
-
-		this.AddOptionalDecimalRules(x => x.DepositOverride, "DepositOverride");
-
-		this.AddRequiredDecimalRules(x => x.DailyRate, "DailyRate");
-
-		this.AddRequiredDecimalRules(x => x.HourlyRate, "HourlyRate");
-
-		this.AddOptionalDecimalRules(x => x.WeeklyRate, "WeeklyRate");
-
-		this.AddOptionalDecimalRules(x => x.MonthlyRate, "MonthlyRate");
-
-		this.AddOptionalStringRules(x => x.Description, "Description", 1000);
+		RuleFor(x => x.Name).RequiredString(50);
+		RuleFor(x => x.MarketValue).NonNegative();
+		RuleFor(x => x.DepositOverride).OptionalNonNegative();
+		RuleFor(x => x.DailyRate).NonNegative();
+		RuleFor(x => x.HourlyRate).NonNegative();
+		RuleFor(x => x.WeeklyRate).OptionalNonNegative();
+		RuleFor(x => x.MonthlyRate).OptionalNonNegative();
+		RuleFor(x => x.Description).OptionalString(1000);
 	}
 }

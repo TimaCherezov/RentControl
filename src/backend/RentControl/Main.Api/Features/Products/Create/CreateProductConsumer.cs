@@ -7,40 +7,40 @@ namespace Main.Api.Features.Products.Create;
 
 public class CreateProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory) : IConsumer<CreateProductCommand>
 {
-    public async Task Consume(ConsumeContext<CreateProductCommand> context)
-    {
-        var command = context.Message;
+	public async Task Consume(ConsumeContext<CreateProductCommand> context)
+	{
+		var command = context.Message;
 
-        var product = await uowFactory.ExecuteAsync(async uow =>
-        {
-            var productModel = new Product
-            {
-                Name = command.Name,
-                MarketValue = command.MarketValue,
-                DepositOverride = command.DepositOverride,
-                DailyRate = command.DailyRate,
-                HourlyRate = command.HourlyRate,
-                WeeklyRate = command.WeeklyRate,
-                MonthlyRate = command.MonthlyRate,
-                Description = command.Description
-            };
+		var product = await uowFactory.ExecuteAsync(uow =>
+		{
+			var productModel = new Product
+			{
+				Name = command.Name,
+				MarketValue = command.MarketValue,
+				DepositOverride = command.DepositOverride,
+				DailyRate = command.DailyRate,
+				HourlyRate = command.HourlyRate,
+				WeeklyRate = command.WeeklyRate,
+				MonthlyRate = command.MonthlyRate,
+				Description = command.Description
+			};
 
-            await uow.Products.AddAsync(productModel);
+			uow.Products.Add(productModel);
 
-            return productModel;
-        }, context.CancellationToken);
+			return Task.FromResult(productModel);
+		}, context.CancellationToken);
 
-        var response = new ProductDto(
-            product.Id,
-            product.Name,
-            product.MarketValue,
-            product.DepositOverride,
-            product.DailyRate,
-            product.HourlyRate,
-            product.WeeklyRate,
-            product.MonthlyRate,
-            product.Description);
+		var response = new ProductDto(
+			product.Id,
+			product.Name,
+			product.MarketValue,
+			product.DepositOverride,
+			product.DailyRate,
+			product.HourlyRate,
+			product.WeeklyRate,
+			product.MonthlyRate,
+			product.Description);
 
-        await context.RespondAsync(response);
-    }
+		await context.RespondAsync(response);
+	}
 }

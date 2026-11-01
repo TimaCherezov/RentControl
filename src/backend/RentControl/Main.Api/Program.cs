@@ -4,7 +4,6 @@ using Main.Api.Auth;
 using MassTransit;
 using Main.Api.Auth.Register;
 using Main.Api.Features.Products.Create;
-using Main.Api.Features.Products.Patch;
 using Main.Api.Features.Products.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
@@ -30,7 +29,6 @@ builder.Services.AddMediator(cfg =>
 {
     // cfg.AddConsumers(typeof(Program).Assembly);
     cfg.AddConsumer<CreateProductConsumer>();
-    cfg.AddConsumer<PatchProductConsumer>();
     cfg.AddConsumer<UpdateProductConsumer>();
     
     cfg.ConfigureMediator((context, mediatorCfg) =>
