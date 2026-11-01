@@ -1,7 +1,9 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Main.Api.Auth;
+using MassTransit;
 using Main.Api.Auth.Register;
+using Main.Api.Features.Validation;
 using Main.Api.Middleware;
 using Main.Model;
 using Scalar.AspNetCore;
@@ -20,7 +22,28 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 
+builder.Services.AddMediator(cfg =>
+{
+    cfg.AddConsumers(typeof(Program).Assembly);
+    
+    cfg.ConfigureMediator((context, mediatorCfg) =>
+    {
+        mediatorCfg.UseSendFilter(typeof(CommandValidationFilter<>), context);
+    });
+});
+
 var app = builder.Build();
+
+// Раскомментируйте, если миграции не подтягиваются автоматически при запуске
+// #region localMigrations
+// await using (var scope = app.Services.CreateAsyncScope())
+// {
+//     var dbContext = scope.ServiceProvider
+//         .GetRequiredService<MainDbContext>();
+//
+//     await dbContext.Database.MigrateAsync();
+// }
+// #endregion
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

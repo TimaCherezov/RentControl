@@ -5,10 +5,8 @@ namespace Main.Model.Repositories;
 
 public class ProductRepository(MainDbContext dbContext) : IProductRepository
 {
-    public Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-        dbContext.Products.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
-
-    public void Add(Product product) => dbContext.Products.Add(product);
+    public Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        => dbContext.Products.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
     public async Task<PageList<Product>> GetPageAsync(
         int pageNumber,
@@ -32,4 +30,7 @@ public class ProductRepository(MainDbContext dbContext) : IProductRepository
         var totalCount = await dbContext.Products.CountAsync(cancellationToken);
         return new PageList<Product>(products, totalCount, pageNumber, pageSize);
     }
+    
+    public void Add(Product product, CancellationToken cancellationToken = default)
+        => dbContext.Products.Add(product);
 }

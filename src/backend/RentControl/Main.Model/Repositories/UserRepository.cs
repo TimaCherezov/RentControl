@@ -19,6 +19,11 @@ public class UserRepository(MainDbContext dbContext) : IUserRepository
             .Where(u => dbContext.Bookings.Any(b => b.UserId == u.Id))
             .ToListAsync(cancellationToken);
 
+    public Task<List<User>> GetTenantsAsync(CancellationToken cancellationToken = default)
+        => dbContext.Users
+            .Where(u => dbContext.Bookings.Any(b => b.UserId == u.Id))
+            .ToListAsync(cancellationToken);
+
     public void Add(User user)
         => dbContext.Users.Add(user);
 }
