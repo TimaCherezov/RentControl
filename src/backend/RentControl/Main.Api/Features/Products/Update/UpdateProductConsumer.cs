@@ -17,7 +17,7 @@ public class UpdateProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactor
 		{
 			var product = await uow.Products.GetByIdAsync(command.Id, context.CancellationToken);
 			if (product is null)
-				throw new ObjectNotFoundException($"Product with ID:'{command.Id}' not found");
+				throw new ObjectNotFoundException($"Product with ID: {command.Id} not found.");
 
 			command.Adapt(product);
 		}, context.CancellationToken);
