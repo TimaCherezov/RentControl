@@ -30,7 +30,7 @@ public class ProductRepository(MainDbContext dbContext) : IProductRepository
         var totalCount = await dbContext.Products.CountAsync(cancellationToken);
         return new PageList<Product>(products, totalCount, pageNumber, pageSize);
     }
-    
-    public void Add(Product product, CancellationToken cancellationToken = default)
+
+    public void Add(Product product)
         => dbContext.Products.Add(product);
 }
