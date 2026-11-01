@@ -7,8 +7,7 @@ public class UpdateLocationRequestValidator : AbstractValidator<UpdateLocationRe
 {
 	public UpdateLocationRequestValidator()
 	{
-		this.AddRequiredStringRules(x => x.Name, "Name", 50);
-
-		this.AddRequiredStringRules(x => x.Address, "Address", 255);
+		RuleFor(x => x.Name).RequiredString(50);
+		RuleFor(x => x.Address).RequiredString(255);
 	}
 }

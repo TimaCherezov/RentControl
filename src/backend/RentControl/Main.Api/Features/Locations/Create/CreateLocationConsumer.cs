@@ -1,31 +1,28 @@
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using MassTransit;
+using Mapster;
 using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Features.Locations.Create;
 
 public class CreateLocationConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory) : IConsumer<CreateLocationCommand>
 {
-    public async Task Consume(ConsumeContext<CreateLocationCommand> context)
-    {
-        var command = context.Message;
+	public async Task Consume(ConsumeContext<CreateLocationCommand> context)
+	{
+		var command = context.Message;
 
-        var location = await uowFactory.ExecuteAsync(async uow =>
-        {
-            var locationModel = new Location
-            {
-                Name = command.Name,
-                Address = command.Address
-            };
+		var location = await uowFactory.ExecuteAsync(uow =>
+		{
+			var locationModel = command.Adapt<Location>();
 
-            await uow.Locations.AddAsync(locationModel);
+			uow.Locations.Add(locationModel);
 
-            return locationModel;
-        }, context.CancellationToken);
+			return Task.FromResult(locationModel);
+		}, context.CancellationToken);
 
-        var response = new LocationDto(location.Id, location.Name, location.Address);
+		var response = location.Adapt<LocationDto>();
 
-        await context.RespondAsync(response);
-    }
+		await context.RespondAsync(response);
+	}
 }

@@ -7,13 +7,10 @@ using Main.Api.Features.Products.Update;
 using MassTransit;
 using Main.Api.Auth.Register;
 using Main.Api.Features.Locations.Create;
-using Main.Api.Features.Locations.Patch;
 using Main.Api.Features.Locations.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
 using Main.Model;
-using MassTransit;
-using Main.Api.Auth.Register;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,7 +35,6 @@ builder.Services.AddMediator(cfg =>
     cfg.AddConsumer<UpdateProductConsumer>();
     
     cfg.AddConsumer<CreateLocationConsumer>();
-    cfg.AddConsumer<PatchLocationConsumer>();
     cfg.AddConsumer<UpdateLocationConsumer>();
     
     cfg.ConfigureMediator((context, mediatorCfg) =>

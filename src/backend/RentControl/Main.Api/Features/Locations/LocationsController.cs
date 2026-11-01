@@ -1,7 +1,6 @@
 using Main.Api.Features.Locations.Create;
-using Main.Api.Features.Locations.Patch;
 using Main.Api.Features.Locations.Update;
-using MassTransit;
+using Mapster;
 using MassTransit.Mediator;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,7 +15,7 @@ public class LocationsController(IMediator mediator) : ControllerBase
 		[FromBody] CreateLocationRequest request,
 		CancellationToken ct)
 	{
-		var command = new CreateLocationCommand(request.Name!, request.Address!);
+		var command = request.Adapt<CreateLocationCommand>();
 
 		var client = mediator.CreateRequestClient<CreateLocationCommand>();
 		var response = await client.GetResponse<LocationDto>(command, cancellationToken: ct);
@@ -30,21 +29,8 @@ public class LocationsController(IMediator mediator) : ControllerBase
 		[FromBody] UpdateLocationRequest request,
 		CancellationToken ct)
 	{
-		var command = new UpdateLocationCommand(id, request.Name!, request.Address!);
+		var command = request.Adapt<UpdateLocationCommand>() with { Id = id };
 
-		await mediator.Send(command, ct);
-
-		return NoContent();
-	}
-
-	[HttpPatch("{id:guid}")]
-	public async Task<IActionResult> Patch(
-		Guid id,
-		[FromBody] PatchLocationRequest request,
-		CancellationToken ct)
-	{
-		var command = new PatchLocationCommand(id, request.Name, request.Address);
-		
 		await mediator.Send(command, ct);
 
 		return NoContent();
