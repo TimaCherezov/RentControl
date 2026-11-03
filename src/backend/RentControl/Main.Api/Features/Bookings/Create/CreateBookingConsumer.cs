@@ -6,7 +6,7 @@ using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Features.Bookings.Create;
 
-public class CreateBookingConusmer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
+public class CreateBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
     : IConsumer<CreateBookingCommand>
 {
     public async Task Consume(ConsumeContext<CreateBookingCommand> context)

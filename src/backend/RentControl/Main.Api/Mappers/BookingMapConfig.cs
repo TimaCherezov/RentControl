@@ -55,7 +55,7 @@ public static class BookingMapConfig
                 src.DepositAmount,
                 src.TotalRentalCost,
                 src.BookingStatus,
-                src.StatusChangedA
+                src.StatusChangedAt
             ));
 
         config.NewConfig<CreateBookingCommand, Booking>();

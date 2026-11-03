@@ -1,6 +1,5 @@
 using FluentValidation;
 using Main.Api.Features.Validation;
-using Main.Model.Models;
 
 namespace Main.Api.Features.Bookings.Update;
 
@@ -17,7 +16,7 @@ public class UpdateBookingRequestValidator : AbstractValidator<UpdateBookingRequ
             .NotInPast()
             .LessThan(x => x.EndAt)
             .WithMessage("{PropertyName} must be before EndAt");
-        RuleFor(x => x.BookingStatus).EqualToExpected(BookingStatusEnum.Pending);
+        RuleFor(x => x.BookingStatus).IsInEnum();
         RuleFor(x => x.TotalRentalCost).OptionalNonNegative();
         RuleFor(x => x.ActualReturnAt).OptionalNotInPast();
     }

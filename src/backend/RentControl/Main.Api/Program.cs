@@ -4,6 +4,10 @@ using Main.Api;
 using Main.Api.Auth;
 using Main.Api.Features.Products.Create;
 using Main.Api.Features.Products.Update;
+using Main.Api.Features.Bookings.Get;
+using Main.Api.Features.Bookings.GetPage;
+using Main.Api.Features.Bookings.Create;
+using Main.Api.Features.Bookings.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
 using Main.Model;
@@ -31,6 +35,10 @@ builder.Services.AddMediator(cfg =>
     // cfg.AddConsumers(typeof(Program).Assembly);
     cfg.AddConsumer<CreateProductConsumer>();
     cfg.AddConsumer<UpdateProductConsumer>();
+    cfg.AddConsumer<CreateBookingConsumer>();
+    cfg.AddConsumer<UpdateBookingConsumer>();
+    cfg.AddConsumer<GetBookingConsumer>();
+    cfg.AddConsumer<GetPageBookingConsumer>();
     
     cfg.ConfigureMediator((context, mediatorCfg) =>
     {

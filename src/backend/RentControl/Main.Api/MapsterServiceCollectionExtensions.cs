@@ -9,6 +9,7 @@ public static class MapsterServiceCollectionExtensions
     public static IServiceCollection AddMapster(this IServiceCollection services)
     {
         ProductMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
+        BookingMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
 
         return services;
     }

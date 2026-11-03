@@ -94,7 +94,7 @@ public static class ValidationRules
         public IRuleBuilderOptions<T, DateTimeOffset?> OptionalNotInPast()
         {
             return ruleBuilder
-                .GreaterThanOrEqualTo(DateTimeOffset.UtcNow)
+                .Must(x => !x.HasValue || x.Value >= DateTimeOffset.UtcNow)
                 .WithMessage("{PropertyName} cannot be in the past");
         }
     }

@@ -3,9 +3,9 @@ using Main.Api.Features.Validation;
 
 namespace Main.Api.Features.Bookings.Get;
 
-public class GetBookingValidator : AbstractValidator<GetBookingCommand>
+public class GetBookingCommandValidator : AbstractValidator<GetBookingCommand>
 {
-    public GetBookingValidator()
+    public GetBookingCommandValidator()
     {
         RuleFor(x => x.Id).Id();
     }

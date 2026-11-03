@@ -13,5 +13,5 @@ public sealed class UpdateBookingRequest
     public decimal DepositAmount { get; set; }
     public decimal? TotalRentalCost { get; set; }
     public BookingStatusEnum BookingStatus { get; set; }
-    public DateTimeOffset StatusChangedA { get; set; }
+    public DateTimeOffset StatusChangedAt { get; set; }
 }
