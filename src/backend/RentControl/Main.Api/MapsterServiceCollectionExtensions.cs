@@ -1,6 +1,5 @@
 using Main.Api.Mappers;
 using Mapster;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Main.Api;
 
@@ -10,7 +9,8 @@ public static class MapsterServiceCollectionExtensions
     {
         ProductMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
         BookingMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
+		    LocationMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
 
-        return services;
-    }
+		    return services;
+	  }
 }
