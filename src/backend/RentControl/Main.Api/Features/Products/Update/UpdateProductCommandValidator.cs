@@ -7,7 +7,7 @@ public class UpdateProductCommandValidator : AbstractValidator<UpdateProductComm
 {
 	public UpdateProductCommandValidator()
 	{
-		RuleFor(x => x.Id).RequiredId();
+		RuleFor(x => x.Id).Id();
 		RuleFor(x => x.Name).RequiredString(50);
 		RuleFor(x => x.MarketValue).NonNegative();
 		RuleFor(x => x.DepositOverride).OptionalNonNegative();
