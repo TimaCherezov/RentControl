@@ -4,6 +4,10 @@ using Main.Api;
 using Main.Api.Auth;
 using Main.Api.Features.Products.Create;
 using Main.Api.Features.Products.Update;
+using Main.Api.Features.Bookings.Get;
+using Main.Api.Features.Bookings.GetPage;
+using Main.Api.Features.Bookings.Create;
+using Main.Api.Features.Bookings.Update;
 using MassTransit;
 using Main.Api.Auth.Register;
 using Main.Api.Features.Locations.Create;
@@ -35,7 +39,12 @@ builder.Services.AddMediator(cfg =>
 {
     cfg.AddConsumer<CreateProductConsumer>();
     cfg.AddConsumer<UpdateProductConsumer>();
-   
+
+    cfg.AddConsumer<CreateBookingConsumer>();
+    cfg.AddConsumer<UpdateBookingConsumer>();
+    cfg.AddConsumer<GetBookingConsumer>();
+    cfg.AddConsumer<GetPageBookingConsumer>();
+    
     cfg.AddConsumer<CreateLocationConsumer>();
     cfg.AddConsumer<UpdateLocationConsumer>();
     cfg.AddConsumer<GetLocationConsumer>();

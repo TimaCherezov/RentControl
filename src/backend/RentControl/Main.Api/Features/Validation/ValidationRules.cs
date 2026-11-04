@@ -67,7 +67,17 @@ public static class ValidationRules
         {
             return ruleBuilder
                 .NotEmpty()
-                .WithMessage("{PropertyName} is required");
+                .WithMessage("{PropertyName} is not empty");
+        }
+    }
+
+    extension<T>(IRuleBuilder<T, Guid?> ruleBuilder)
+    {
+        public IRuleBuilderOptions<T, Guid?> OptionalId()
+        {
+            return ruleBuilder
+                .Must(x => !x.HasValue || x.Value != Guid.Empty)
+                .WithMessage("{PropertyName} is not empty");
         }
     }
 
@@ -88,16 +98,6 @@ public static class ValidationRules
             return ruleBuilder
                 .Must(x => !x.HasValue || x.Value >= DateTimeOffset.UtcNow)
                 .WithMessage("{PropertyName} cannot be in the past");
-        }
-    }
-
-    extension<T>(IRuleBuilder<T, DateOnly> ruleBuilder)
-    {
-        public IRuleBuilderOptions<T, DateOnly> NotInFuture()
-        {
-            return ruleBuilder
-                .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow))
-                .WithMessage("{PropertyName} cannot be in the future");
         }
     }
 
@@ -128,6 +128,16 @@ public static class ValidationRules
             return ruleBuilder
                 .GreaterThanOrEqualTo(0)
                 .WithMessage("{PropertyName} must be non-negative");
+        }
+    }
+
+    extension<T>(IRuleBuilder<T, DateOnly> ruleBuilder)
+    {
+        public IRuleBuilderOptions<T, DateOnly> NotInFuture()
+        {
+            return ruleBuilder
+                .LessThanOrEqualTo(DateOnly.FromDateTime(DateTime.UtcNow))
+                .WithMessage("{PropertyName} cannot be in the future");
         }
     }
 }
