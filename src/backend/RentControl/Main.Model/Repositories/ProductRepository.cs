@@ -33,4 +33,7 @@ public class ProductRepository(MainDbContext dbContext) : IProductRepository
 
     public void Add(Product product)
         => dbContext.Products.Add(product);
+
+    public void Remove(Product product)
+        => dbContext.Products.Remove(product);
 }
