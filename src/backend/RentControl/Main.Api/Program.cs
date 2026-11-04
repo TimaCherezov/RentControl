@@ -11,7 +11,10 @@ using Main.Api.Features.Bookings.Update;
 using MassTransit;
 using Main.Api.Auth.Register;
 using Main.Api.Features.Locations.Create;
+using Main.Api.Features.Locations.Delete;
+using Main.Api.Features.Locations.Get;
 using Main.Api.Features.Locations.Update;
+
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
 using Main.Model;
@@ -34,9 +37,9 @@ builder.Services.AddControllers();
 
 builder.Services.AddMediator(cfg =>
 {
-    // cfg.AddConsumers(typeof(Program).Assembly);
     cfg.AddConsumer<CreateProductConsumer>();
     cfg.AddConsumer<UpdateProductConsumer>();
+
     cfg.AddConsumer<CreateBookingConsumer>();
     cfg.AddConsumer<UpdateBookingConsumer>();
     cfg.AddConsumer<GetBookingConsumer>();
@@ -44,6 +47,8 @@ builder.Services.AddMediator(cfg =>
     
     cfg.AddConsumer<CreateLocationConsumer>();
     cfg.AddConsumer<UpdateLocationConsumer>();
+    cfg.AddConsumer<GetLocationConsumer>();
+    cfg.AddConsumer<DeleteLocationConsumer>();
     
     cfg.ConfigureMediator((context, mediatorCfg) =>
     {
