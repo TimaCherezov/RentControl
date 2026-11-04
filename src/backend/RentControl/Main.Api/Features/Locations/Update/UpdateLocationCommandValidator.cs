@@ -7,7 +7,7 @@ public class UpdateLocationCommandValidator : AbstractValidator<UpdateLocationCo
 {
 	public UpdateLocationCommandValidator()
 	{
-		RuleFor(x => x.Id).RequiredId();
+		RuleFor(x => x.Id).Id();
 		RuleFor(x => x.Name).RequiredString(50);
 		RuleFor(x => x.Address).RequiredString(255);
 	}
