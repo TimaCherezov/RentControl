@@ -1,5 +1,4 @@
 using Main.Api.Exceptions;
-using Main.Api.Features.Bookings.Issue;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using MassTransit;
