@@ -9,13 +9,6 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
         => dbContext.Bookings
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
-    public async Task<List<Booking>> GetByStatusAsync(BookingStatusEnum status, CancellationToken cancellationToken = default)
-    {
-        return await dbContext.Bookings
-            .Where(b => b.BookingStatus == status)
-            .ToListAsync(cancellationToken);
-    }
-
     public async Task<PageList<Booking>> GetPageAsync(
         int pageNumber,
         int pageSize,

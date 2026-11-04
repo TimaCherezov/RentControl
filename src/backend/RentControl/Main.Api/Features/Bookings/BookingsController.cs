@@ -1,6 +1,8 @@
 using Main.Api.Features.Bookings.Create;
 using Main.Api.Features.Bookings.Get;
 using Main.Api.Features.Bookings.GetPage;
+using Main.Api.Features.Bookings.Issue;
+using Main.Api.Features.Bookings.Return;
 using Main.Api.Features.Bookings.Update;
 using Mapster;
 using MassTransit.Mediator;
@@ -13,6 +15,22 @@ namespace Main.Api.Features.Bookings;
 [Route("api/[controller]")]
 public class BookingsController(IMediator mediator) : ControllerBase
 {
+    [HttpPost("{id:guid}/issuance")]
+    public async Task<IActionResult> MarkAsIssuedAsync(Guid id, CancellationToken ct)
+    {
+        var command = new IssueBookingCommand(id);
+        await mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/return")]
+    public async Task<IActionResult> MarkAsReturnedAsync(Guid id, CancellationToken ct)
+    {
+        var command = new ReturnBookingCommand(id);
+        await mediator.Send(command, ct);
+        return NoContent();
+    }
+
     [HttpPost]
     public async Task<ActionResult<BookingDto>> Create(
         [FromBody] CreateBookingRequest request,

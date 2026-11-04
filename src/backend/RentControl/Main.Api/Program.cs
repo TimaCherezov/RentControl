@@ -10,6 +10,8 @@ using Main.Api.Features.Bookings.Create;
 using Main.Api.Features.Bookings.Update;
 using MassTransit;
 using Main.Api.Auth.Register;
+using Main.Api.Features.Bookings.Issue;
+using Main.Api.Features.Bookings.Return;
 using Main.Api.Features.Locations.Create;
 using Main.Api.Features.Locations.Delete;
 using Main.Api.Features.Locations.Get;
@@ -44,12 +46,14 @@ builder.Services.AddMediator(cfg =>
     cfg.AddConsumer<UpdateBookingConsumer>();
     cfg.AddConsumer<GetBookingConsumer>();
     cfg.AddConsumer<GetPageBookingConsumer>();
+    cfg.AddConsumer<IssueBookingConsumer>();
+    cfg.AddConsumer<ReturnBookingConsumer>();
     
     cfg.AddConsumer<CreateLocationConsumer>();
     cfg.AddConsumer<UpdateLocationConsumer>();
     cfg.AddConsumer<GetLocationConsumer>();
     cfg.AddConsumer<DeleteLocationConsumer>();
-    
+       
     cfg.ConfigureMediator((context, mediatorCfg) =>
     {
         mediatorCfg.UseSendFilter(typeof(CommandValidationFilter<>), context);
