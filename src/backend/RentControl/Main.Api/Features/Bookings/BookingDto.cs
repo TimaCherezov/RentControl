@@ -1,14 +1,15 @@
-namespace Main.Api.Features.Bookings;
+using Main.Model.Models;
 
 public record BookingDto(
-	Guid Id,
-	Guid ProductUnitId,
-	DateTimeOffset StartAt,
-	DateTimeOffset EndAt,
-	Guid LocationId,
-	DateTimeOffset? ActualReturnAt,
-	decimal? TotalRentalCost,
-	decimal DepositAmount,
-	string BookingStatus,
-	DateTimeOffset StatusChangedAt,
-	Guid UserId);
+    Guid Id,
+    Guid UserId,
+    Guid ProductUnitId,
+    Guid LocationId,
+    DateTimeOffset StartAt,
+    DateTimeOffset EndAt,
+    DateTimeOffset? ActualReturnAt,
+    decimal DepositAmount,
+    decimal? TotalRentalCost,
+    BookingStatusEnum BookingStatus,
+    DateTimeOffset StatusChangedAt
+);

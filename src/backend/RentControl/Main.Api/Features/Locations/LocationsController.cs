@@ -1,4 +1,6 @@
 using Main.Api.Features.Locations.Create;
+using Main.Api.Features.Locations.Delete;
+using Main.Api.Features.Locations.Get;
 using Main.Api.Features.Locations.Update;
 using Mapster;
 using MassTransit.Mediator;
@@ -23,6 +25,17 @@ public class LocationsController(IMediator mediator) : ControllerBase
 		return Created($"/api/locations/{response.Message.Id}", response.Message);
 	}
 
+	[HttpGet("{id:guid}")]
+	public async Task<ActionResult<LocationDto>> Get(Guid id, CancellationToken ct)
+	{
+		var command = new GetLocationCommand(id);
+
+		var client = mediator.CreateRequestClient<GetLocationCommand>();
+		var response = await client.GetResponse<LocationDto>(command, cancellationToken: ct);
+
+		return Ok(response.Message);
+	}
+
 	[HttpPut("{id:guid}")]
 	public async Task<IActionResult> Update(
 		Guid id,
@@ -33,6 +46,14 @@ public class LocationsController(IMediator mediator) : ControllerBase
 
 		await mediator.Send(command, ct);
 
+		return NoContent();
+	}
+
+	[HttpDelete("{id:guid}")]
+	public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+	{
+		var command = new DeleteLocationCommand(id);
+		await mediator.Send(command, ct);
 		return NoContent();
 	}
 }
