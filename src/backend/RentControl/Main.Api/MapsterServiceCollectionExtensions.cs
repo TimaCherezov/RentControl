@@ -10,6 +10,7 @@ public static class MapsterServiceCollectionExtensions
         ProductMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
         BookingMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
         LocationMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
+        ProductUnitMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
 
         return services;
     }

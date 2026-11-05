@@ -1,0 +1,17 @@
+using FluentValidation;
+using Main.Api.Features.Validation;
+
+namespace Main.Api.Features.ProductUnits.Create;
+
+public class CreateProductUnitCommandValidator : AbstractValidator<CreateProductUnitCommand>
+{
+    public CreateProductUnitCommandValidator()
+    {
+        RuleFor(x => x.ProductId).Id();
+        RuleFor(x => x.LocationId).Id();
+        RuleFor(x => x.State).IsInEnum();
+        RuleFor(x => x.SerialNumber).RequiredString(255);
+        RuleFor(x => x.PurchaseDate).NotInFuture();
+        RuleFor(x => x.PurchasePrice).NonNegative();
+    }
+}

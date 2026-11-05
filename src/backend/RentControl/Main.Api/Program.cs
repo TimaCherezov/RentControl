@@ -19,7 +19,10 @@ using Main.Api.Features.Locations.Create;
 using Main.Api.Features.Locations.Delete;
 using Main.Api.Features.Locations.Get;
 using Main.Api.Features.Locations.Update;
-
+using Main.Api.Features.ProductUnits.Create;
+using Main.Api.Features.ProductUnits.Get;
+using Main.Api.Features.ProductUnits.Delete;
+using Main.Api.Features.ProductUnits.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
 using Main.Model;
@@ -59,6 +62,11 @@ builder.Services.AddMediator(cfg =>
     cfg.AddConsumer<UpdateLocationConsumer>();
     cfg.AddConsumer<GetLocationConsumer>();
     cfg.AddConsumer<DeleteLocationConsumer>();
+
+    cfg.AddConsumer<CreateProductUnitConsumer>();
+    cfg.AddConsumer<GetProductUnitConsumer>();
+    cfg.AddConsumer<UpdateProductUnitConsumer>();
+    cfg.AddConsumer<DeleteProductUnitConsumer>();
        
     cfg.ConfigureMediator((context, mediatorCfg) =>
     {

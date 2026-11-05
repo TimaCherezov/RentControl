@@ -8,16 +8,13 @@ public class ProductUnitRepository(MainDbContext dbContext) : IProductUnitReposi
 {
     public void Add(ProductUnit productUnit) => dbContext.ProductUnits.Add(productUnit);
 
-    public Task<ProductUnit?> GetByIdAsync(
-        Guid id,
-        CancellationToken cancellationToken = default
-    ) => dbContext.ProductUnits.FirstOrDefaultAsync(pu => pu.Id == id, cancellationToken);
+    public void Remove(ProductUnit productUnit) => dbContext.ProductUnits.Remove(productUnit);
 
     /// <summary>
     /// Нет проверки, что метод выполняется внутри транзакции.
     /// Использовать только внутри UOW.
     /// </summary>
-    public Task<ProductUnit?> GetByIdForUpdateAsync(
+    public Task<ProductUnit?> GetByIdAsync(
         Guid id,
         CancellationToken cancellationToken = default
     ) =>
