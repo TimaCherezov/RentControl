@@ -1,7 +1,12 @@
+using Main.Api.Features.Bookings.Cancel;
+using Main.Api.Features.Bookings.Complete;
+using Main.Api.Features.Bookings.Confirm;
 using Main.Api.Features.Bookings.Create;
 using Main.Api.Features.Bookings.Get;
 using Main.Api.Features.Bookings.GetPage;
 using Main.Api.Features.Bookings.Issue;
+using Main.Api.Features.Bookings.Overdue;
+using Main.Api.Features.Bookings.ReadyForPickup;
 using Main.Api.Features.Bookings.Return;
 using Main.Api.Features.Bookings.Update;
 using Mapster;
@@ -27,6 +32,46 @@ public class BookingsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> MarkAsReturnedAsync(Guid id, CancellationToken ct)
     {
         var command = new ReturnBookingCommand(id);
+        await mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/confirm")]
+    public async Task<IActionResult> MarkAsConfirmedAsync(Guid id, CancellationToken ct)
+    {
+        var command = new ConfirmBookingCommand(id);
+        await mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/cancel")]
+    public async Task<IActionResult> MarkAsCancelledAsync(Guid id, CancellationToken ct)
+    {
+        var command = new CancelBookingCommand(id);
+        await mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/ready-for-pickup")]
+    public async Task<IActionResult> MarkAsReadyForPickupAsync(Guid id, CancellationToken ct)
+    {
+        var command = new ReadyForPickupBookingCommand(id);
+        await mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/overdue")]
+    public async Task<IActionResult> MarkAsOverdueAsync(Guid id, CancellationToken ct)
+    {
+        var command = new OverdueBookingCommand(id);
+        await mediator.Send(command, ct);
+        return NoContent();
+    }
+
+    [HttpPost("{id:guid}/complete")]
+    public async Task<IActionResult> MarkAsCompletedAsync(Guid id, CancellationToken ct)
+    {
+        var command = new CompleteBookingCommand(id);
         await mediator.Send(command, ct);
         return NoContent();
     }
