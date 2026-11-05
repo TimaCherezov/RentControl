@@ -5,9 +5,12 @@ var builder = Host.CreateApplicationBuilder(args);
 
 builder.AddServiceDefaults();
 
-builder.AddMainDatabase("maindb");
+builder.AddMainDatabase("maindb", disableRetry: true);
 
-builder.Services.AddHostedService<Worker>();
+builder.AddMainWorkerBus();
 
 var host = builder.Build();
 host.Run();
+
+/// <summary>Точка входа для хостинга в тестах.</summary>
+public partial class Program;

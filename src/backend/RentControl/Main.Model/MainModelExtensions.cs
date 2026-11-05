@@ -10,9 +10,12 @@ public static class MainModelExtensions
 {
     public static IHostApplicationBuilder AddMainDatabase(
         this IHostApplicationBuilder builder,
-        string connectionName = "maindb")
+        string connectionName = "maindb",
+        bool disableRetry = false)
     {
-        builder.AddNpgsqlDbContext<MainDbContext>(connectionName, configureDbContextOptions: opt => opt.UseQueryLocks());
+        builder.AddNpgsqlDbContext<MainDbContext>(connectionName,
+            configureSettings: settings => settings.DisableRetry = disableRetry,
+            configureDbContextOptions: opt => opt.UseQueryLocks());
         builder.Services.AddDbContextFactory<MainDbContext>();
 
         builder.Services.AddSingleton<IUnitOfWorkFactory<IMainUnitOfWork>, MainUnitOfWorkFactory>();

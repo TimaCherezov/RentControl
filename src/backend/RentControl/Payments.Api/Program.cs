@@ -1,3 +1,6 @@
+using MassTransit;
+using Payments.Api;
+using Payments.Api.Features.Invoices;
 using Payments.Model;
 
 using RentControl.ServiceDefaults;
@@ -8,7 +11,31 @@ builder.AddServiceDefaults();
 
 builder.Services.AddJwtAuthorizationFromJwks(builder.Configuration);
 
+builder.Services.AddMapster();
+
 builder.AddPaymentsDatabase("paymentsdb");
+
+builder.Services.AddMassTransit(cfg =>
+{
+    cfg.AddConsumer<OrderCreatedConsumer>();
+
+    cfg.AddEntityFrameworkOutbox<PaymentsDbContext>(outbox =>
+    {
+        outbox.UsePostgres();
+        outbox.QueryDelay = TimeSpan.FromSeconds(1);
+    });
+
+    cfg.AddConfigureEndpointsCallback((context, name, endpoint) =>
+    {
+        endpoint.UseEntityFrameworkOutbox<PaymentsDbContext>(context);
+    });
+
+    cfg.UsingRabbitMq((context, rmq) =>
+    {
+        rmq.Host(builder.Configuration.GetConnectionString("rabbitmq"));
+        rmq.ConfigureEndpoints(context);
+    });
+});
 
 builder.Services.AddHttpClient("main-api", client =>
     client.BaseAddress = new Uri("https+http://main-api"));
@@ -18,6 +45,16 @@ builder.Services.AddOpenApi();
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
+
+// В dev создаём схему paymentsdb по модели (сами миграций пока нет — см. TODO в тестовой фикстуре).
+if (app.Environment.IsDevelopment())
+{
+    await using (var scope = app.Services.CreateAsyncScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<PaymentsDbContext>();
+        await dbContext.Database.EnsureCreatedAsync();
+    }
+}
 
 if (app.Environment.IsDevelopment())
 {

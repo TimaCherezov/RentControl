@@ -1,3 +1,5 @@
+namespace RentControl.AppHost;
+
 public static class ServiceNames
 {
     public const string MainApi = "main-api";

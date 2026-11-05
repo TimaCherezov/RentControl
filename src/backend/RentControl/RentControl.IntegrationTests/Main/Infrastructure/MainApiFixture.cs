@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using RentControl.IntegrationTests.Infrastructure;
 using RentControl.ServiceDefaults;
 using Testcontainers.PostgreSql;
+using Testcontainers.RabbitMq;
 
 namespace RentControl.IntegrationTests.Main.Infrastructure;
 
@@ -22,6 +23,7 @@ public sealed class MainApiFixture : IAsyncLifetime
 
     private readonly TestJwtKeys _jwtKeys = new();
     private PostgreSqlContainer _postgres = null!;
+    private RabbitMqContainer _rabbit = null!;
     private IntegrationTestFactory<MainApiProgram> _factory = null!;
 
     /// <summary>Готовый клиент к Main.Api.</summary>
@@ -29,6 +31,9 @@ public sealed class MainApiFixture : IAsyncLifetime
 
     /// <summary>Строка подключения к тестовой базе maindb.</summary>
     public string ConnectionString => _postgres.GetConnectionString();
+
+    /// <summary>AMQP-строка подключения к тестовому RabbitMQ.</summary>
+    public string RabbitMqConnectionString => _rabbit.GetConnectionString();
 
     /// <summary>Issuer из конфигурации сервиса.</summary>
     public string Issuer => GetJwtSetting("Issuer");
@@ -42,14 +47,17 @@ public sealed class MainApiFixture : IAsyncLifetime
         _postgres = new PostgreSqlBuilder(TestImages.Postgres)
             .WithDatabase(DatabaseName)
             .Build();
+        _rabbit = new RabbitMqBuilder(TestImages.RabbitMq).Build();
         try
         {
             await _postgres.StartAsync();
+            await _rabbit.StartAsync();
             await MigrateAsync();
 
             _factory = new IntegrationTestFactory<MainApiProgram>(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:maindb"] = ConnectionString,
+                ["ConnectionStrings:rabbitmq"] = RabbitMqConnectionString,
                 ["Jwt:PrivateKeyPem"] = _jwtKeys.PrivateKeyPem,
             });
 
@@ -81,6 +89,11 @@ public sealed class MainApiFixture : IAsyncLifetime
             if (_postgres is not null)
             {
                 await _postgres.DisposeAsync();
+            }
+
+            if (_rabbit is not null)
+            {
+                await _rabbit.DisposeAsync();
             }
 
             _jwtKeys.Dispose();

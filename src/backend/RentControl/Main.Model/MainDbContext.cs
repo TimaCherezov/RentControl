@@ -1,5 +1,6 @@
 using Main.Model.Configurations;
 using Main.Model.Models;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace Main.Model;
@@ -23,6 +24,11 @@ public class MainDbContext(DbContextOptions<MainDbContext> options) : DbContext(
         modelBuilder.ApplyConfiguration(new ProductImageConfiguration());
         modelBuilder.ApplyConfiguration(new ProductUnitConfiguration());
         modelBuilder.ApplyConfiguration(new LocationConfiguration());
+
+        modelBuilder.AddInboxStateEntity();
+        modelBuilder.AddOutboxMessageEntity();
+        modelBuilder.AddOutboxStateEntity();
+
         base.OnModelCreating(modelBuilder);
     }
 }

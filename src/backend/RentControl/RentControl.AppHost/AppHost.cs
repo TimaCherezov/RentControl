@@ -1,3 +1,5 @@
+using RentControl.AppHost;
+
 var builder = DistributedApplication.CreateBuilder(args);
 
 var requested = (builder.Configuration["Services"] ?? "")
@@ -31,7 +33,8 @@ if (IsEnabled(ServiceNames.MainApi) || IsEnabled(ServiceNames.MainWorker))
     if (IsEnabled(ServiceNames.MainApi))
     {
         mainApi = builder.AddProject<Projects.Main_Api>(ServiceNames.MainApi)
-            .WithReference(mainDb).WaitFor(mainDb);
+            .WithReference(mainDb).WaitFor(mainDb)
+            .WithReference(rabbitmq).WaitFor(rabbitmq);
     }
 
     if (IsEnabled(ServiceNames.MainWorker))

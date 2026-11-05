@@ -38,6 +38,7 @@ using Main.Api.Features.Validation;
 using Main.Api.Middleware;
 using Main.Model;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -99,6 +100,21 @@ builder.Services.AddMediator(cfg =>
             mediatorCfg.UseSendFilter(typeof(CommandValidationFilter<>), context);
         }
     );
+});
+
+builder.Services.AddMassTransit(cfg =>
+{
+    cfg.AddEntityFrameworkOutbox<MainDbContext>(outbox =>
+    {
+        outbox.UsePostgres();
+        outbox.QueryDelay = TimeSpan.FromSeconds(1);
+        outbox.UseBusOutbox();
+    });
+
+    cfg.UsingRabbitMq((_, rmq) =>
+    {
+        rmq.Host(builder.Configuration.GetConnectionString("rabbitmq"));
+    });
 });
 
 var app = builder.Build();
