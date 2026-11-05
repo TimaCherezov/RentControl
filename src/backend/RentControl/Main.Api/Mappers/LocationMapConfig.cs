@@ -16,11 +16,11 @@ public static class LocationMapConfig
 
 		config.NewConfig<CreateLocationRequest, CreateLocationCommand>()
 			.ConstructUsing(src => new CreateLocationCommand(
-				src.Name!, src.Address!));
+				src.Name, src.Address));
 
 		config.NewConfig<UpdateLocationRequest, UpdateLocationCommand>()
 			.ConstructUsing(src => new UpdateLocationCommand(
-				Guid.Empty, src.Name!, src.Address!));
+				Guid.Empty, src.Name, src.Address));
 
 		config.NewConfig<CreateLocationCommand, Location>()
 			.Ignore(dest => dest.Id);

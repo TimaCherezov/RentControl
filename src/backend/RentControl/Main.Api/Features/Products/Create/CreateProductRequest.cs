@@ -1,11 +1,11 @@
 namespace Main.Api.Features.Products.Create;
 
 public record CreateProductRequest(
-    string? Name,
-    decimal? MarketValue,
+    string Name,
+    decimal MarketValue,
     decimal? DepositOverride,
-    decimal? DailyRate,
-    decimal? HourlyRate,
+    decimal DailyRate,
+    decimal HourlyRate,
     decimal? WeeklyRate,
     decimal? MonthlyRate,
     string? Description);
