@@ -2,30 +2,36 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Main.Api;
 using Main.Api.Auth;
-using Main.Api.Features.Products.Create;
-using Main.Api.Features.Products.Update;
-using Main.Api.Features.Products.Get;
-using Main.Api.Features.Products.GetPage;
-using Main.Api.Features.Products.Delete;
+using Main.Api.Auth.Register;
+using Main.Api.Features.Bookings.Create;
 using Main.Api.Features.Bookings.Get;
 using Main.Api.Features.Bookings.GetPage;
-using Main.Api.Features.Bookings.Create;
-using Main.Api.Features.Bookings.Update;
-using MassTransit;
-using Main.Api.Auth.Register;
 using Main.Api.Features.Bookings.Issue;
 using Main.Api.Features.Bookings.Return;
+using Main.Api.Features.Bookings.Update;
 using Main.Api.Features.Locations.Create;
 using Main.Api.Features.Locations.Delete;
 using Main.Api.Features.Locations.Get;
 using Main.Api.Features.Locations.Update;
+using Main.Api.Features.ProductImages.Create;
+using Main.Api.Features.ProductImages.Delete;
+using Main.Api.Features.ProductImages.Get;
+using Main.Api.Features.ProductImages.GetAll;
+using Main.Api.Features.ProductImages.GetMain;
+using Main.Api.Features.ProductImages.Update;
+using Main.Api.Features.Products.Create;
+using Main.Api.Features.Products.Delete;
+using Main.Api.Features.Products.Get;
+using Main.Api.Features.Products.GetPage;
+using Main.Api.Features.Products.Update;
 using Main.Api.Features.ProductUnits.Create;
-using Main.Api.Features.ProductUnits.Get;
 using Main.Api.Features.ProductUnits.Delete;
+using Main.Api.Features.ProductUnits.Get;
 using Main.Api.Features.ProductUnits.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
 using Main.Model;
+using MassTransit;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -57,7 +63,7 @@ builder.Services.AddMediator(cfg =>
     cfg.AddConsumer<GetPageBookingConsumer>();
     cfg.AddConsumer<IssueBookingConsumer>();
     cfg.AddConsumer<ReturnBookingConsumer>();
-    
+
     cfg.AddConsumer<CreateLocationConsumer>();
     cfg.AddConsumer<UpdateLocationConsumer>();
     cfg.AddConsumer<GetLocationConsumer>();
@@ -67,11 +73,20 @@ builder.Services.AddMediator(cfg =>
     cfg.AddConsumer<GetProductUnitConsumer>();
     cfg.AddConsumer<UpdateProductUnitConsumer>();
     cfg.AddConsumer<DeleteProductUnitConsumer>();
-       
-    cfg.ConfigureMediator((context, mediatorCfg) =>
-    {
-        mediatorCfg.UseSendFilter(typeof(CommandValidationFilter<>), context);
-    });
+
+    cfg.AddConsumer<CreateProductImageConsumer>();
+    cfg.AddConsumer<GetProductImageConsumer>();
+    cfg.AddConsumer<DeleteProductImageConsumer>();
+    cfg.AddConsumer<GetMainProductImageConsumer>();
+    cfg.AddConsumer<GetAllProductImageConsumer>();
+    cfg.AddConsumer<UpdateProductImageConsumer>();
+
+    cfg.ConfigureMediator(
+        (context, mediatorCfg) =>
+        {
+            mediatorCfg.UseSendFilter(typeof(CommandValidationFilter<>), context);
+        }
+    );
 });
 
 var app = builder.Build();
@@ -106,21 +121,32 @@ app.MapControllers();
 
 var summaries = new[]
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering"
+    "Freezing",
+    "Bracing",
+    "Chilly",
+    "Cool",
+    "Mild",
+    "Warm",
+    "Balmy",
+    "Hot",
+    "Sweltering",
 };
 
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
+app.MapGet(
+        "/weatherforecast",
+        () =>
+        {
+            var forecast = Enumerable
+                .Range(1, 5)
+                .Select(index => new WeatherForecast(
                     DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
                     Random.Shared.Next(-20, 55),
                     summaries[Random.Shared.Next(summaries.Length)]
                 ))
-            .ToArray();
-        return forecast;
-    })
+                .ToArray();
+            return forecast;
+        }
+    )
     .WithName("GetWeatherForecast")
     .RequireAuthorization();
 
@@ -132,6 +158,4 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 }
 
 // Точка входа для WebApplicationFactory в интеграционных тестах.
-public partial class Program
-{
-}
+public partial class Program { }

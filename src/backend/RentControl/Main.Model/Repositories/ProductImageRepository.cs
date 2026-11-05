@@ -30,4 +30,7 @@ public class ProductImageRepository(MainDbContext dbContext) : IProductImageRepo
             pi => pi.ProductId == productId && pi.IsMain,
             cancellationToken
         );
+
+    public void Remove(ProductImage productImage)
+        => dbContext.ProductImages.Remove(productImage);
 }

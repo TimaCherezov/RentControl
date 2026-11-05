@@ -6,6 +6,7 @@ public interface IProductImageRepository
 {
     Task<ProductImage?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     void Add(ProductImage productImage);
+    void Remove(ProductImage productImage);
     Task<ProductImage?> GetMainByProductIdAsync(
         Guid productId,
         CancellationToken cancellationToken = default

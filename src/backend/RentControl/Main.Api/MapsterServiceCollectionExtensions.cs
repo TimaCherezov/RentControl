@@ -11,6 +11,7 @@ public static class MapsterServiceCollectionExtensions
         BookingMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
         LocationMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
         ProductUnitMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
+        ProductImageMapConfig.Configure(TypeAdapterConfig.GlobalSettings);
 
         return services;
     }
