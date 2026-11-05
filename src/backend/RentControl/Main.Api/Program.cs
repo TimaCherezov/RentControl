@@ -3,6 +3,7 @@ using FluentValidation.AspNetCore;
 using Main.Api;
 using Main.Api.Auth;
 using Main.Api.Auth.Register;
+using Main.Api.Features.Bookings;
 using Main.Api.Features.Bookings.Create;
 using Main.Api.Features.Bookings.Get;
 using Main.Api.Features.Bookings.GetPage;
@@ -42,6 +43,7 @@ builder.AddMainDatabase("maindb");
 
 builder.Services.AddAuth(builder.Configuration);
 builder.Services.AddMapster();
+builder.Services.AddBookings();
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
