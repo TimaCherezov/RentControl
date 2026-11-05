@@ -6,7 +6,8 @@ using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Features.Bookings.Issue;
 
-public class IssueBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory) : IConsumer<IssueBookingCommand>
+public class IssueBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IBookingStatusStateService bookingStatusService) 
+    : IConsumer<IssueBookingCommand>
 {
 	public async Task Consume(ConsumeContext<IssueBookingCommand> context)
 	{
@@ -19,11 +20,11 @@ public class IssueBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory
 			if (booking is null)
 				throw new ObjectNotFoundException($"Booking with ID: {command.Id} not found.");
 
-			if (booking.BookingStatus != BookingStatusEnum.ReadyForPickup)
-				throw new InvalidOperationException($"Booking with ID: {command.Id} is not ready for pickup.");
-
-			booking.BookingStatus = BookingStatusEnum.Active;
-			booking.StatusChangedAt = DateTimeOffset.UtcNow;
+			await bookingStatusService.SwitchBookingStatusAsync(
+                    BookingStatusEnum.Active,
+                    booking, 
+                    context.CancellationToken
+            );
 		}, context.CancellationToken);
 	}
 }

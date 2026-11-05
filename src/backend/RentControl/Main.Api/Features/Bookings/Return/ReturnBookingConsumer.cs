@@ -6,7 +6,8 @@ using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Features.Bookings.Return;
 
-public class ReturnBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory) : IConsumer<ReturnBookingCommand>
+public class ReturnBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IBookingStatusStateService bookingStatusService)
+    : IConsumer<ReturnBookingCommand>
 {
 	public async Task Consume(ConsumeContext<ReturnBookingCommand> context)
 	{
@@ -18,15 +19,12 @@ public class ReturnBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactor
 
 			if (booking is null)
 				throw new ObjectNotFoundException($"Booking with ID: {command.Id} not found.");
-
-			if (booking.BookingStatus is not BookingStatusEnum.Active and not BookingStatusEnum.Overdue)
-				throw new InvalidOperationException($"Booking with ID: {command.Id} cannot be returned.");
-
-			var now = DateTimeOffset.UtcNow;
-
-			booking.ActualReturnAt = now;
-			booking.BookingStatus = BookingStatusEnum.Returned;
-			booking.StatusChangedAt = now;
+            
+            await bookingStatusService.SwitchBookingStatusAsync(
+                    BookingStatusEnum.Returned, 
+                    booking, 
+                    context.CancellationToken
+            );
 		}, context.CancellationToken);
 	}
 }

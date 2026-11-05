@@ -3,10 +3,16 @@ using FluentValidation.AspNetCore;
 using Main.Api;
 using Main.Api.Auth;
 using Main.Api.Auth.Register;
+using Main.Api.Features.Bookings;
 using Main.Api.Features.Bookings.Create;
 using Main.Api.Features.Bookings.Get;
 using Main.Api.Features.Bookings.GetPage;
+using Main.Api.Features.Bookings.Cancel;
+using Main.Api.Features.Bookings.Complete;
+using Main.Api.Features.Bookings.Confirm;
 using Main.Api.Features.Bookings.Issue;
+using Main.Api.Features.Bookings.Overdue;
+using Main.Api.Features.Bookings.ReadyForPickup;
 using Main.Api.Features.Bookings.Return;
 using Main.Api.Features.Bookings.Update;
 using Main.Api.Features.Locations.Create;
@@ -42,6 +48,7 @@ builder.AddMainDatabase("maindb");
 
 builder.Services.AddAuth(builder.Configuration);
 builder.Services.AddMapster();
+builder.Services.AddBookings();
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
@@ -63,6 +70,11 @@ builder.Services.AddMediator(cfg =>
     cfg.AddConsumer<GetPageBookingConsumer>();
     cfg.AddConsumer<IssueBookingConsumer>();
     cfg.AddConsumer<ReturnBookingConsumer>();
+    cfg.AddConsumer<ConfirmBookingConsumer>();
+    cfg.AddConsumer<CancelBookingConsumer>();
+    cfg.AddConsumer<ReadyForPickupBookingConsumer>();
+    cfg.AddConsumer<OverdueBookingConsumer>();
+    cfg.AddConsumer<CompleteBookingConsumer>();
 
     cfg.AddConsumer<CreateLocationConsumer>();
     cfg.AddConsumer<UpdateLocationConsumer>();
