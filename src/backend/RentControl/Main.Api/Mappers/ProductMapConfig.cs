@@ -17,13 +17,13 @@ public static class ProductMapConfig
 
 		config.NewConfig<CreateProductRequest, CreateProductCommand>()
 			.ConstructUsing(src => new CreateProductCommand(
-				src.Name!, src.MarketValue!.Value, src.DepositOverride,
-				src.DailyRate!.Value, src.HourlyRate!.Value, src.WeeklyRate, src.MonthlyRate, src.Description));
+				src.Name, src.MarketValue, src.DepositOverride,
+				src.DailyRate, src.HourlyRate, src.WeeklyRate, src.MonthlyRate, src.Description));
 
 		config.NewConfig<UpdateProductRequest, UpdateProductCommand>()
 			.ConstructUsing(src => new UpdateProductCommand(
-				Guid.Empty, src.Name!, src.MarketValue!.Value, src.DepositOverride,
-				src.DailyRate!.Value, src.HourlyRate!.Value, src.WeeklyRate, src.MonthlyRate, src.Description));
+				Guid.Empty, src.Name!, src.MarketValue, src.DepositOverride,
+				src.DailyRate, src.HourlyRate, src.WeeklyRate, src.MonthlyRate, src.Description));
 
 		config.NewConfig<CreateProductCommand, Product>()
 			.Ignore(dest => dest.Id)
