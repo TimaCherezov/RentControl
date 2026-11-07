@@ -1,19 +1,11 @@
-using Main.Model;
-using Main.Model.Models;
-using Main.Model.Repositories;
+using Main.Model.UnitOfWork;
 using MassTransit;
 using RentControl.Common.IntegrationEvents;
 
 namespace Main.Worker.Consumers;
 
-/// <summary>
-/// Payments выставил счёт по брони: отмечаем бронь готовой к оплате
-/// (фронт по OrderChanged покажет кнопку оплаты) и уведомляем фронт.
-/// Атомарность — Consumer Outbox (см. MainWorkerExtensions).
-/// </summary>
 public class InvoiceCreatedConsumer(
-    IBookingRepository bookings,
-    MainDbContext dbContext,
+    IMainUnitOfWork uow,
     ILogger<InvoiceCreatedConsumer> logger) : IConsumer<InvoiceCreated>
 {
     public async Task Consume(ConsumeContext<InvoiceCreated> context)
@@ -21,18 +13,18 @@ public class InvoiceCreatedConsumer(
         var message = context.Message;
         var ct = context.CancellationToken;
 
-        var booking = await bookings.GetByIdAsync(message.BookingId, ct)
+        var booking = await uow.Bookings.GetByIdAsync(message.BookingId, ct)
             ?? throw new InvalidOperationException(
-                $"Бронь {message.BookingId} не найдена — InvoiceCreated не может быть обработан, сообщение уйдёт в error-очередь");
+                $"Бронь {message.BookingId} не найдена — InvoiceCreated не может быть обработан");
 
         if (booking.IsInvoiceCreated)
         {
-            return; // повторная доставка — уже обработано
+            return; 
         }
 
         booking.IsInvoiceCreated = true;
-        await dbContext.SaveChangesAsync(ct);
-        await context.Publish(new OrderChanged(booking.Id, booking.BookingStatus.ToString()));
+        await uow.SaveChangesAsync(ct);
+        await context.Publish(new OrderChanged(booking.Id, booking.BookingStatus.ToString()), ct);
 
         logger.LogInformation("Бронь {BookingId} готова к оплате: счёт выставлен", booking.Id);
     }

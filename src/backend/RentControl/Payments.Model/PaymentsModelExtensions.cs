@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Payments.Model.Repositories;
 using Payments.Model.UnitOfWork;
 using RentControl.Common.UnitOfWork;
 
@@ -20,7 +19,8 @@ public static class PaymentsModelExtensions
         builder.Services.AddDbContextFactory<PaymentsDbContext>();
 
         builder.Services.AddSingleton<IUnitOfWorkFactory<IPaymentsUnitOfWork>, PaymentsUnitOfWorkFactory>();
-        builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+
+        builder.Services.AddScoped<IPaymentsUnitOfWork, PaymentsUnitOfWork>();
 
         return builder;
     }

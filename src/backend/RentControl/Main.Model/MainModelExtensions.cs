@@ -20,6 +20,8 @@ public static class MainModelExtensions
 
         builder.Services.AddSingleton<IUnitOfWorkFactory<IMainUnitOfWork>, MainUnitOfWorkFactory>();
 
+        builder.Services.AddScoped<IMainUnitOfWork, MainUnitOfWork>();
+
         return builder;
     }
 }

@@ -1,3 +1,4 @@
+using Main.Api.Features.Bookings;
 using Main.Api.Features.Bookings.Create;
 using Main.Api.Features.Bookings.GetPage;
 using Main.Api.Features.Bookings.Update;
@@ -23,7 +24,8 @@ public static class BookingMapConfig
                 src.DepositAmount,
                 src.TotalRentalCost,
                 src.BookingStatus,
-                src.StatusChangedAt
+                src.StatusChangedAt,
+                src.IsInvoiceCreated
             ));
 
         config

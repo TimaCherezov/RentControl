@@ -1,8 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
+using Main.Model.Models;
 using MassTransit;
-using MassTransit.EntityFrameworkCoreIntegration;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RentControl.Common.IntegrationEvents;
@@ -14,39 +15,73 @@ namespace RentControl.IntegrationTests.Main;
 public class OutboxTests(MainApiFixture fixture)
 {
     [Fact]
-    public async Task PublishOrderCreated_GoesThroughOutbox_AndDeliveredToRabbit()
+    public async Task CreateBooking_WritesBookingAndOrderCreatedAtomically_DeliveredToRabbit()
     {
+        var suffix = Guid.NewGuid().ToString("N");
+        var user = new User { Id = Guid.NewGuid(), Name = "test", Email = $"{suffix}@test.local", PasswordHash = "hash" };
+        var location = new Location { Id = Guid.NewGuid(), Name = "test", Address = "test" };
+        var product = new Product
+        {
+            Id = Guid.NewGuid(),
+            Name = "test",
+            MarketValue = 1000m,
+            DailyRate = 100m,
+            HourlyRate = 10m,
+        };
+        var unit = new ProductUnit
+        {
+            Id = Guid.NewGuid(),
+            Product = product,
+            State = StateEnum.Good,
+            SerialNumber = suffix,
+            PurchaseDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            PurchasePrice = 1000m,
+            Location = location,
+        };
+
+        await using (var db = fixture.CreateDbContext())
+        {
+            db.AddRange(user, location, product, unit);
+            await db.SaveChangesAsync();
+        }
+
         var probe = new OrderCreatedProbe();
         var probeHost = StartProbeHost(fixture.RabbitMqConnectionString, probe);
         await probeHost.StartAsync();
 
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Post, "/api/debug/publish-order-created");
+            const decimal depositAmount = 500m;
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/api/bookings");
+            request.Content = JsonContent.Create(new
+            {
+                productUnitId = unit.Id,
+                locationId = location.Id,
+                userId = user.Id,
+                startAt = DateTimeOffset.UtcNow.AddDays(1),
+                endAt = DateTimeOffset.UtcNow.AddDays(2),
+                depositAmount,
+                bookingStatus = (int)BookingStatusEnum.Pending,
+                statusChangedAt = DateTimeOffset.UtcNow,
+            });
             request.Headers.Authorization = new AuthenticationHeaderValue(
                 "Bearer", fixture.CreateAccessToken(Guid.NewGuid()));
 
             var response = await fixture.Client.SendAsync(request);
             var responseBody = await response.Content.ReadAsStringAsync();
             Assert.True(response.IsSuccessStatusCode,
-                $"POST вернул {(int)response.StatusCode}: {responseBody}");
+                $"POST /api/bookings вернул {(int)response.StatusCode}: {responseBody}");
 
-            var body = System.Text.Json.JsonSerializer.Deserialize<PublishResponse>(
+            var created = JsonSerializer.Deserialize<BookingResponse>(
                 responseBody,
-                new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
-            Assert.NotNull(body);
+                new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            Assert.NotNull(created);
 
-            // Assert 1: сообщение доставлено из outbox в RabbitMQ и получено пробой.
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             var delivered = await probe.Received.WaitAsync(cts.Token);
 
-            Assert.Equal(body.BookingId, delivered.BookingId);
-            Assert.Equal(1000m, delivered.Amount);
-
-            // Assert 2: publish действительно шёл через outbox — запись в OutboxMessage существует
-            // (delivery не удаляет её сразу; это отличает outbox от прямой публикации в брокер).
-            await using var db = fixture.CreateDbContext();
-            Assert.True(await db.Set<OutboxMessage>().AnyAsync());
+            Assert.Equal(created.Id, delivered.BookingId);
+            Assert.Equal(depositAmount, delivered.Amount);
         }
         finally
         {
@@ -55,7 +90,7 @@ public class OutboxTests(MainApiFixture fixture)
         }
     }
 
-    private sealed record PublishResponse(Guid BookingId);
+    private sealed record BookingResponse(Guid Id);
 
     private static IHost StartProbeHost(string rabbitMqConnectionString, OrderCreatedProbe probe)
     {

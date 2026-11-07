@@ -119,16 +119,12 @@ builder.Services.AddMassTransit(cfg =>
 
 var app = builder.Build();
 
-// Раскомментируйте, если миграции не подтягиваются автоматически при запуске
-// #region localMigrations
-// await using (var scope = app.Services.CreateAsyncScope())
-// {
-//     var dbContext = scope.ServiceProvider
-//         .GetRequiredService<MainDbContext>();
-//
-//     await dbContext.Database.MigrateAsync();
-// }
-// #endregion
+if (app.Environment.IsDevelopment())
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<MainDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

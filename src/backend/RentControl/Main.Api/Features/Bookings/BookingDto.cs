@@ -1,5 +1,7 @@
 using Main.Model.Models;
 
+namespace Main.Api.Features.Bookings;
+
 public record BookingDto(
     Guid Id,
     Guid UserId,
@@ -11,5 +13,6 @@ public record BookingDto(
     decimal DepositAmount,
     decimal? TotalRentalCost,
     BookingStatusEnum BookingStatus,
-    DateTimeOffset StatusChangedAt
+    DateTimeOffset StatusChangedAt,
+    bool IsInvoiceCreated
 );

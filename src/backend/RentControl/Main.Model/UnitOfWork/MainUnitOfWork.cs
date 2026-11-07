@@ -11,4 +11,7 @@ internal sealed class MainUnitOfWork(MainDbContext dbContext) : IMainUnitOfWork
     public IBookingRepository Bookings { get; } = new BookingRepository(dbContext);
     public IProductImageRepository ProductImages { get; } = new ProductImageRepository(dbContext);
     public IProductUnitRepository ProductUnits { get; } = new ProductUnitRepository(dbContext);
+
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        => dbContext.SaveChangesAsync(cancellationToken);
 }
