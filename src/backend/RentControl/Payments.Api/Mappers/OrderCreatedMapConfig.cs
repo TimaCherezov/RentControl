@@ -4,10 +4,6 @@ using RentControl.Common.IntegrationEvents;
 
 namespace Payments.Api.Mappers;
 
-/// <summary>
-/// OrderCreated → Invoice: суммы и бронь берутся из события,
-/// служебные поля счёта проставляются при выставлении.
-/// </summary>
 public static class OrderCreatedMapConfig
 {
     public static void Configure(TypeAdapterConfig config)

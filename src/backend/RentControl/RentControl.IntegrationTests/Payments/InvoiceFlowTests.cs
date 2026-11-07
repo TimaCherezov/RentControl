@@ -22,19 +22,15 @@ public class InvoiceFlowTests(PaymentsApiFixture fixture)
         await probeHost.StartAsync();
         try
         {
-            // Act: публикуем OrderCreated от имени Main.Api через пробу-шину.
             var bus = probeHost.Services.GetRequiredService<IBus>();
             await bus.Publish(new OrderCreated(bookingId, amount));
-
-            // Assert 1: Payments опубликовал InvoiceCreated — событие доходит только
-            // после коммита счёта, т.к. шло через outbox.
+            
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
             var received = await probe.Received.WaitAsync(cts.Token);
             Assert.Equal(bookingId, received.BookingId);
 
-            // Assert 2: счёт в paymentsdb — Pending, сумма совпадает.
             await using var db = fixture.CreateDbContext();
-            var invoice = await db.Invoices.SingleOrDefaultAsync(i => i.BookingId == bookingId);
+            var invoice = await db.Invoices.SingleOrDefaultAsync(i => i.BookingId == bookingId, cancellationToken: cts.Token);
             Assert.NotNull(invoice);
             Assert.Equal(amount, invoice.Amount);
             Assert.Equal(InvoiceStatus.Pending, invoice.Status);
@@ -54,14 +50,14 @@ public class InvoiceFlowTests(PaymentsApiFixture fixture)
 
         hostBuilder.Services.AddMassTransit(cfg =>
         {
-            cfg.AddConsumer<InvoiceCreatedProbeConsumer>();
+            cfg.AddConsumer<InvoiceCreatedProbe>();
 
             cfg.UsingRabbitMq((context, rmq) =>
             {
                 rmq.Host(rabbitMqConnectionString);
                 rmq.ReceiveEndpoint("invoice-flow-tests-probe", e =>
                 {
-                    e.ConfigureConsumer<InvoiceCreatedProbeConsumer>(context);
+                    e.ConfigureConsumer<InvoiceCreatedProbe>(context);
                 });
             });
         });
@@ -81,10 +77,5 @@ public class InvoiceFlowTests(PaymentsApiFixture fixture)
             _completion.TrySetResult(context.Message);
             return Task.CompletedTask;
         }
-    }
-
-    private sealed class InvoiceCreatedProbeConsumer(InvoiceCreatedProbe probe) : IConsumer<InvoiceCreated>
-    {
-        public Task Consume(ConsumeContext<InvoiceCreated> context) => probe.Consume(context);
     }
 }

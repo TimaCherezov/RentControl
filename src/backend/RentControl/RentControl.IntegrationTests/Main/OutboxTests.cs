@@ -100,14 +100,14 @@ public class OutboxTests(MainApiFixture fixture)
 
         hostBuilder.Services.AddMassTransit(cfg =>
         {
-            cfg.AddConsumer<OrderCreatedProbeConsumer>();
+            cfg.AddConsumer<OrderCreatedProbe>();
 
             cfg.UsingRabbitMq((context, rmq) =>
             {
                 rmq.Host(rabbitMqConnectionString);
                 rmq.ReceiveEndpoint("outbox-tests-probe", e =>
                 {
-                    e.ConfigureConsumer<OrderCreatedProbeConsumer>(context);
+                    e.ConfigureConsumer<OrderCreatedProbe>(context);
                 });
             });
         });
@@ -127,10 +127,5 @@ public class OutboxTests(MainApiFixture fixture)
             _completion.TrySetResult(context.Message);
             return Task.CompletedTask;
         }
-    }
-
-    private sealed class OrderCreatedProbeConsumer(OrderCreatedProbe probe) : IConsumer<OrderCreated>
-    {
-        public Task Consume(ConsumeContext<OrderCreated> context) => probe.Consume(context);
     }
 }
