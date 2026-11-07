@@ -9,7 +9,7 @@ public class User
     public string Name { get; set; } = null!;
     public string Email { get; set; } = null!;
     public string PasswordHash { get; set; } = null!;
-    public RoleEnum Role { get; set; }
+    public RoleEnum Role { get; set; } = RoleEnum.Client;
 
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 }
