@@ -11,16 +11,20 @@ using Main.Api.Features.Bookings.Return;
 using Main.Api.Features.Bookings.Update;
 using Mapster;
 using MassTransit.Mediator;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentControl.Common.DTOs;
+using Main.Model.Models;
 
 namespace Main.Api.Features.Bookings;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class BookingsController(IMediator mediator) : ControllerBase
 {
     [HttpPost("{id:guid}/issuance")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsIssuedAsync(Guid id, CancellationToken ct)
     {
         var command = new IssueBookingCommand(id);
@@ -29,6 +33,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/return")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsReturnedAsync(Guid id, CancellationToken ct)
     {
         var command = new ReturnBookingCommand(id);
@@ -37,6 +42,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/confirm")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsConfirmedAsync(Guid id, CancellationToken ct)
     {
         var command = new ConfirmBookingCommand(id);
@@ -45,6 +51,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/cancel")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsCancelledAsync(Guid id, CancellationToken ct)
     {
         var command = new CancelBookingCommand(id);
@@ -53,6 +60,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/ready-for-pickup")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsReadyForPickupAsync(Guid id, CancellationToken ct)
     {
         var command = new ReadyForPickupBookingCommand(id);
@@ -61,6 +69,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/overdue")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsOverdueAsync(Guid id, CancellationToken ct)
     {
         var command = new OverdueBookingCommand(id);
@@ -69,6 +78,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/complete")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsCompletedAsync(Guid id, CancellationToken ct)
     {
         var command = new CompleteBookingCommand(id);
