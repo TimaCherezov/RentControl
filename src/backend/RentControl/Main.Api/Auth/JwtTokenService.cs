@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using RentControl.ServiceDefaults;
+using Main.Model.Models;
 
 namespace Main.Api.Auth;
 
@@ -14,11 +15,12 @@ public class JwtTokenService(
 {
     private readonly JwtOptions _jwtOptions = jwtOptions.Value;
 
-    public string GenerateToken(Guid userId)
+    public string GenerateToken(Guid userId, RoleEnum role)
     {
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
+            new Claim(ClaimTypes.Role, role.ToString())
         };
 
         var token = new JwtSecurityToken(

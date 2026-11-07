@@ -28,7 +28,7 @@ public class RefreshTokenService(
                 throw new UnauthorizedAccessException("User not found");
             }
 
-            var newAccess = jwtTokenService.GenerateToken(user.Id);
+            var newAccess = jwtTokenService.GenerateToken(user.Id, user.Role);
             var newRefresh = jwtTokenService.GenerateRefreshToken();
             var newRefreshHash = jwtTokenService.HashRefreshToken(newRefresh);
 
