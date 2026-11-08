@@ -33,11 +33,14 @@ public class ProductUnitRepository(MainDbContext dbContext) : IProductUnitReposi
         return dbContext
             .ProductUnits.AsNoTracking()
             .Where(pu => pu.ProductId == productId)
-            .Where(pu => StatesExtensions.IsRentable(pu.State))
+            .Where(pu => Enumerable.Contains(StatesExtensions.RentableStates, pu.State))
             .Where(pu =>
                 !dbContext.Bookings.Any(b =>
                     b.ProductUnitId == pu.Id
-                    && BookingStatusExtensions.IsBlocking(b.BookingStatus)
+                    && Enumerable.Contains(
+                        BookingStatusExtensions.BlockingStatuses,
+                        b.BookingStatus
+                    )
                     && b.StartAt < end
                     && b.EndAt > start
                 )

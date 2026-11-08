@@ -1,5 +1,5 @@
 using Main.Model.Repositories;
-using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.EntityFrameworkCore;
 
 namespace Main.Model.UnitOfWork;
 
@@ -13,9 +13,35 @@ internal sealed class MainUnitOfWork(MainDbContext dbContext) : IMainUnitOfWork
     public IProductImageRepository ProductImages { get; } = new ProductImageRepository(dbContext);
     public IProductUnitRepository ProductUnits { get; } = new ProductUnitRepository(dbContext);
 
-    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
-        => dbContext.Database.BeginTransactionAsync(cancellationToken);
+    public async Task<T> ExecuteInTransactionAsync<T>(
+        Func<Task<T>> operation,
+        CancellationToken cancellationToken = default
+    )
+    {
+        var strategy = dbContext.Database.CreateExecutionStrategy();
+        return await strategy.ExecuteAsync<T>(
+            async (cancellationToken) =>
+            {
+                await using var transaction = await dbContext.Database.BeginTransactionAsync(
+                    cancellationToken
+                );
+                try
+                {
+                    var result = await operation();
+                    await dbContext.SaveChangesAsync(cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+                    return result;
+                }
+                catch
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    throw;
+                }
+            },
+            cancellationToken
+        );
+    }
 
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        => dbContext.SaveChangesAsync(cancellationToken);
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default) =>
+        dbContext.SaveChangesAsync(cancellationToken);
 }

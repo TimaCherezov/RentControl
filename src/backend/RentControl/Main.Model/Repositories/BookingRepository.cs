@@ -55,7 +55,7 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
                 b.ProductUnitId == productUnitId
                 && b.StartAt < endAt
                 && b.EndAt > startAt
-                && BookingStatusExtensions.IsBlocking(b.BookingStatus),
+                && Enumerable.Contains(BookingStatusExtensions.BlockingStatuses, b.BookingStatus),
             cancellationToken
         );
     }
