@@ -1,4 +1,5 @@
 using Main.Model.Repositories;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Main.Model.UnitOfWork;
 
@@ -13,4 +14,5 @@ public interface IMainUnitOfWork
     IProductUnitRepository ProductUnits { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
 }

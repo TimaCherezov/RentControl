@@ -1,4 +1,5 @@
 using Main.Model.Repositories;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace Main.Model.UnitOfWork;
 
@@ -11,6 +12,9 @@ internal sealed class MainUnitOfWork(MainDbContext dbContext) : IMainUnitOfWork
     public IBookingRepository Bookings { get; } = new BookingRepository(dbContext);
     public IProductImageRepository ProductImages { get; } = new ProductImageRepository(dbContext);
     public IProductUnitRepository ProductUnits { get; } = new ProductUnitRepository(dbContext);
+
+    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+        => dbContext.Database.BeginTransactionAsync(cancellationToken);
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => dbContext.SaveChangesAsync(cancellationToken);
