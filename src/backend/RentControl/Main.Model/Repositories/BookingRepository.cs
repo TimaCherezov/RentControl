@@ -5,15 +5,6 @@ namespace Main.Model.Repositories;
 
 public class BookingRepository(MainDbContext dbContext) : IBookingRepository
 {
-    private static readonly BookingStatusEnum[] blockingBookingStatuses = new[]
-    {
-        BookingStatusEnum.Pending,
-        BookingStatusEnum.Confirmed,
-        BookingStatusEnum.ReadyForPickup,
-        BookingStatusEnum.Active,
-        BookingStatusEnum.Overdue,
-    };
-
     public Task<Booking?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         dbContext.Bookings.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
@@ -64,7 +55,7 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
                 b.ProductUnitId == productUnitId
                 && b.StartAt < endAt
                 && b.EndAt > startAt
-                && blockingBookingStatuses.Contains(b.BookingStatus),
+                && BookingStatusExtensions.IsBlocking(b.BookingStatus),
             cancellationToken
         );
     }
