@@ -38,6 +38,7 @@ using Main.Api.Features.Validation;
 using Main.Api.Middleware;
 using Main.Model;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -101,18 +102,29 @@ builder.Services.AddMediator(cfg =>
     );
 });
 
+builder.Services.AddMassTransit(cfg =>
+{
+    cfg.AddEntityFrameworkOutbox<MainDbContext>(outbox =>
+    {
+        outbox.UsePostgres();
+        outbox.QueryDelay = TimeSpan.FromSeconds(1);
+        outbox.UseBusOutbox();
+    });
+
+    cfg.UsingRabbitMq((_, rmq) =>
+    {
+        rmq.Host(builder.Configuration.GetConnectionString("rabbitmq"));
+    });
+});
+
 var app = builder.Build();
 
-// Раскомментируйте, если миграции не подтягиваются автоматически при запуске
-// #region localMigrations
-// await using (var scope = app.Services.CreateAsyncScope())
-// {
-//     var dbContext = scope.ServiceProvider
-//         .GetRequiredService<MainDbContext>();
-//
-//     await dbContext.Database.MigrateAsync();
-// }
-// #endregion
+if (app.Environment.IsDevelopment())
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<MainDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 

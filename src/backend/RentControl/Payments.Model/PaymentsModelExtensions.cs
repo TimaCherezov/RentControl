@@ -12,10 +12,15 @@ public static class PaymentsModelExtensions
         this IHostApplicationBuilder builder,
         string connectionName = "paymentsdb")
     {
-        builder.AddNpgsqlDbContext<PaymentsDbContext>(connectionName);
+        // DisableRetry: retry-стратегия Npgsql запрещает явные BeginTransaction извне,
+        // а Consumer Outbox MassTransit открывает собственные транзакции на консьюмерах.
+        builder.AddNpgsqlDbContext<PaymentsDbContext>(connectionName,
+            configureSettings: settings => settings.DisableRetry = true);
         builder.Services.AddDbContextFactory<PaymentsDbContext>();
 
         builder.Services.AddSingleton<IUnitOfWorkFactory<IPaymentsUnitOfWork>, PaymentsUnitOfWorkFactory>();
+
+        builder.Services.AddScoped<IPaymentsUnitOfWork, PaymentsUnitOfWork>();
 
         return builder;
     }

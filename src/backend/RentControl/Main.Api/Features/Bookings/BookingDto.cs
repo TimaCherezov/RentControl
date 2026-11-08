@@ -13,5 +13,6 @@ public record BookingDto(
     decimal DepositAmount,
     decimal? TotalRentalCost,
     BookingStatusEnum BookingStatus,
-    DateTimeOffset StatusChangedAt
+    DateTimeOffset StatusChangedAt,
+    bool IsInvoiceCreated
 );

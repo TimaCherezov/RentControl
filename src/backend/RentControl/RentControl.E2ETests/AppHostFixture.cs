@@ -4,7 +4,7 @@ using Main.Model;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using System.Net.Security;
-using System.Security.Authentication.ExtendedProtection;
+using RentControl.AppHost;
 using Xunit;
 
 namespace RentControl.E2ETests;

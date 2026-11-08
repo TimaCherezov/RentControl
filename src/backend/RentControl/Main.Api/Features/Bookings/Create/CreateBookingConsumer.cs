@@ -2,29 +2,24 @@ using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using Mapster;
 using MassTransit;
-using RentControl.Common.UnitOfWork;
+using RentControl.Common.IntegrationEvents;
 
 namespace Main.Api.Features.Bookings.Create;
 
-public class CreateBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
+public class CreateBookingConsumer(
+    IMainUnitOfWork uow,
+    IPublishEndpoint publishEndpoint)
     : IConsumer<CreateBookingCommand>
 {
     public async Task Consume(ConsumeContext<CreateBookingCommand> context)
     {
-        var command = context.Message;
+        var ct = context.CancellationToken;
+        var booking = context.Message.Adapt<Booking>();
 
-        var booking = await uowFactory.ExecuteAsync(
-            uow =>
-            {
-                var bookingModel = command.Adapt<Booking>();
-                uow.Bookings.Add(bookingModel);
-                return Task.FromResult(bookingModel);
-            },
-            context.CancellationToken
-        );
+        uow.Bookings.Add(booking);
+        await publishEndpoint.Publish(new OrderCreated(booking.Id, booking.DepositAmount), ct);
+        await uow.SaveChangesAsync(ct);
 
-        var response = booking.Adapt<BookingDto>();
-
-        await context.RespondAsync(response);
+        await context.RespondAsync(booking.Adapt<BookingDto>());
     }
 }

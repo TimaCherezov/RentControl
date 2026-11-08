@@ -39,4 +39,6 @@ public class Booking
     public BookingStatusEnum BookingStatus { get; set; }
     public User User { get; set; } = null!;
     public Guid UserId { get; set; }
+
+    public bool IsInvoiceCreated { get; set; }
 }
