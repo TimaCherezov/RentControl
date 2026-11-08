@@ -33,6 +33,7 @@ using Main.Api.Features.Products.Update;
 using Main.Api.Features.ProductUnits.Create;
 using Main.Api.Features.ProductUnits.Delete;
 using Main.Api.Features.ProductUnits.Get;
+using Main.Api.Features.ProductUnits.GetAvailable;
 using Main.Api.Features.ProductUnits.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
@@ -84,6 +85,7 @@ builder.Services.AddMediator(cfg =>
 
     cfg.AddConsumer<CreateProductUnitConsumer>();
     cfg.AddConsumer<GetProductUnitConsumer>();
+    cfg.AddConsumer<GetAvailableProductUnitsConsumer>();
     cfg.AddConsumer<UpdateProductUnitConsumer>();
     cfg.AddConsumer<DeleteProductUnitConsumer>();
 
