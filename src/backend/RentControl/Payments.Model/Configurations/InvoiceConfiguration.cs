@@ -14,7 +14,6 @@ public class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
 
         builder.Property(invoice => invoice.Status)
             .HasConversion<string>()
-            .HasMaxLength(16)
-            .IsRequired();
+            .HasMaxLength(16);
     }
 }

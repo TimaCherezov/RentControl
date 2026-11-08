@@ -2,8 +2,8 @@ namespace Payments.Model.Models;
 
 public enum InvoiceStatus
 {
-    Pending,
-    Paid
+    Pending = 1,
+    Paid = 2
 }
 
 public class Invoice
