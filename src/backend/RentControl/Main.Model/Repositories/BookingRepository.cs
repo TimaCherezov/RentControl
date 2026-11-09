@@ -5,9 +5,8 @@ namespace Main.Model.Repositories;
 
 public class BookingRepository(MainDbContext dbContext) : IBookingRepository
 {
-    public Task<Booking?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        => dbContext.Bookings
-            .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
+    public Task<Booking?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+        dbContext.Bookings.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
     public async Task<PageList<Booking>> GetPageAsync(
         int pageNumber,
@@ -42,6 +41,22 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
         return new PageList<Booking>(bookings, totalCount, pageNumber, pageSize);
     }
 
-    public void Add(Booking booking)
-        => dbContext.Bookings.Add(booking);
+    public void Add(Booking booking) => dbContext.Bookings.Add(booking);
+
+    public Task<bool> HasOverlappingBookingAsync(
+        Guid productUnitId,
+        DateTimeOffset startAt,
+        DateTimeOffset endAt,
+        CancellationToken cancellationToken = default
+    )
+    {
+        return dbContext.Bookings.AnyAsync(
+            b =>
+                b.ProductUnitId == productUnitId
+                && b.StartAt < endAt
+                && b.EndAt > startAt
+                && Enumerable.Contains(BookingStatusExtensions.BlockingStatuses, b.BookingStatus),
+            cancellationToken
+        );
+    }
 }

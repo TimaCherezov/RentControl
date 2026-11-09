@@ -13,4 +13,8 @@ public interface IMainUnitOfWork
     IProductUnitRepository ProductUnits { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task<T> ExecuteInTransactionAsync<T>(
+        Func<Task<T>> operation,
+        CancellationToken cancellationToken = default
+    );
 }

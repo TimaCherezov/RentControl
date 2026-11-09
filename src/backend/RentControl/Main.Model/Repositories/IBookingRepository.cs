@@ -5,6 +5,12 @@ namespace Main.Model.Repositories;
 public interface IBookingRepository
 {
     Task<Booking?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<bool> HasOverlappingBookingAsync(
+        Guid productUnitId,
+        DateTimeOffset startAt,
+        DateTimeOffset endAt,
+        CancellationToken cancellationToken = default
+    );
     Task<PageList<Booking>> GetPageAsync(
         int pageNumber,
         int pageSize,

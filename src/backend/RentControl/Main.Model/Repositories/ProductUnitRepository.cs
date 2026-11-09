@@ -6,23 +6,6 @@ namespace Main.Model.Repositories;
 
 public class ProductUnitRepository(MainDbContext dbContext) : IProductUnitRepository
 {
-    private static readonly StateEnum[] rentableStates = new[]
-    {
-        StateEnum.Good,
-        StateEnum.Excellent,
-        StateEnum.Used,
-        StateEnum.New,
-    };
-
-    private static readonly BookingStatusEnum[] blockingBookingStatuses = new[]
-    {
-        BookingStatusEnum.Pending,
-        BookingStatusEnum.Confirmed,
-        BookingStatusEnum.ReadyForPickup,
-        BookingStatusEnum.Active,
-        BookingStatusEnum.Overdue,
-    };
-
     public void Add(ProductUnit productUnit) => dbContext.ProductUnits.Add(productUnit);
 
     public void Remove(ProductUnit productUnit) => dbContext.ProductUnits.Remove(productUnit);
@@ -50,11 +33,14 @@ public class ProductUnitRepository(MainDbContext dbContext) : IProductUnitReposi
         return dbContext
             .ProductUnits.AsNoTracking()
             .Where(pu => pu.ProductId == productId)
-            .Where(pu => rentableStates.Contains(pu.State))
+            .Where(pu => Enumerable.Contains(StatesExtensions.RentableStates, pu.State))
             .Where(pu =>
                 !dbContext.Bookings.Any(b =>
                     b.ProductUnitId == pu.Id
-                    && blockingBookingStatuses.Contains(b.BookingStatus)
+                    && Enumerable.Contains(
+                        BookingStatusExtensions.BlockingStatuses,
+                        b.BookingStatus
+                    )
                     && b.StartAt < end
                     && b.EndAt > start
                 )
