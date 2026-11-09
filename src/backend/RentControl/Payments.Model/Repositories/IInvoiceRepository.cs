@@ -5,6 +5,9 @@ namespace Payments.Model.Repositories;
 public interface IInvoiceRepository
 {
     Task<bool> ExistsByBookingIdAsync(Guid bookingId, CancellationToken cancellationToken = default);
+
+    Task<Invoice?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+
     Task<Invoice?> GetByBookingIdAsync(Guid bookingId, CancellationToken cancellationToken = default);
     void Add(Invoice invoice);
 }

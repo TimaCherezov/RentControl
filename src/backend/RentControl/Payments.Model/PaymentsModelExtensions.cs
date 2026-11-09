@@ -1,3 +1,4 @@
+using EFCore.PostgresExtensions.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -15,7 +16,8 @@ public static class PaymentsModelExtensions
         // DisableRetry: retry-стратегия Npgsql запрещает явные BeginTransaction извне,
         // а Consumer Outbox MassTransit открывает собственные транзакции на консьюмерах.
         builder.AddNpgsqlDbContext<PaymentsDbContext>(connectionName,
-            configureSettings: settings => settings.DisableRetry = true);
+            configureSettings: settings => settings.DisableRetry = true,
+            configureDbContextOptions: opt => opt.UseQueryLocks());  
         builder.Services.AddDbContextFactory<PaymentsDbContext>();
 
         builder.Services.AddSingleton<IUnitOfWorkFactory<IPaymentsUnitOfWork>, PaymentsUnitOfWorkFactory>();
