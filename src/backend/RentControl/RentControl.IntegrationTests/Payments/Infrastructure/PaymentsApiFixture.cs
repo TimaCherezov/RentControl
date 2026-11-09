@@ -56,7 +56,7 @@ public sealed class PaymentsApiFixture : IAsyncLifetime
         {
             await _postgres.StartAsync();
             await _rabbit.StartAsync();
-            await CreateDatabaseAsync();
+            await MigrateAsync();
 
             _factory = new IntegrationTestFactory<PaymentsApiProgram>(
                 configuration: new Dictionary<string, string?>
@@ -130,15 +130,14 @@ public sealed class PaymentsApiFixture : IAsyncLifetime
         _factory.Services.GetRequiredService<IConfiguration>()[$"{JwtOptions.Section}:{key}"]
         ?? throw new InvalidOperationException($"В конфигурации Payments.Api не найден Jwt:{key}");
 
-    // TODO: у Payments.Model пока нет миграций — создаём схему по модели.
-    // Когда появятся — заменить на Database.MigrateAsync(), как в MainApiFixture.
-    private async Task CreateDatabaseAsync()
+    /// <summary>Накатывает миграции paymentsdb на тестовую базу.</summary>
+    private async Task MigrateAsync()
     {
         var options = new DbContextOptionsBuilder<PaymentsDbContext>()
             .UseNpgsql(ConnectionString)
             .Options;
 
         await using var context = new PaymentsDbContext(options);
-        await context.Database.EnsureCreatedAsync();
+        await context.Database.MigrateAsync();
     }
 }
