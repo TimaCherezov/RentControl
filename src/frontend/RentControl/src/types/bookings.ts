@@ -16,7 +16,42 @@ export class BookingDto {
   readonly isInvoiceCreated: boolean;
 }
 
-export class CreateBookingRequest {}
+export class CreateBookingRequest {
+  readonly productUnitId: string;
+  readonly startAt: Temporal.ZonedDateTime;
+  readonly endAt: Temporal.ZonedDateTime;
+  readonly locationId: string;
+  readonly actualReturnAt?: string;
+  readonly totalRentalCost?: Big;
+  readonly depositAmount: Big;
+  readonly statusChangedAt: Temporal.ZonedDateTime;
+  readonly bookingStatus: BookingStatus;
+  readonly userId: string;
+
+  constructor(
+    productUnitId: string,
+    startAt: Temporal.ZonedDateTime,
+    endAt: Temporal.ZonedDateTime,
+    locationId: string,
+    depositAmount: Big,
+    statusChangedAt: Temporal.ZonedDateTime,
+    bookingStatus: BookingStatus,
+    userId: string,
+    actualReturnAt?: string,
+    totalRentalCost?: Big,
+  ) {
+    this.productUnitId = productUnitId;
+    this.startAt = startAt;
+    this.endAt = endAt;
+    this.locationId = locationId;
+    this.actualReturnAt = actualReturnAt;
+    this.totalRentalCost = totalRentalCost;
+    this.depositAmount = depositAmount;
+    this.statusChangedAt = statusChangedAt;
+    this.bookingStatus = bookingStatus;
+    this.userId = userId;
+  }
+}
 
 export class UpdateBookingRequest {}
 

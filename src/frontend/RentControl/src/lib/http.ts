@@ -4,8 +4,8 @@ const baseUrl = "";
 
 export async function httpGet<T>(
   url: string,
-  init: RequestInit,
   query?: Record<string, unknown>,
+  init?: RequestInit,
 ): Promise<T> {
   const qs = new URLSearchParams();
   if (query) {
@@ -23,8 +23,8 @@ export async function httpGet<T>(
 
 export async function httpPost<T>(
   url: string,
-  init: RequestInit,
   body?: unknown,
+  init?: RequestInit,
 ): Promise<T | void> {
   const res = await fetch(`${baseUrl}${url}`, {
     ...init,
@@ -44,8 +44,8 @@ export async function httpPost<T>(
 
 export async function httpPut(
   url: string,
-  init: RequestInit,
   body?: unknown,
+  init?: RequestInit,
 ): Promise<void> {
   const res = await fetch(`${baseUrl}${url}`, {
     ...init,
@@ -62,7 +62,7 @@ export async function httpPut(
 
 export async function httpDelete(
   url: string,
-  init: RequestInit,
+  init?: RequestInit,
 ): Promise<void> {
   const res = await fetch(`${baseUrl}${url}`, {
     ...init,
