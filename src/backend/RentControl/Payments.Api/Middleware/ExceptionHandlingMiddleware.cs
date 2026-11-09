@@ -1,0 +1,44 @@
+using System.Text.Json;
+using Payments.Api.Exceptions;
+
+namespace Payments.Api.Middleware;
+
+public class ExceptionHandlingMiddleware(RequestDelegate next, ILogger<ExceptionHandlingMiddleware> logger)
+{
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await next(context);
+        }
+        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (ObjectNotFoundException ex)
+        {
+            logger.LogWarning(ex, "Not found: {Message}", ex.Message);
+            await WriteErrorAsync(context, StatusCodes.Status404NotFound, ex.Message);
+        }
+        catch (PaymentAlreadyPaidException ex)
+        {
+            logger.LogWarning(ex, "Conflict: {Message}", ex.Message);
+            await WriteErrorAsync(context, StatusCodes.Status409Conflict, ex.Message);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unhandled exception");
+            await WriteErrorAsync(context, StatusCodes.Status500InternalServerError, "An internal server error occurred.");
+        }
+    }
+
+    private static async Task WriteErrorAsync(HttpContext context, int statusCode, string message)
+    {
+        if (context.Response.HasStarted)
+            return;
+
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(JsonSerializer.Serialize(new { error = message }));
+    }
+}

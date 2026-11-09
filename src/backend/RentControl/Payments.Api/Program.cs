@@ -1,7 +1,12 @@
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Payments.Api;
 using Payments.Api.Features.Invoices;
+using Payments.Api.Features.Invoices.FakePay;
+using Payments.Api.Features.Invoices.Pay;
+using Payments.Api.Middleware;
 using Payments.Model;
+using Scalar.AspNetCore;
 
 using RentControl.ServiceDefaults;
 
@@ -15,6 +20,12 @@ builder.Services.AddMapster();
 
 builder.AddPaymentsDatabase("paymentsdb");
 
+builder.Services.AddMediator(cfg =>
+{
+    cfg.AddConsumer<PayInvoiceConsumer>();
+    cfg.AddConsumer<FakePayInvoiceConsumer>();
+});
+
 builder.Services.AddMassTransit(cfg =>
 {
     cfg.AddConsumer<OrderCreatedConsumer>();
@@ -23,6 +34,7 @@ builder.Services.AddMassTransit(cfg =>
     {
         outbox.UsePostgres();
         outbox.QueryDelay = TimeSpan.FromSeconds(1);
+        outbox.UseBusOutbox();
     });
 
     cfg.AddConfigureEndpointsCallback((context, name, endpoint) =>
@@ -42,29 +54,34 @@ builder.Services.AddHttpClient("main-api", client =>
 
 builder.Services.AddOpenApi();
 
+builder.Services.AddControllers();
+
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-// В dev создаём схему paymentsdb по модели (сами миграций пока нет — см. TODO в тестовой фикстуре).
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
-    await using (var scope = app.Services.CreateAsyncScope())
-    {
-        var dbContext = scope.ServiceProvider.GetRequiredService<PaymentsDbContext>();
-        await dbContext.Database.EnsureCreatedAsync();
-    }
+    // В dev накатываем миграции paymentsdb (симметрично localMigrations в Main.Api).
+    await using var scope = app.Services.CreateAsyncScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<PaymentsDbContext>();
+    await dbContext.Database.MigrateAsync();
 }
 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapControllers();
 
 var summaries = new[]
 {
