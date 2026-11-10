@@ -41,7 +41,9 @@ using Main.Api.Middleware;
 using Main.Api.Storage;
 using Main.Model;
 using MassTransit;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -53,6 +55,7 @@ builder.AddMainDatabase("maindb");
 builder.Services.AddAuth(builder.Configuration);
 builder.Services.AddMapster();
 builder.Services.AddBookings();
+
 builder.Services.AddSingleton(
     new ImageStorageOptions
     {
@@ -61,6 +64,11 @@ builder.Services.AddSingleton(
             ?? throw new InvalidOperationException("Storage:ImageBaseUrl is not configured"),
     }
 );
+var uploadsPath = Path.GetFullPath(
+    builder.Configuration["Storage:LocalPath"] ?? "uploads",
+    builder.Environment.ContentRootPath
+);
+Directory.CreateDirectory(uploadsPath);
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
@@ -142,6 +150,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+app.UseStaticFiles(
+    new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(uploadsPath),
+        RequestPath = "/images",
+    }
+);
 
 app.MapDefaultEndpoints();
 
