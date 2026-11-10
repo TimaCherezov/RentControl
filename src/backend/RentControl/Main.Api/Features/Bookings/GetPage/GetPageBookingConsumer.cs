@@ -1,12 +1,13 @@
 using Main.Model.UnitOfWork;
-using Mapster;
 using MassTransit;
 using RentControl.Common.DTOs;
 using RentControl.Common.UnitOfWork;
+using Main.Api.Storage;
+using Main.Api.Mappers;
 
 namespace Main.Api.Features.Bookings.GetPage;
 
-public class GetPageBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
+public class GetPageBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions opt)
     : IConsumer<GetPageBookingCommand>
 {
     public async Task Consume(ConsumeContext<GetPageBookingCommand> context)
@@ -24,7 +25,7 @@ public class GetPageBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFacto
             return pageList;
         });
 
-        var items = bookingPageList.Adapt<List<BookingDto>>();
+        var items = bookingPageList.ToDto(opt);
         var response = new PagedResponse<BookingDto>(
             items,
             bookingPageList.TotalCount,

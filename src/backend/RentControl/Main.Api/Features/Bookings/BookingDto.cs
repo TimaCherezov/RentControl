@@ -1,3 +1,4 @@
+using Main.Api.Features.ProductImages;
 using Main.Model.Models;
 
 namespace Main.Api.Features.Bookings;
@@ -14,5 +15,7 @@ public record BookingDto(
     decimal? TotalRentalCost,
     BookingStatusEnum BookingStatus,
     DateTimeOffset StatusChangedAt,
-    bool IsInvoiceCreated
+    bool IsInvoiceCreated,
+    string ProductName,
+    ProductImageDto? MainImage
 );

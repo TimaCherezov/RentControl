@@ -4,12 +4,12 @@ using Main.Api;
 using Main.Api.Auth;
 using Main.Api.Auth.Register;
 using Main.Api.Features.Bookings;
-using Main.Api.Features.Bookings.Create;
-using Main.Api.Features.Bookings.Get;
-using Main.Api.Features.Bookings.GetPage;
 using Main.Api.Features.Bookings.Cancel;
 using Main.Api.Features.Bookings.Complete;
 using Main.Api.Features.Bookings.Confirm;
+using Main.Api.Features.Bookings.Create;
+using Main.Api.Features.Bookings.Get;
+using Main.Api.Features.Bookings.GetPage;
 using Main.Api.Features.Bookings.Issue;
 using Main.Api.Features.Bookings.Overdue;
 using Main.Api.Features.Bookings.ReadyForPickup;
@@ -38,6 +38,7 @@ using Main.Api.Features.ProductUnits.GetAvailable;
 using Main.Api.Features.ProductUnits.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
+using Main.Api.Storage;
 using Main.Model;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
@@ -52,6 +53,14 @@ builder.AddMainDatabase("maindb");
 builder.Services.AddAuth(builder.Configuration);
 builder.Services.AddMapster();
 builder.Services.AddBookings();
+builder.Services.AddSingleton(
+    new ImageStorageOptions
+    {
+        BaseUrl =
+            builder.Configuration["Storage:ImageBaseUrl"]
+            ?? throw new InvalidOperationException("Storage:ImageBaseUrl is not configured"),
+    }
+);
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
@@ -115,10 +124,12 @@ builder.Services.AddMassTransit(cfg =>
         outbox.UseBusOutbox();
     });
 
-    cfg.UsingRabbitMq((_, rmq) =>
-    {
-        rmq.Host(builder.Configuration.GetConnectionString("rabbitmq"));
-    });
+    cfg.UsingRabbitMq(
+        (_, rmq) =>
+        {
+            rmq.Host(builder.Configuration.GetConnectionString("rabbitmq"));
+        }
+    );
 });
 
 var app = builder.Build();

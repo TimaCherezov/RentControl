@@ -6,7 +6,10 @@ namespace Main.Model.Repositories;
 public class BookingRepository(MainDbContext dbContext) : IBookingRepository
 {
     public Task<Booking?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
-        dbContext.Bookings.FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
+        dbContext
+            .Bookings.Include(b => b.ProductUnit.Product.Images.Where(i => i.IsMain))
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
     public async Task<PageList<Booking>> GetPageAsync(
         int pageNumber,
@@ -23,6 +26,7 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
 
         var query = dbContext
             .Bookings.Include(b => b.ProductUnit.Product.Images.Where(i => i.IsMain))
+            .AsSplitQuery()
             .AsNoTracking();
 
         if (userId is not null)

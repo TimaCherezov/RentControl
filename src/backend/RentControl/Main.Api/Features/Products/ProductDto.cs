@@ -1,3 +1,5 @@
+using Main.Api.Features.ProductImages;
+
 namespace Main.Api.Features.Products;
 
 public record ProductDto(
@@ -9,4 +11,6 @@ public record ProductDto(
     decimal HourlyRate,
     decimal? WeeklyRate,
     decimal? MonthlyRate,
-    string? Description);
+    string? Description,
+    List<ProductImageDto> Images
+);

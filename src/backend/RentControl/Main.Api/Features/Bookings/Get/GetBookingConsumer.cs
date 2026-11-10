@@ -1,13 +1,16 @@
 using Main.Api.Exceptions;
+using Main.Api.Mappers;
+using Main.Api.Storage;
 using Main.Model.UnitOfWork;
-using Mapster;
 using MassTransit;
 using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Features.Bookings.Get;
 
-public class GetBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
-    : IConsumer<GetBookingCommand>
+public class GetBookingConsumer(
+    IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
+    ImageStorageOptions opt
+) : IConsumer<GetBookingCommand>
 {
     public async Task Consume(ConsumeContext<GetBookingCommand> context)
     {
@@ -26,7 +29,7 @@ public class GetBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
             context.CancellationToken
         );
 
-        var response = booking.Adapt<BookingDto>();
+        var response = booking.ToDto(opt);
 
         await context.RespondAsync(response);
     }

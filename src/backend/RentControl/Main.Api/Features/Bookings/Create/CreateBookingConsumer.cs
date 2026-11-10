@@ -1,4 +1,6 @@
 using Main.Api.Exceptions;
+using Main.Api.Mappers;
+using Main.Api.Storage;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using Mapster;
@@ -7,15 +9,18 @@ using RentControl.Common.IntegrationEvents;
 
 namespace Main.Api.Features.Bookings.Create;
 
-public class CreateBookingConsumer(IMainUnitOfWork uow, IPublishEndpoint publishEndpoint)
-    : IConsumer<CreateBookingCommand>
+public class CreateBookingConsumer(
+    IMainUnitOfWork uow,
+    IPublishEndpoint publishEndpoint,
+    ImageStorageOptions opt
+) : IConsumer<CreateBookingCommand>
 {
     public async Task Consume(ConsumeContext<CreateBookingCommand> context)
     {
         var ct = context.CancellationToken;
         var booking = context.Message.Adapt<Booking>();
 
-        var createdBooking = await uow.ExecuteInTransactionAsync(
+        await uow.ExecuteInTransactionAsync(
             async () =>
             {
                 _ =
@@ -41,11 +46,17 @@ public class CreateBookingConsumer(IMainUnitOfWork uow, IPublishEndpoint publish
                     new OrderCreated(booking.Id, booking.DepositAmount),
                     ct
                 );
-                return booking;
+                return Task.CompletedTask;
             },
             ct
         );
 
-        await context.RespondAsync(createdBooking.Adapt<BookingDto>());
+        var createdBooking =
+            await uow.Bookings.GetByIdAsync(booking.Id)
+            ?? throw new ObjectNotFoundException($"Booking with ID: {booking.Id} not found.");
+
+        var response = createdBooking.ToDto(opt);
+
+        await context.RespondAsync(response);
     }
 }

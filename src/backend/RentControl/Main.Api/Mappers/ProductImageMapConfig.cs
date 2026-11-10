@@ -1,6 +1,7 @@
 using Main.Api.Features.ProductImages;
 using Main.Api.Features.ProductImages.Create;
 using Main.Api.Features.ProductImages.Update;
+using Main.Api.Storage;
 using Main.Model.Models;
 using Mapster;
 
@@ -8,19 +9,24 @@ namespace Main.Api.Mappers;
 
 public static class ProductImageMapConfig
 {
+    public static ProductImageDto ToDto(this ProductImage src, ImageStorageOptions opt) =>
+        new ProductImageDto(
+            src.Id,
+            src.ProductId,
+            src.StorageKey,
+            src.IsMain,
+            src.CreatedAt,
+            src.AltText,
+            Url: opt.Build(src.StorageKey)
+        );
+
+    public static List<ProductImageDto> ToDto(
+        this IEnumerable<ProductImage> src,
+        ImageStorageOptions opt
+    ) => src.Select(i => i.ToDto(opt)).ToList();
+
     public static void Configure(TypeAdapterConfig config)
     {
-        config
-            .NewConfig<ProductImage, ProductImageDto>()
-            .ConstructUsing(src => new ProductImageDto(
-                src.Id,
-                src.ProductId,
-                src.StorageKey,
-                src.IsMain,
-                src.CreatedAt,
-                src.AltText
-            ));
-
         config
             .NewConfig<CreateProductImageRequest, CreateProductImageCommand>()
             .ConstructUsing(src => new CreateProductImageCommand(
