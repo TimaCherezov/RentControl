@@ -4,16 +4,20 @@ using Main.Api.Features.Locations.Get;
 using Main.Api.Features.Locations.Update;
 using Mapster;
 using MassTransit.Mediator;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Main.Model.Models;
 
 namespace Main.Api.Features.Locations;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class LocationsController(IMediator mediator) : ControllerBase
 {
-	[HttpPost]
-	public async Task<ActionResult<LocationDto>> Create(
+    [HttpPost]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
+    public async Task<ActionResult<LocationDto>> Create(
 		[FromBody] CreateLocationRequest request,
 		CancellationToken ct)
 	{
@@ -36,8 +40,9 @@ public class LocationsController(IMediator mediator) : ControllerBase
 		return Ok(response.Message);
 	}
 
-	[HttpPut("{id:guid}")]
-	public async Task<IActionResult> Update(
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
+    public async Task<IActionResult> Update(
 		Guid id,
 		[FromBody] UpdateLocationRequest request,
 		CancellationToken ct)
@@ -49,8 +54,9 @@ public class LocationsController(IMediator mediator) : ControllerBase
 		return NoContent();
 	}
 
-	[HttpDelete("{id:guid}")]
-	public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
 	{
 		var command = new DeleteLocationCommand(id);
 		await mediator.Send(command, ct);

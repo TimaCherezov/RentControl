@@ -5,15 +5,19 @@ using Main.Api.Features.ProductUnits.GetAvailable;
 using Main.Api.Features.ProductUnits.Update;
 using Mapster;
 using MassTransit.Mediator;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Main.Model.Models;
 
 namespace Main.Api.Features.ProductUnits;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ProductUnitsController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<ActionResult<ProductUnitDto>> Create(
         [FromBody] CreateProductUnitRequest request,
         CancellationToken ct
@@ -56,6 +60,7 @@ public class ProductUnitsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateProductUnitRequest request,
@@ -70,6 +75,7 @@ public class ProductUnitsController(IMediator mediator) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var command = new DeleteProductUnitCommand(id);
