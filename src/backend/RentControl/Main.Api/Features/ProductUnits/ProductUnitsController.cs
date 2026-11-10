@@ -47,12 +47,12 @@ public class ProductUnitsController(IMediator mediator) : ControllerBase
         var command = request.Adapt<GetAvailableProductUnitsCommand>();
 
         var client = mediator.CreateRequestClient<GetAvailableProductUnitsCommand>();
-        var response = await client.GetResponse<List<ProductUnitDto>>(
+        var response = await client.GetResponse<GetAvailableProductUnitsResponse>(
             command,
             cancellationToken: ct
         );
 
-        return Ok(response.Message);
+        return Ok(response.Message.Units);
     }
 
     [HttpPut("{id:guid}")]

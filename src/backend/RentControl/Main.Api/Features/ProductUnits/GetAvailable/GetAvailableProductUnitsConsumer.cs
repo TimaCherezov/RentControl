@@ -25,7 +25,9 @@ public class GetAvailableProductUnitsConsumer(IUnitOfWorkFactory<IMainUnitOfWork
             context.CancellationToken
         );
 
-        var response = units.Adapt<List<ProductUnitDto>>();
+        var response = new GetAvailableProductUnitsResponse(
+            units.Adapt<List<ProductUnitDto>>()
+        );
         await context.RespondAsync(response);
     }
 }

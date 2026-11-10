@@ -20,7 +20,7 @@ public class GetAllProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowF
             )
         );
 
-        var response = list.ToDto(opt);
+        var response = new GetAllProductImageResponse(list.ToDto(opt));
         await context.RespondAsync(response);
     }
 }
