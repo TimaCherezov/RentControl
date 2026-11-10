@@ -1,10 +1,12 @@
 using Main.Api.Features.Locations.Create;
 using Main.Api.Features.Locations.Delete;
 using Main.Api.Features.Locations.Get;
+using Main.Api.Features.Locations.GetPage;
 using Main.Api.Features.Locations.Update;
 using Mapster;
 using MassTransit.Mediator;
 using Microsoft.AspNetCore.Mvc;
+using RentControl.Common.DTOs;
 
 namespace Main.Api.Features.Locations;
 
@@ -32,6 +34,19 @@ public class LocationsController(IMediator mediator) : ControllerBase
 
 		var client = mediator.CreateRequestClient<GetLocationCommand>();
 		var response = await client.GetResponse<LocationDto>(command, cancellationToken: ct);
+
+		return Ok(response.Message);
+	}
+
+	[HttpGet]
+	public async Task<ActionResult<PagedResponse<LocationDto>>> GetPage(
+		[FromQuery] GetPageLocationRequest request,
+		CancellationToken ct)
+	{
+		var command = request.Adapt<GetPageLocationCommand>();
+
+		var client = mediator.CreateRequestClient<GetPageLocationCommand>();
+		var response = await client.GetResponse<PagedResponse<LocationDto>>(command, cancellationToken: ct);
 
 		return Ok(response.Message);
 	}

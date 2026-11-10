@@ -18,6 +18,7 @@ using Main.Api.Features.Bookings.Update;
 using Main.Api.Features.Locations.Create;
 using Main.Api.Features.Locations.Delete;
 using Main.Api.Features.Locations.Get;
+using Main.Api.Features.Locations.GetPage;
 using Main.Api.Features.Locations.Update;
 using Main.Api.Features.ProductImages.Create;
 using Main.Api.Features.ProductImages.Delete;
@@ -80,6 +81,7 @@ builder.Services.AddMediator(cfg =>
 
     cfg.AddConsumer<CreateLocationConsumer>();
     cfg.AddConsumer<UpdateLocationConsumer>();
+    cfg.AddConsumer<GetPageLocationConsumer>();
     cfg.AddConsumer<GetLocationConsumer>();
     cfg.AddConsumer<DeleteLocationConsumer>();
 
