@@ -9,15 +9,15 @@ namespace Main.Api.Mappers;
 
 public static class ProductImageMapConfig
 {
-    public static ProductImageDto ToDto(this ProductImage src, ImageStorageOptions opt) =>
+    public static ProductImageDto ToDto(this ProductImage pi, ImageStorageOptions opt) =>
         new ProductImageDto(
-            src.Id,
-            src.ProductId,
-            src.StorageKey,
-            src.IsMain,
-            src.CreatedAt,
-            src.AltText,
-            Url: opt.Build(src.StorageKey)
+            pi.Id,
+            pi.ProductId,
+            pi.StorageKey,
+            pi.IsMain,
+            pi.CreatedAt,
+            pi.AltText,
+            Url: opt.Build(pi.StorageKey)
         );
 
     public static List<ProductImageDto> ToDto(
@@ -27,34 +27,12 @@ public static class ProductImageMapConfig
 
     public static void Configure(TypeAdapterConfig config)
     {
-        config
-            .NewConfig<CreateProductImageRequest, CreateProductImageCommand>()
-            .ConstructUsing(src => new CreateProductImageCommand(
-                src.ProductId,
-                src.StorageKey!,
-                src.IsMain,
-                src.AltText
-            ));
+        config.NewConfig<CreateProductImageRequest, CreateProductImageCommand>();
 
-        config
-            .NewConfig<UpdateProductImageRequest, UpdateProductImageCommand>()
-            .ConstructUsing(src => new UpdateProductImageCommand(
-                Guid.Empty,
-                src.ProductId,
-                src.StorageKey!,
-                src.IsMain,
-                src.AltText
-            ));
+        config.NewConfig<UpdateProductImageRequest, UpdateProductImageCommand>();
 
-        config
-            .NewConfig<CreateProductImageCommand, ProductImage>()
-            .Ignore(dest => dest.Id)
-            .Ignore(dest => dest.Product);
+        config.NewConfig<CreateProductImageCommand, ProductImage>();
 
-        config
-            .NewConfig<UpdateProductImageCommand, ProductImage>()
-            .Ignore(dest => dest.Id)
-            .Ignore(dest => dest.Product)
-            .Ignore(dest => dest.CreatedAt);
+        config.NewConfig<UpdateProductImageCommand, ProductImage>().Ignore(dest => dest.Id);
     }
 }

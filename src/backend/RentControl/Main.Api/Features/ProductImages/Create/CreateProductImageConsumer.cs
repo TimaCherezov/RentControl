@@ -1,15 +1,17 @@
+using Main.Api.Mappers;
+using Main.Api.Storage;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using Mapster;
 using MassTransit;
 using RentControl.Common.UnitOfWork;
-using Main.Api.Storage;
-using Main.Api.Mappers;
 
 namespace Main.Api.Features.ProductImages.Create;
 
-public class CreateProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions opt)
-    : IConsumer<CreateProductImageCommand>
+public class CreateProductImageConsumer(
+    IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
+    ImageStorageOptions opt
+) : IConsumer<CreateProductImageCommand>
 {
     public async Task Consume(ConsumeContext<CreateProductImageCommand> context)
     {
@@ -18,11 +20,18 @@ public class CreateProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowF
         //TODO: сохранять локально / где-то еще картинку ^ сервис для сохранения
 
         var productImage = await uowFactory.ExecuteAsync(
-            uow =>
+            async uow =>
             {
                 var productImageModel = command.Adapt<ProductImage>();
+                if (
+                    await uow.ProductImages.GetMainByProductIdAsync(
+                        productImageModel.ProductId,
+                        context.CancellationToken
+                    ) == null
+                )
+                    productImageModel.IsMain = true;
                 uow.ProductImages.Add(productImageModel);
-                return Task.FromResult(productImageModel);
+                return productImageModel;
             },
             context.CancellationToken
         );
