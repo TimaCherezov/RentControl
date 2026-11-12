@@ -41,7 +41,6 @@ using Main.Api.Middleware;
 using Main.Api.Storage;
 using Main.Model;
 using MassTransit;
-using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Scalar.AspNetCore;
@@ -151,6 +150,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
+//NOTE: BaseUrl в appsettings должен оканчиваться /images
 app.UseStaticFiles(
     new StaticFileOptions
     {

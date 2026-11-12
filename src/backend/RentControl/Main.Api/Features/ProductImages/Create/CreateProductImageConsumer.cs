@@ -23,13 +23,14 @@ public class CreateProductImageConsumer(
             async uow =>
             {
                 var productImageModel = command.Adapt<ProductImage>();
-                if (
+
+                var hasMain =
                     await uow.ProductImages.GetMainByProductIdAsync(
                         productImageModel.ProductId,
                         context.CancellationToken
-                    ) == null
-                )
-                    productImageModel.IsMain = true;
+                    ) != null;
+
+                productImageModel.IsMain = !hasMain;
                 uow.ProductImages.Add(productImageModel);
                 return productImageModel;
             },

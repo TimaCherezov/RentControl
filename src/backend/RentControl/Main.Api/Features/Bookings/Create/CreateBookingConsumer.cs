@@ -52,7 +52,7 @@ public class CreateBookingConsumer(
         );
 
         var createdBooking =
-            await uow.Bookings.GetByIdAsync(booking.Id)
+            await uow.Bookings.GetByIdAsync(booking.Id, ct)
             ?? throw new ObjectNotFoundException($"Booking with ID: {booking.Id} not found.");
 
         var response = createdBooking.ToDto(opt);

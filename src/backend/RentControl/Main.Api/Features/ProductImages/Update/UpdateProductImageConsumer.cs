@@ -27,6 +27,9 @@ public class UpdateProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowF
 
                 command.Adapt(productImage);
 
+                // NOTE: SetMainAsync использует ExecuteUpdateAsync (в обход change tracker);
+                // важно, чтобы прямые UPDATE не пересекались
+                // с отслеживаемой сущностью.
                 if (productImage.IsMain)
                 {
                     if (!wasMain)
@@ -53,7 +56,10 @@ public class UpdateProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowF
                     }
                     else
                     {
-                        productImage.IsMain = true;
+                        throw new InvalidOperationException(
+                            $"Cannot unset IsMain for product image {productImage.Id}: "
+                                + $"no other image of product {productImage.ProductId} is available to become the main one."
+                        );
                     }
                 }
             },

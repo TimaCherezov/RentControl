@@ -15,6 +15,7 @@ public class ProductImageRepository(MainDbContext dbContext) : IProductImageRepo
             .ProductImages.Where(pi => pi.ProductId == productId)
             .OrderByDescending(pi => pi.IsMain)
             .ThenBy(pi => pi.CreatedAt)
+            .ThenBy(pi => pi.Id)
             .ToListAsync(cancellationToken);
 
     public Task<ProductImage?> GetByIdAsync(

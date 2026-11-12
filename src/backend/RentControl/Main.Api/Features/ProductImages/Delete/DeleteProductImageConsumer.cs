@@ -16,10 +16,7 @@ public class DeleteProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowF
         await uowFactory.ExecuteAsync(
             async uow =>
             {
-                var productImage = await uow.ProductImages.GetByIdAsync(
-                    command.Id,
-                    context.CancellationToken
-                );
+                var productImage = await uow.ProductImages.GetByIdAsync(command.Id, ct);
                 if (productImage is null)
                     throw new ObjectNotFoundException(
                         $"Product image with ID: {command.Id} not found."
@@ -42,7 +39,7 @@ public class DeleteProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowF
                         );
                 }
             },
-            context.CancellationToken
+            ct
         );
     }
 }

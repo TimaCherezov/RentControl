@@ -15,7 +15,7 @@ public class GetProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, 
         var command = context.Message;
 
         var product = await uowFactory.ExecuteAsync(
-            (Func<IMainUnitOfWork, Task<Model.Models.Product>>)(async uow =>
+            (async uow =>
             {
                 var productModel =
                     await uow.Products.GetByIdAsync(command.Id)
