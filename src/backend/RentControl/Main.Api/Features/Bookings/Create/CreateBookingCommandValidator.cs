@@ -1,6 +1,5 @@
 using FluentValidation;
 using Main.Api.Features.Validation;
-using Main.Model.Models;
 
 namespace Main.Api.Features.Bookings.Create;
 
@@ -8,7 +7,6 @@ public class CreateBookingCommandValidator : AbstractValidator<CreateBookingComm
 {
     public CreateBookingCommandValidator()
     {
-        RuleFor(x => x.Id).Id();
         RuleFor(x => x.ProductUnitId).Id();
         RuleFor(x => x.LocationId).Id();
         RuleFor(x => x.DepositAmount).NonNegative();
@@ -18,8 +16,5 @@ public class CreateBookingCommandValidator : AbstractValidator<CreateBookingComm
             .NotInPast()
             .LessThan(x => x.EndAt)
             .WithMessage("{PropertyName} must be before EndAt");
-        RuleFor(x => x.BookingStatus).EqualToExpected(BookingStatusEnum.Pending);
-        RuleFor(x => x.TotalRentalCost).OptionalNonNegative();
-        RuleFor(x => x.ActualReturnAt).OptionalNotInPast();
     }
 }

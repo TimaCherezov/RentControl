@@ -8,6 +8,7 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
     public Task<Booking?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         dbContext
             .Bookings.Include(b => b.ProductUnit.Product.Images.Where(i => i.IsMain))
+            .Include(b => b.Location)
             .AsSplitQuery()
             .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 

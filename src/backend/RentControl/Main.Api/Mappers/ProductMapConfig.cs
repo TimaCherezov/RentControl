@@ -1,18 +1,16 @@
 using Main.Api.Features.Products;
 using Main.Api.Features.Products.Create;
 using Main.Api.Features.Products.Update;
+using Main.Api.Features.Products.GetPage;
+using Main.Api.Storage;
 using Main.Model.Models;
 using Mapster;
-using Main.Api.Storage;
 
 namespace Main.Api.Mappers;
 
 public static class ProductMapConfig
 {
-    public static ProductDto ToDto(
-        this Product p,
-        ImageStorageOptions opt
-    ) =>
+    public static ProductDto ToDto(this Product p, ImageStorageOptions opt) =>
         new ProductDto(
             p.Id,
             p.Name,
@@ -29,24 +27,16 @@ public static class ProductMapConfig
     public static List<ProductDto> ToDto(this IEnumerable<Product> b, ImageStorageOptions opt) =>
         b.Select(b => b.ToDto(opt)).ToList();
 
-	public static void Configure(TypeAdapterConfig config)
-	{
-		config.NewConfig<CreateProductRequest, CreateProductCommand>()
-			.ConstructUsing(src => new CreateProductCommand(
-				src.Name, src.MarketValue, src.DepositOverride,
-				src.DailyRate, src.HourlyRate, src.WeeklyRate, src.MonthlyRate, src.Description));
+    public static void Configure(TypeAdapterConfig config)
+    {
+        config.NewConfig<CreateProductRequest, CreateProductCommand>();
 
-		config.NewConfig<UpdateProductRequest, UpdateProductCommand>()
-			.ConstructUsing(src => new UpdateProductCommand(
-				Guid.Empty, src.Name!, src.MarketValue, src.DepositOverride,
-				src.DailyRate, src.HourlyRate, src.WeeklyRate, src.MonthlyRate, src.Description));
+        config.NewConfig<UpdateProductRequest, UpdateProductCommand>();
 
-		config.NewConfig<CreateProductCommand, Product>()
-			.Ignore(dest => dest.Id)
-			.Ignore(dest => dest.Images);
+        config.NewConfig<CreateProductCommand, Product>();
 
-		config.NewConfig<UpdateProductCommand, Product>()
-			.Ignore(dest => dest.Id)
-			.Ignore(dest => dest.Images);
-	}
+        config.NewConfig<UpdateProductCommand, Product>().Ignore(dest => dest.Id);
+
+        config.NewConfig<GetPageProductRequest, GetPageProductCommand>();
+    }
 }

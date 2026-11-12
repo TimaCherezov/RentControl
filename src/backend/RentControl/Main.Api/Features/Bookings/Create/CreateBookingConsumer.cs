@@ -41,6 +41,9 @@ public class CreateBookingConsumer(
                         $"Product unit with ID: {booking.ProductUnitId} is already booked for the period {booking.StartAt:O} – {booking.EndAt:O}."
                     );
 
+                booking.Id = Guid.NewGuid(); // for publish (default empty)
+                booking.BookingStatus = BookingStatusEnum.Pending;
+
                 uow.Bookings.Add(booking);
                 await publishEndpoint.Publish(
                     new OrderCreated(booking.Id, booking.DepositAmount),
