@@ -7,7 +7,7 @@ using Main.Api.Mappers;
 
 namespace Main.Api.Features.Bookings.GetPage;
 
-public class GetPageBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions opt)
+public class GetPageBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions imageStorageOptions)
     : IConsumer<GetPageBookingCommand>
 {
     public async Task Consume(ConsumeContext<GetPageBookingCommand> context)
@@ -25,7 +25,7 @@ public class GetPageBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFacto
             return pageList;
         });
 
-        var items = bookingPageList.ToDto(opt);
+        var items = bookingPageList.ToDto(imageStorageOptions);
         var response = new PagedResponse<BookingDto>(
             items,
             bookingPageList.TotalCount,

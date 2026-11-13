@@ -9,7 +9,7 @@ namespace Main.Api.Mappers;
 
 public static class ProductImageMapConfig
 {
-    public static ProductImageDto ToDto(this ProductImage pi, ImageStorageOptions opt) =>
+    public static ProductImageDto ToDto(this ProductImage pi, ImageStorageOptions imageStorageOptions) =>
         new ProductImageDto(
             pi.Id,
             pi.ProductId,
@@ -17,13 +17,13 @@ public static class ProductImageMapConfig
             pi.IsMain,
             pi.CreatedAt,
             pi.AltText,
-            Url: opt.Build(pi.StorageKey)
+            Url: imageStorageOptions.Build(pi.StorageKey)
         );
 
     public static List<ProductImageDto> ToDto(
         this IEnumerable<ProductImage> src,
-        ImageStorageOptions opt
-    ) => src.Select(i => i.ToDto(opt)).ToList();
+        ImageStorageOptions imageStorageOptions
+    ) => src.Select(i => i.ToDto(imageStorageOptions)).ToList();
 
     public static void Configure(TypeAdapterConfig config)
     {

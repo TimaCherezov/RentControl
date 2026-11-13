@@ -10,7 +10,7 @@ namespace Main.Api.Features.ProductImages.Create;
 
 public class CreateProductImageConsumer(
     IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
-    ImageStorageOptions opt
+    ImageStorageOptions imageStorageOptions
 ) : IConsumer<CreateProductImageCommand>
 {
     public async Task Consume(ConsumeContext<CreateProductImageCommand> context)
@@ -37,7 +37,7 @@ public class CreateProductImageConsumer(
             context.CancellationToken
         );
 
-        var response = productImage.ToDto(opt);
+        var response = productImage.ToDto(imageStorageOptions);
 
         await context.RespondAsync(response);
     }

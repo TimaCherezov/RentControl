@@ -6,7 +6,7 @@ using Main.Api.Mappers;
 
 namespace Main.Api.Features.ProductImages.GetAll;
 
-public class GetAllProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions opt)
+public class GetAllProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions imageStorageOptions)
     : IConsumer<GetAllProductImageCommand>
 {
     public async Task Consume(ConsumeContext<GetAllProductImageCommand> context)
@@ -20,7 +20,7 @@ public class GetAllProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowF
             )
         );
 
-        var response = new GetAllProductImageResponse(list.ToDto(opt));
+        var response = new GetAllProductImageResponse(list.ToDto(imageStorageOptions));
         await context.RespondAsync(response);
     }
 }

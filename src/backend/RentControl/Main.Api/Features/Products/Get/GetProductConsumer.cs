@@ -4,10 +4,12 @@ using MassTransit;
 using RentControl.Common.UnitOfWork;
 using Main.Api.Mappers;
 using Main.Api.Storage;
+using Microsoft.Extensions.Options;
+using Main.Api.Features.Bookings;
 
 namespace Main.Api.Features.Products.Get;
 
-public class GetProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions opt)
+public class GetProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions imageStorageOptions, IOptions<BookingOptions> bookingOptions)
     : IConsumer<GetProductCommand>
 {
     public async Task Consume(ConsumeContext<GetProductCommand> context)
@@ -27,7 +29,7 @@ public class GetProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, 
             context.CancellationToken
         );
 
-        var response = product.ToDto(opt);
+        var response = product.ToDto(imageStorageOptions, bookingOptions.Value.DepositRate);
 
         await context.RespondAsync(response);
     }

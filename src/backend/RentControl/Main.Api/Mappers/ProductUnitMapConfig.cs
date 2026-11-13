@@ -1,6 +1,5 @@
 using Main.Api.Features.ProductUnits;
 using Main.Api.Features.ProductUnits.Create;
-using Main.Api.Features.ProductUnits.GetAvailable;
 using Main.Api.Features.ProductUnits.Update;
 using Main.Model.Models;
 using Mapster;
@@ -16,8 +15,6 @@ public static class ProductUnitMapConfig
         config.NewConfig<CreateProductUnitRequest, CreateProductUnitCommand>();
 
         config.NewConfig<UpdateProductUnitRequest, UpdateProductUnitCommand>();
-
-        config.NewConfig<GetAvailableProductUnitsRequest, GetAvailableProductUnitsCommand>();
 
         config.NewConfig<CreateProductUnitCommand, ProductUnit>();
 

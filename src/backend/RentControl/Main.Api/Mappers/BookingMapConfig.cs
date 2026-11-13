@@ -10,7 +10,7 @@ namespace Main.Api.Mappers;
 
 public static class BookingMapConfig
 {
-    public static BookingDto ToDto(this Booking b, ImageStorageOptions opt) =>
+    public static BookingDto ToDto(this Booking b, ImageStorageOptions imageStorageOptions) =>
         new BookingDto(
             b.Id,
             b.Location?.Name,
@@ -22,14 +22,14 @@ public static class BookingMapConfig
             b.StatusChangedAt,
             b.ProductUnit?.Product?.Name,
             b.ProductUnit?.ProductId,
-            b.ProductUnit?.Product?.MainImage?.ToDto(opt),
+            b.ProductUnit?.Product?.MainImage?.ToDto(imageStorageOptions),
             b.ActualReturnAt,
             b.TotalRentalCost,
             b.IsInvoiceCreated
         );
 
-    public static List<BookingDto> ToDto(this IEnumerable<Booking> b, ImageStorageOptions opt) =>
-        b.Select(b => b.ToDto(opt)).ToList();
+    public static List<BookingDto> ToDto(this IEnumerable<Booking> b, ImageStorageOptions imageStorageOptions) =>
+        b.Select(b => b.ToDto(imageStorageOptions)).ToList();
 
     public static void Configure(TypeAdapterConfig config)
     {

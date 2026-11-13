@@ -5,10 +5,12 @@ using Mapster;
 using RentControl.Common.UnitOfWork;
 using Main.Api.Mappers;
 using Main.Api.Storage;
+using Microsoft.Extensions.Options;
+using Main.Api.Features.Bookings;
 
 namespace Main.Api.Features.Products.Create;
 
-public class CreateProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions opt) : IConsumer<CreateProductCommand>
+public class CreateProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions imageStorageOptions, IOptions<BookingOptions> bookingOptions) : IConsumer<CreateProductCommand>
 {
 	public async Task Consume(ConsumeContext<CreateProductCommand> context)
 	{
@@ -23,7 +25,7 @@ public class CreateProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactor
 			return Task.FromResult(productModel);
 		}, context.CancellationToken);
 
-		var response = product.ToDto(opt);
+		var response = product.ToDto(imageStorageOptions, bookingOptions.Value.DepositRate);
 
 		await context.RespondAsync(response);
 	}

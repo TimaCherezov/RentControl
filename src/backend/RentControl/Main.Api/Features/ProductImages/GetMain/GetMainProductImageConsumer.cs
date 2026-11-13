@@ -7,7 +7,7 @@ using Main.Api.Mappers;
 
 namespace Main.Api.Features.ProductImages.GetMain;
 
-public class GetMainProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions opt)
+public class GetMainProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions imageStorageOptions)
     : IConsumer<GetMainProductImageCommand>
 {
     public async Task Consume(ConsumeContext<GetMainProductImageCommand> context)
@@ -27,7 +27,7 @@ public class GetMainProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uow
             context.CancellationToken
         );
 
-        var response = image.ToDto(opt);
+        var response = image.ToDto(imageStorageOptions);
         await context.RespondAsync(response);
     }
 }

@@ -9,7 +9,7 @@ namespace Main.Api.Features.Bookings.Get;
 
 public class GetBookingConsumer(
     IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
-    ImageStorageOptions opt
+    ImageStorageOptions imageStorageOptions
 ) : IConsumer<GetBookingCommand>
 {
     public async Task Consume(ConsumeContext<GetBookingCommand> context)
@@ -29,7 +29,7 @@ public class GetBookingConsumer(
             context.CancellationToken
         );
 
-        var response = booking.ToDto(opt);
+        var response = booking.ToDto(imageStorageOptions);
 
         await context.RespondAsync(response);
     }

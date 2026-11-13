@@ -29,12 +29,12 @@ using Main.Api.Features.ProductImages.Update;
 using Main.Api.Features.Products.Create;
 using Main.Api.Features.Products.Delete;
 using Main.Api.Features.Products.Get;
+using Main.Api.Features.Products.GetMaxAvailableDuration;
 using Main.Api.Features.Products.GetPage;
 using Main.Api.Features.Products.Update;
 using Main.Api.Features.ProductUnits.Create;
 using Main.Api.Features.ProductUnits.Delete;
 using Main.Api.Features.ProductUnits.Get;
-using Main.Api.Features.ProductUnits.GetAvailable;
 using Main.Api.Features.ProductUnits.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
@@ -53,7 +53,7 @@ builder.AddMainDatabase("maindb");
 
 builder.Services.AddAuth(builder.Configuration);
 builder.Services.AddMapster();
-builder.Services.AddBookings();
+builder.Services.AddBookings(builder.Configuration);
 
 builder.Services.AddSingleton(
     new ImageStorageOptions
@@ -82,6 +82,7 @@ builder.Services.AddMediator(cfg =>
     cfg.AddConsumer<GetPageProductConsumer>();
     cfg.AddConsumer<GetProductConsumer>();
     cfg.AddConsumer<DeleteProductConsumer>();
+    cfg.AddConsumer<GetMaxAvailableDurationConsumer>();
 
     cfg.AddConsumer<CreateBookingConsumer>();
     cfg.AddConsumer<UpdateBookingConsumer>();
@@ -103,7 +104,6 @@ builder.Services.AddMediator(cfg =>
 
     cfg.AddConsumer<CreateProductUnitConsumer>();
     cfg.AddConsumer<GetProductUnitConsumer>();
-    cfg.AddConsumer<GetAvailableProductUnitsConsumer>();
     cfg.AddConsumer<UpdateProductUnitConsumer>();
     cfg.AddConsumer<DeleteProductUnitConsumer>();
 

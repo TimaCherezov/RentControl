@@ -7,6 +7,7 @@ public record ProductDto(
     string Name,
     decimal MarketValue,
     decimal? DepositOverride,
+    decimal DepositAmount,
     decimal DailyRate,
     decimal HourlyRate,
     decimal? WeeklyRate,
