@@ -1,6 +1,6 @@
 using Main.Api.Exceptions;
+using Main.Api.Features.ProductImages;
 using Main.Api.Mappers;
-using Main.Api.Storage;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using MassTransit;
@@ -12,7 +12,7 @@ namespace Main.Api.Features.Bookings.Create;
 public class CreateBookingConsumer(
     IMainUnitOfWork uow,
     IPublishEndpoint publishEndpoint,
-    ImageStorageOptions imageStorageOptions,
+    IOptions<ImageStorageOptions> imageStorageOptions,
     IOptions<BookingOptions> bookingOptions
 ) : IConsumer<CreateBookingCommand>
 {
@@ -104,7 +104,7 @@ public class CreateBookingConsumer(
             await uow.Bookings.GetByIdAsync(booking.Id, ct)
             ?? throw new ObjectNotFoundException($"Booking with ID: {booking.Id} not found.");
 
-        var response = createdBooking.ToDto(imageStorageOptions);
+        var response = createdBooking.ToDto(imageStorageOptions.Value);
 
         await context.RespondAsync(response);
     }

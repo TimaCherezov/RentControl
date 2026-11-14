@@ -1,7 +1,6 @@
 using Main.Api.Features.ProductImages;
 using Main.Api.Features.ProductImages.Create;
 using Main.Api.Features.ProductImages.Update;
-using Main.Api.Storage;
 using Main.Model.Models;
 using Mapster;
 
@@ -9,7 +8,10 @@ namespace Main.Api.Mappers;
 
 public static class ProductImageMapConfig
 {
-    public static ProductImageDto ToDto(this ProductImage pi, ImageStorageOptions imageStorageOptions) =>
+    public static ProductImageDto ToDto(
+        this ProductImage pi,
+        ImageStorageOptions imageStorageOptions
+    ) =>
         new ProductImageDto(
             pi.Id,
             pi.ProductId,

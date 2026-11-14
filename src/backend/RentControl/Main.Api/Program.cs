@@ -20,6 +20,7 @@ using Main.Api.Features.Locations.Delete;
 using Main.Api.Features.Locations.Get;
 using Main.Api.Features.Locations.GetPage;
 using Main.Api.Features.Locations.Update;
+using Main.Api.Features.ProductImages;
 using Main.Api.Features.ProductImages.Create;
 using Main.Api.Features.ProductImages.Delete;
 using Main.Api.Features.ProductImages.Get;
@@ -38,11 +39,11 @@ using Main.Api.Features.ProductUnits.Get;
 using Main.Api.Features.ProductUnits.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
-using Main.Api.Storage;
 using Main.Model;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -55,19 +56,7 @@ builder.Services.AddAuth(builder.Configuration);
 builder.Services.AddMapster();
 builder.Services.AddBookings(builder.Configuration);
 
-builder.Services.AddSingleton(
-    new ImageStorageOptions
-    {
-        BaseUrl =
-            builder.Configuration["Storage:ImageBaseUrl"]
-            ?? throw new InvalidOperationException("Storage:ImageBaseUrl is not configured"),
-    }
-);
-var uploadsPath = Path.GetFullPath(
-    builder.Configuration["Storage:LocalPath"] ?? "uploads",
-    builder.Environment.ContentRootPath
-);
-Directory.CreateDirectory(uploadsPath);
+builder.Services.AddProductImages(builder.Configuration);
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
@@ -150,12 +139,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-//NOTE: BaseUrl в appsettings должен оканчиваться /images
+var storageOptions = app.Services.GetRequiredService<IOptions<ImageStorageOptions>>().Value;
+var uploadsPath = Path.GetFullPath(storageOptions.LocalPath, app.Environment.ContentRootPath);
+Directory.CreateDirectory(uploadsPath);
+
 app.UseStaticFiles(
     new StaticFileOptions
     {
         FileProvider = new PhysicalFileProvider(uploadsPath),
-        RequestPath = "/images",
+        RequestPath = storageOptions.RequestPath,
     }
 );
 

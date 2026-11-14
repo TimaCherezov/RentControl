@@ -2,12 +2,13 @@ using Main.Model.UnitOfWork;
 using MassTransit;
 using RentControl.Common.DTOs;
 using RentControl.Common.UnitOfWork;
-using Main.Api.Storage;
+using Main.Api.Features.ProductImages;
 using Main.Api.Mappers;
+using Microsoft.Extensions.Options;
 
 namespace Main.Api.Features.Bookings.GetPage;
 
-public class GetPageBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions imageStorageOptions)
+public class GetPageBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IOptions<ImageStorageOptions> imageStorageOptions)
     : IConsumer<GetPageBookingCommand>
 {
     public async Task Consume(ConsumeContext<GetPageBookingCommand> context)
@@ -25,7 +26,7 @@ public class GetPageBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFacto
             return pageList;
         });
 
-        var items = bookingPageList.ToDto(imageStorageOptions);
+        var items = bookingPageList.ToDto(imageStorageOptions.Value);
         var response = new PagedResponse<BookingDto>(
             items,
             bookingPageList.TotalCount,

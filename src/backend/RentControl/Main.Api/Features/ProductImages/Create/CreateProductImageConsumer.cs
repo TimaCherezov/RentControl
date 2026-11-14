@@ -1,16 +1,16 @@
 using Main.Api.Mappers;
-using Main.Api.Storage;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using Mapster;
 using MassTransit;
+using Microsoft.Extensions.Options;
 using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Features.ProductImages.Create;
 
 public class CreateProductImageConsumer(
     IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
-    ImageStorageOptions imageStorageOptions
+    IOptions<ImageStorageOptions> imageStorageOptions
 ) : IConsumer<CreateProductImageCommand>
 {
     public async Task Consume(ConsumeContext<CreateProductImageCommand> context)
@@ -37,7 +37,7 @@ public class CreateProductImageConsumer(
             context.CancellationToken
         );
 
-        var response = productImage.ToDto(imageStorageOptions);
+        var response = productImage.ToDto(imageStorageOptions.Value);
 
         await context.RespondAsync(response);
     }

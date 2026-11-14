@@ -2,7 +2,7 @@ using Main.Api.Features.Bookings;
 using Main.Api.Features.Bookings.Create;
 using Main.Api.Features.Bookings.GetPage;
 using Main.Api.Features.Bookings.Update;
-using Main.Api.Storage;
+using Main.Api.Features.ProductImages;
 using Main.Model.Models;
 using Mapster;
 

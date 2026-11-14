@@ -2,12 +2,12 @@ using Main.Api.Exceptions;
 using Main.Model.UnitOfWork;
 using MassTransit;
 using RentControl.Common.UnitOfWork;
-using Main.Api.Storage;
 using Main.Api.Mappers;
+using Microsoft.Extensions.Options;
 
 namespace Main.Api.Features.ProductImages.GetMain;
 
-public class GetMainProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, ImageStorageOptions imageStorageOptions)
+public class GetMainProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IOptions<ImageStorageOptions> imageStorageOptions)
     : IConsumer<GetMainProductImageCommand>
 {
     public async Task Consume(ConsumeContext<GetMainProductImageCommand> context)
@@ -27,7 +27,7 @@ public class GetMainProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uow
             context.CancellationToken
         );
 
-        var response = image.ToDto(imageStorageOptions);
+        var response = image.ToDto(imageStorageOptions.Value);
         await context.RespondAsync(response);
     }
 }

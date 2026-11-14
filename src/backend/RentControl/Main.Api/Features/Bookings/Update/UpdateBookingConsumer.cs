@@ -6,7 +6,7 @@ using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Features.Bookings.Update;
 
-public class UpdateBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IBookingStatusStateService bookingStatusService)
+public class UpdateBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
     : IConsumer<UpdateBookingCommand>
 {
     public async Task Consume(ConsumeContext<UpdateBookingCommand> context)
