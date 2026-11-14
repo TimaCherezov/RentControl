@@ -1,11 +1,12 @@
 using Main.Model.UnitOfWork;
-using Mapster;
 using MassTransit;
+using Microsoft.Extensions.Options;
 using RentControl.Common.UnitOfWork;
+using Main.Api.Mappers;
 
 namespace Main.Api.Features.ProductImages.GetAll;
 
-public class GetAllProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
+public class GetAllProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IOptions<ImageStorageOptions> imageStorageOptions)
     : IConsumer<GetAllProductImageCommand>
 {
     public async Task Consume(ConsumeContext<GetAllProductImageCommand> context)
@@ -19,7 +20,7 @@ public class GetAllProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowF
             )
         );
 
-        var response = list.Adapt<List<ProductImageDto>>();
+        var response = new GetAllProductImageResponse(list.ToDto(imageStorageOptions.Value));
         await context.RespondAsync(response);
     }
 }

@@ -27,6 +27,7 @@ public class OutboxTests(MainApiFixture fixture)
             MarketValue = 1000m,
             DailyRate = 100m,
             HourlyRate = 10m,
+            DepositOverride = 500m,
         };
         var unit = new ProductUnit
         {
@@ -55,14 +56,11 @@ public class OutboxTests(MainApiFixture fixture)
             using var request = new HttpRequestMessage(HttpMethod.Post, "/api/bookings");
             request.Content = JsonContent.Create(new
             {
-                productUnitId = unit.Id,
+                productId = product.Id,
                 locationId = location.Id,
                 userId = user.Id,
                 startAt = DateTimeOffset.UtcNow.AddDays(1),
                 endAt = DateTimeOffset.UtcNow.AddDays(2),
-                depositAmount,
-                bookingStatus = (int)BookingStatusEnum.Pending,
-                statusChangedAt = DateTimeOffset.UtcNow,
             });
             request.Headers.Authorization = new AuthenticationHeaderValue(
                 "Bearer", fixture.CreateAccessToken(Guid.NewGuid()));

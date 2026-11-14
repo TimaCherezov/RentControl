@@ -15,6 +15,7 @@ public class ProductImageRepository(MainDbContext dbContext) : IProductImageRepo
             .ProductImages.Where(pi => pi.ProductId == productId)
             .OrderByDescending(pi => pi.IsMain)
             .ThenBy(pi => pi.CreatedAt)
+            .ThenBy(pi => pi.Id)
             .ToListAsync(cancellationToken);
 
     public Task<ProductImage?> GetByIdAsync(
@@ -31,6 +32,31 @@ public class ProductImageRepository(MainDbContext dbContext) : IProductImageRepo
             cancellationToken
         );
 
-    public void Remove(ProductImage productImage)
-        => dbContext.ProductImages.Remove(productImage);
+    public Task<Guid?> GetNextMainCandidateIdByProductIdAsync(
+        Guid productId,
+        Guid excludeId,
+        CancellationToken cancellationToken = default
+    ) =>
+        dbContext
+            .ProductImages.Where(pi => pi.ProductId == productId && pi.Id != excludeId)
+            .OrderBy(pi => pi.CreatedAt)
+            .Select(pi => (Guid?)pi.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public void Remove(ProductImage productImage) => dbContext.ProductImages.Remove(productImage);
+
+    public async Task SetMainAsync(
+        Guid productId,
+        Guid mainImageId,
+        CancellationToken cancellationToken = default
+    )
+    {
+        await dbContext
+            .ProductImages.Where(pi => pi.ProductId == productId && pi.IsMain)
+            .ExecuteUpdateAsync(pi => pi.SetProperty(x => x.IsMain, false), cancellationToken);
+
+        await dbContext
+            .ProductImages.Where(pi => pi.ProductId == productId && pi.Id == mainImageId)
+            .ExecuteUpdateAsync(pi => pi.SetProperty(x => x.IsMain, true), cancellationToken);
+    }
 }

@@ -15,4 +15,14 @@ public interface IProductImageRepository
         Guid productId,
         CancellationToken cancellationToken = default
     );
+    Task<Guid?> GetNextMainCandidateIdByProductIdAsync(
+        Guid productId,
+        Guid excludeId,
+        CancellationToken cancellationToken = default
+    );
+    Task SetMainAsync(
+        Guid productId,
+        Guid mainImageId,
+        CancellationToken cancellationToken = default
+    );
 }

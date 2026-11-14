@@ -1,12 +1,15 @@
 using Main.Api.Exceptions;
 using Main.Model.UnitOfWork;
-using Mapster;
 using MassTransit;
 using RentControl.Common.UnitOfWork;
+using Main.Api.Mappers;
+using Main.Api.Features.ProductImages;
+using Microsoft.Extensions.Options;
+using Main.Api.Features.Bookings;
 
 namespace Main.Api.Features.Products.Get;
 
-public class GetProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
+public class GetProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IOptions<ImageStorageOptions> imageStorageOptions, IOptions<BookingOptions> bookingOptions)
     : IConsumer<GetProductCommand>
 {
     public async Task Consume(ConsumeContext<GetProductCommand> context)
@@ -14,7 +17,7 @@ public class GetProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
         var command = context.Message;
 
         var product = await uowFactory.ExecuteAsync(
-            async uow =>
+            (async uow =>
             {
                 var productModel =
                     await uow.Products.GetByIdAsync(command.Id)
@@ -22,11 +25,11 @@ public class GetProductConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory)
                         $"Product with ID:'{command.Id}' not found"
                     );
                 return productModel;
-            },
+            }),
             context.CancellationToken
         );
 
-        var response = product.Adapt<ProductDto>();
+        var response = product.ToDto(imageStorageOptions.Value, bookingOptions.Value);
 
         await context.RespondAsync(response);
     }

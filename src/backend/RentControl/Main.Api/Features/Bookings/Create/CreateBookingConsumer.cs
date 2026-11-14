@@ -1,51 +1,111 @@
 using Main.Api.Exceptions;
+using Main.Api.Features.ProductImages;
+using Main.Api.Mappers;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
-using Mapster;
 using MassTransit;
+using Microsoft.Extensions.Options;
 using RentControl.Common.IntegrationEvents;
 
 namespace Main.Api.Features.Bookings.Create;
 
-public class CreateBookingConsumer(IMainUnitOfWork uow, IPublishEndpoint publishEndpoint)
-    : IConsumer<CreateBookingCommand>
+public class CreateBookingConsumer(
+    IMainUnitOfWork uow,
+    IPublishEndpoint publishEndpoint,
+    IOptions<ImageStorageOptions> imageStorageOptions,
+    IOptions<BookingOptions> bookingOptions
+) : IConsumer<CreateBookingCommand>
 {
     public async Task Consume(ConsumeContext<CreateBookingCommand> context)
     {
         var ct = context.CancellationToken;
-        var booking = context.Message.Adapt<Booking>();
+        var command = context.Message;
 
-        var createdBooking = await uow.ExecuteInTransactionAsync(
+        var booking = await uow.ExecuteInTransactionAsync(
             async () =>
             {
-                _ =
-                    await uow.ProductUnits.GetByIdAsync(booking.ProductUnitId, ct)
+                var product =
+                    await uow.Products.GetByIdAsync(command.ProductId, ct)
                     ?? throw new ObjectNotFoundException(
-                        $"ProductUnit with ID: {booking.ProductUnitId} not found."
+                        $"Product with ID: {command.ProductId} not found."
+                    );
+
+                var productUnitId =
+                    await uow.ProductUnits.GetBestFitUnitIdAsync(
+                        command.ProductId,
+                        command.StartAt,
+                        command.EndAt,
+                        bookingOptions.Value.MaxBookingDuration,
+                        command.LocationId,
+                        ct
+                    )
+                    ?? throw new InvalidOperationException(
+                        $"Could not find a suitable product unit. ProductId: {command.ProductId}, StartAt: {command.StartAt:O}, EndAt: {command.EndAt:O}"
+                    );
+
+                var productUnit =
+                    await uow.ProductUnits.GetByIdAsync(productUnitId, ct)
+                    ?? throw new ObjectNotFoundException(
+                        $"ProductUnit with ID: {productUnitId} not found."
                     ); // pessimistic lock
+
+                if (productUnit.ProductId != command.ProductId)
+                    throw new InvalidOperationException(
+                        $"Product unit with ID: {productUnit.Id} does not belong to product with ID: {command.ProductId}."
+                    );
+
+                if (!StatesExtensions.IsRentable(productUnit.State))
+                    throw new InvalidOperationException(
+                        $"Product unit with ID: {productUnit.Id} is not rentable in state '{productUnit.State}'."
+                    );
+
+                if (command.LocationId != null && productUnit.LocationId != command.LocationId)
+                    throw new InvalidOperationException(
+                        $"Product unit with ID: {productUnit.Id} belongs to location {productUnit.LocationId}, not the requested location {command.LocationId}."
+                    );
 
                 if (
                     await uow.Bookings.HasOverlappingBookingAsync(
-                        booking.ProductUnitId,
-                        booking.StartAt,
-                        booking.EndAt,
+                        productUnitId,
+                        command.StartAt,
+                        command.EndAt,
                         ct
                     )
                 )
                     throw new InvalidOperationException(
-                        $"Product unit with ID: {booking.ProductUnitId} is already booked for the period {booking.StartAt:O} – {booking.EndAt:O}."
+                        $"Product unit with ID: {productUnitId} is already booked for the period {command.StartAt:O} – {command.EndAt:O}."
                     );
 
-                uow.Bookings.Add(booking);
+                var bookingModel = new Booking
+                {
+                    Id = Guid.NewGuid(),
+                    ProductUnitId = productUnit.Id,
+                    UserId = command.UserId,
+                    LocationId = productUnit.LocationId,
+                    StartAt = command.StartAt,
+                    EndAt = command.EndAt,
+                    DepositAmount = product.CalculateDeposit(bookingOptions.Value.DepositRate),
+                    BookingStatus = BookingStatusEnum.Pending,
+                    StatusChangedAt = DateTimeOffset.UtcNow,
+                };
+
+                uow.Bookings.Add(bookingModel);
+
                 await publishEndpoint.Publish(
-                    new OrderCreated(booking.Id, booking.DepositAmount),
+                    new OrderCreated(bookingModel.Id, bookingModel.DepositAmount), //TODO: + аренда
                     ct
                 );
-                return booking;
+                return bookingModel;
             },
             ct
         );
 
-        await context.RespondAsync(createdBooking.Adapt<BookingDto>());
+        var createdBooking =
+            await uow.Bookings.GetByIdAsync(booking.Id, ct)
+            ?? throw new ObjectNotFoundException($"Booking with ID: {booking.Id} not found.");
+
+        var response = createdBooking.ToDto(imageStorageOptions.Value);
+
+        await context.RespondAsync(response);
     }
 }

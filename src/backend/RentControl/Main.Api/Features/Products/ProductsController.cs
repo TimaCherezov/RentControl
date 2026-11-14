@@ -1,6 +1,7 @@
 using Main.Api.Features.Products.Create;
 using Main.Api.Features.Products.Delete;
 using Main.Api.Features.Products.Get;
+using Main.Api.Features.Products.GetMaxAvailableDuration;
 using Main.Api.Features.Products.GetPage;
 using Main.Api.Features.Products.Update;
 using Mapster;
@@ -17,7 +18,8 @@ public class ProductsController(IMediator mediator) : ControllerBase
     [HttpPost]
     public async Task<ActionResult<ProductDto>> Create(
         [FromBody] CreateProductRequest request,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var command = request.Adapt<CreateProductCommand>();
 
@@ -41,12 +43,31 @@ public class ProductsController(IMediator mediator) : ControllerBase
     [HttpGet]
     public async Task<ActionResult<PagedResponse<ProductDto>>> GetPage(
         [FromQuery] GetPageProductRequest request,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var command = request.Adapt<GetPageProductCommand>();
 
         var client = mediator.CreateRequestClient<GetPageProductCommand>();
-        var response = await client.GetResponse<PagedResponse<ProductDto>>(command, cancellationToken: ct);
+        var response = await client.GetResponse<PagedResponse<ProductDto>>(
+            command,
+            cancellationToken: ct
+        );
+
+        return Ok(response.Message);
+    }
+
+    [HttpGet("{id:guid}/max-duration")]
+    public async Task<IActionResult> GetMaxDuration(
+        Guid id,
+        [FromQuery] GetMaxAvailableDurationRequest request,
+        CancellationToken ct
+    )
+    {
+        var command = request.Adapt<GetMaxAvailableDurationCommand>() with { Id = id };
+
+        var client = mediator.CreateRequestClient<GetMaxAvailableDurationCommand>();
+        var response = await client.GetResponse<ProductMaxAvailableDuration>(command, ct);
 
         return Ok(response.Message);
     }
@@ -63,7 +84,8 @@ public class ProductsController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateProductRequest request,
-        CancellationToken ct)
+        CancellationToken ct
+    )
     {
         var command = request.Adapt<UpdateProductCommand>() with { Id = id };
 
@@ -71,5 +93,4 @@ public class ProductsController(IMediator mediator) : ControllerBase
 
         return NoContent();
     }
-
 }

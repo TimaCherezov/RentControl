@@ -8,7 +8,6 @@ public class UpdateProductImageCommandValidator : AbstractValidator<UpdateProduc
     public UpdateProductImageCommandValidator()
     {
         RuleFor(x => x.Id).Id();
-        RuleFor(x => x.ProductId).Id();
         RuleFor(x => x.StorageKey).RequiredString(255);
         RuleFor(x => x.AltText).OptionalString(255);
     }

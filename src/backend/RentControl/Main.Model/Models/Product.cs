@@ -25,4 +25,6 @@ public class Product
 
     public ProductImage? MainImage => Images.FirstOrDefault(i => i.IsMain);
     public ICollection<ProductImage> Images { get; set; } = new List<ProductImage>();
+
+    public decimal CalculateDeposit(decimal depositRate) => DepositOverride ?? MarketValue * depositRate;
 }
