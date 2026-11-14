@@ -69,11 +69,11 @@ public class ProductImagesController(IMediator mediator) : ControllerBase
     {
         var command = new GetAllProductImageCommand(productId);
         var client = mediator.CreateRequestClient<GetAllProductImageCommand>();
-        var response = await client.GetResponse<List<ProductImageDto>>(
+        var response = await client.GetResponse<GetAllProductImageResponse>(
             command,
             cancellationToken: ct
         );
-        return Ok(response.Message);
+        return Ok(response.Message.Images);
     }
 
     [HttpGet("product/{productId:guid}/main")]

@@ -5,8 +5,14 @@ namespace Main.Model.Repositories;
 
 public class ProductRepository(MainDbContext dbContext) : IProductRepository
 {
-    public Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        => dbContext.Products.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+    public Task<Product?> GetByIdAsync(
+        Guid id,
+        CancellationToken cancellationToken = default
+    ) =>
+        dbContext
+            .Products.Include(p => p.Images)
+            .AsSplitQuery()
+            .FirstOrDefaultAsync(b => b.Id == id, cancellationToken);
 
     public async Task<PageList<Product>> GetPageAsync(
         int pageNumber,
@@ -19,21 +25,22 @@ public class ProductRepository(MainDbContext dbContext) : IProductRepository
         if (pageSize < 1)
             throw new ArgumentOutOfRangeException(nameof(pageSize));
 
-        var products = await dbContext
+        var products = dbContext
             .Products.Include(p => p.Images)
             .AsSplitQuery()
-            .AsNoTracking()
+            .AsNoTracking();
+
+        var productsLimit = await products
             .OrderBy(p => p.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);
+
         var totalCount = await dbContext.Products.CountAsync(cancellationToken);
-        return new PageList<Product>(products, totalCount, pageNumber, pageSize);
+        return new PageList<Product>(productsLimit, totalCount, pageNumber, pageSize);
     }
 
-    public void Add(Product product)
-        => dbContext.Products.Add(product);
+    public void Add(Product product) => dbContext.Products.Add(product);
 
-    public void Remove(Product product)
-        => dbContext.Products.Remove(product);
+    public void Remove(Product product) => dbContext.Products.Remove(product);
 }

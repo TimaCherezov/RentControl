@@ -6,5 +6,6 @@ public record ProductImageDto(
     string StorageKey,
     bool IsMain,
     DateTimeOffset CreatedAt,
-    string? AltText
+    string? AltText,
+    string Url
 );

@@ -1,25 +1,22 @@
 using FluentValidation;
 using Main.Api.Features.Validation;
-using Main.Model.Models;
+using Microsoft.Extensions.Options;
 
 namespace Main.Api.Features.Bookings.Create;
 
 public class CreateBookingCommandValidator : AbstractValidator<CreateBookingCommand>
 {
-    public CreateBookingCommandValidator()
+    public CreateBookingCommandValidator(IOptions<BookingOptions> bookingOptions)
     {
-        RuleFor(x => x.Id).Id();
-        RuleFor(x => x.ProductUnitId).Id();
-        RuleFor(x => x.LocationId).Id();
-        RuleFor(x => x.DepositAmount).NonNegative();
+        var maxDuration = bookingOptions.Value.MaxBookingDuration;
+        RuleFor(x => x.ProductId).Id();
+        RuleFor(x => x.LocationId).OptionalId();
         RuleFor(x => x.UserId).Id();
         RuleFor(x => x.EndAt).NotInPast();
         RuleFor(x => x.StartAt)
             .NotInPast()
             .LessThan(x => x.EndAt)
             .WithMessage("{PropertyName} must be before EndAt");
-        RuleFor(x => x.BookingStatus).EqualToExpected(BookingStatusEnum.Pending);
-        RuleFor(x => x.TotalRentalCost).OptionalNonNegative();
-        RuleFor(x => x.ActualReturnAt).OptionalNotInPast();
+        RuleFor(x => x.EndAt - x.StartAt).LessThanOrEqualTo(maxDuration);
     }
 }
