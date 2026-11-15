@@ -3,7 +3,9 @@ using Main.Api.Features.Products.Delete;
 using Main.Api.Features.Products.Get;
 using Main.Api.Features.Products.GetMaxAvailableDuration;
 using Main.Api.Features.Products.GetPage;
+using Main.Api.Features.Products.GetQuote;
 using Main.Api.Features.Products.Update;
+using Main.Api.Features.Bookings.Pricing;
 using Mapster;
 using MassTransit.Mediator;
 using Main.Model.Models;
@@ -72,6 +74,21 @@ public class ProductsController(IMediator mediator) : ControllerBase
 
         var client = mediator.CreateRequestClient<GetMaxAvailableDurationCommand>();
         var response = await client.GetResponse<ProductMaxAvailableDuration>(command, ct);
+
+        return Ok(response.Message);
+    }
+
+    [HttpGet("{id:guid}/quote")]
+    public async Task<ActionResult<BookingQuote>> GetQuote(
+        Guid id,
+        [FromQuery] GetQuoteProductRequest request,
+        CancellationToken ct
+    )
+    {
+        var command = request.Adapt<GetQuoteProductCommand>() with { Id = id };
+
+        var client = mediator.CreateRequestClient<GetQuoteProductCommand>();
+        var response = await client.GetResponse<BookingQuote>(command, ct);
 
         return Ok(response.Message);
     }

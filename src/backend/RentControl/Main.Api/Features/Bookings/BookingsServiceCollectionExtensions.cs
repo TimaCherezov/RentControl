@@ -1,3 +1,5 @@
+using Main.Api.Features.Bookings.Pricing;
+
 namespace Main.Api.Features.Bookings;
 
 public static class BookingsServiceCollectionExtensions
@@ -17,6 +19,7 @@ public static class BookingsServiceCollectionExtensions
                 .ValidateOnStart();
 
             services.AddScoped<IBookingStatusStateService, BookingStatusStateService>();
+            services.AddScoped<IRentalPricingService, RentalPricingService>();
 
             return services;
         }
