@@ -1,3 +1,4 @@
+using Main.Api.Exceptions;
 using Main.Api.Mappers;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
@@ -16,25 +17,28 @@ public class CreateProductImageConsumer(
     public async Task Consume(ConsumeContext<CreateProductImageCommand> context)
     {
         var command = context.Message;
+        var ct = context.CancellationToken;
 
         //TODO: сохранять локально / где-то еще картинку ^ сервис для сохранения
 
         var productImage = await uowFactory.ExecuteAsync(
             async uow =>
             {
+                _ =
+                    await uow.Products.GetAndLockForUpdateByIdAsync(command.ProductId, ct)
+                    ?? throw new ObjectNotFoundException($"Product with ID: {command.ProductId} not found.");
+
                 var productImageModel = command.Adapt<ProductImage>();
 
                 var hasMain =
-                    await uow.ProductImages.GetMainByProductIdAsync(
-                        productImageModel.ProductId,
-                        context.CancellationToken
-                    ) != null;
+                    await uow.ProductImages.GetMainByProductIdAsync(productImageModel.ProductId, ct)
+                    != null;
 
                 productImageModel.IsMain = !hasMain;
                 uow.ProductImages.Add(productImageModel);
                 return productImageModel;
             },
-            context.CancellationToken
+            ct
         );
 
         var response = productImage.ToDto(imageStorageOptions.Value);

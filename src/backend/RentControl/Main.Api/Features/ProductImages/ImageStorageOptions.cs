@@ -10,6 +10,11 @@ public sealed class ImageStorageOptions
 
     public string RequestPath { get; set; } = "/images";
 
-    public string Build(string storageKey) =>
-        $"{ImageBaseUrl.TrimEnd('/')}/{storageKey.TrimStart('/')}";
+    public string Build(string storageKey)
+    {
+        if (string.IsNullOrWhiteSpace(ImageBaseUrl))
+            throw new InvalidOperationException("Storage:ImageBaseUrl is not configured.");
+
+        return $"{ImageBaseUrl.TrimEnd('/')}/{storageKey.TrimStart('/')}";
+    }
 }

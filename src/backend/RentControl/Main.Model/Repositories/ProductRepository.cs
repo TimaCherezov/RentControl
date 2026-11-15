@@ -1,3 +1,4 @@
+using EFCore.PostgresExtensions.Extensions;
 using Main.Model.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -43,4 +44,10 @@ public class ProductRepository(MainDbContext dbContext) : IProductRepository
     public void Add(Product product) => dbContext.Products.Add(product);
 
     public void Remove(Product product) => dbContext.Products.Remove(product);
+
+    public Task<Product?> GetAndLockForUpdateByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        => dbContext.Products
+        .Where(p => p.Id == id)
+        .ForUpdate()
+        .FirstOrDefaultAsync(cancellationToken);
 }

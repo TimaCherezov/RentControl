@@ -49,6 +49,7 @@ public class ProductUnitRepository(MainDbContext dbContext) : IProductUnitReposi
                     && b.EndAt > start
                 )
             )
+            .OrderBy(pu => pu.PurchaseDate)
             .Select(pu => pu.Id)
             .ToListAsync(cancellationToken);
     }

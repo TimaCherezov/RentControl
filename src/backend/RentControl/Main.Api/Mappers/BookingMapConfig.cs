@@ -37,8 +37,6 @@ public static class BookingMapConfig
 
         config.NewConfig<UpdateBookingRequest, UpdateBookingCommand>();
 
-        config.NewConfig<CreateBookingCommand, Booking>();
-
         config.NewConfig<UpdateBookingCommand, Booking>().Ignore(dest => dest.Id);
 
         config.NewConfig<GetPageBookingRequest, GetPageBookingCommand>();
