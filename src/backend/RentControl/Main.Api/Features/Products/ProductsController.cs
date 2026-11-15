@@ -6,16 +6,20 @@ using Main.Api.Features.Products.GetPage;
 using Main.Api.Features.Products.Update;
 using Mapster;
 using MassTransit.Mediator;
+using Main.Model.Models;
 using Microsoft.AspNetCore.Mvc;
 using RentControl.Common.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Main.Api.Features.Products;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ProductsController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<ActionResult<ProductDto>> Create(
         [FromBody] CreateProductRequest request,
         CancellationToken ct
@@ -73,6 +77,7 @@ public class ProductsController(IMediator mediator) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var command = new DeleteProductCommand(id);
@@ -81,6 +86,7 @@ public class ProductsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateProductRequest request,

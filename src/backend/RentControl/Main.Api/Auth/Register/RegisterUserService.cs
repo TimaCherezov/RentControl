@@ -23,7 +23,8 @@ public class RegisterUserService(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
             {
                 PasswordHash = null!,
                 Name = request.Name.Trim(),
-                Email = email
+                Email = email,
+                Role = RoleEnum.Client
             };
             user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
 

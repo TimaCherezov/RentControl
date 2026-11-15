@@ -6,5 +6,4 @@ public sealed class CreateBookingRequest
     public DateTimeOffset StartAt { get; set; }
     public DateTimeOffset EndAt { get; set; }
     public Guid? LocationId { get; set; }
-    public Guid UserId { get; set; }
 }

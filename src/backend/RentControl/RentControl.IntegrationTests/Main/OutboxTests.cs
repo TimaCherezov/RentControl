@@ -58,12 +58,11 @@ public class OutboxTests(MainApiFixture fixture)
             {
                 productId = product.Id,
                 locationId = location.Id,
-                userId = user.Id,
                 startAt = DateTimeOffset.UtcNow.AddDays(1),
                 endAt = DateTimeOffset.UtcNow.AddDays(2),
             });
             request.Headers.Authorization = new AuthenticationHeaderValue(
-                "Bearer", fixture.CreateAccessToken(Guid.NewGuid()));
+                "Bearer", fixture.CreateAccessToken(user.Id));
 
             var response = await fixture.Client.SendAsync(request);
             var responseBody = await response.Content.ReadAsStringAsync();
