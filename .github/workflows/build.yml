@@ -85,7 +85,7 @@ jobs:
         if: steps.key.outputs.skip != 'true'
         # Пин на полный commit SHA (теги мутабельны): action получает секрет
         # ZAI_API_KEY, поэтому компрометация ссылки = утечка ключа.
-        uses: alibaba/open-code-review@375f64cd6f67a48a135da83cfcf59c52669a09cb # v1.13.3
+        uses: alibaba/open-code-review@7e5ce06c88de5ce81df5dc4f24e2e485b517fae8 # v1.13.10
         with:
           # GLM Coding Plan ходит через отдельный OpenAI-совместимый эндпоинт
           # (не общий https://api.z.ai/api/paas/v4).
@@ -106,5 +106,5 @@ jobs:
           incremental: 'true'
           resolve_outdated: 'true'
           # CLI пиним тем же тегом, что и action; при обновлении менять оба.
-          ocr_version: '1.13.3'
+          ocr_version: '1.13.10'
           language: Russian
