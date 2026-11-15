@@ -32,7 +32,7 @@ public class Booking
     public decimal? TotalRentalCost { get; set; }
 
     /// <summary>
-    /// Сумма внесенного депозита на во время создания бронирования. Необходима для возврата средств.
+    /// Сумма внесенного депозита во время создания бронирования. Необходима для возврата средств.
     /// </summary>
     public decimal DepositAmount { get; set; }
     public DateTimeOffset StatusChangedAt { get; set; }

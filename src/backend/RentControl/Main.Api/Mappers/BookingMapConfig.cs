@@ -2,7 +2,7 @@ using Main.Api.Features.Bookings;
 using Main.Api.Features.Bookings.Create;
 using Main.Api.Features.Bookings.GetPage;
 using Main.Api.Features.Bookings.Update;
-using Main.Api.Features.Bookings;
+using Main.Api.Features.ProductImages;
 using Main.Model.Models;
 using Mapster;
 
@@ -10,56 +10,32 @@ namespace Main.Api.Mappers;
 
 public static class BookingMapConfig
 {
+    public static BookingDto ToDto(this Booking b, ImageStorageOptions imageStorageOptions) =>
+        new BookingDto(
+            b.Id,
+            b.Location?.Name,
+            b.Location?.Address,
+            b.StartAt,
+            b.EndAt,
+            b.DepositAmount,
+            b.BookingStatus,
+            b.StatusChangedAt,
+            b.ProductUnit?.Product?.Name,
+            b.ProductUnit?.ProductId,
+            b.ProductUnit?.Product?.MainImage?.ToDto(imageStorageOptions),
+            b.ActualReturnAt,
+            b.TotalRentalCost,
+            b.IsInvoiceCreated
+        );
+
+    public static List<BookingDto> ToDto(this IEnumerable<Booking> b, ImageStorageOptions imageStorageOptions) =>
+        b.Select(b => b.ToDto(imageStorageOptions)).ToList();
+
     public static void Configure(TypeAdapterConfig config)
     {
-        config
-            .NewConfig<Booking, BookingDto>()
-            .ConstructUsing(src => new BookingDto(
-                src.Id,
-                src.UserId,
-                src.ProductUnitId,
-                src.LocationId,
-                src.StartAt,
-                src.EndAt,
-                src.ActualReturnAt,
-                src.DepositAmount,
-                src.TotalRentalCost,
-                src.BookingStatus,
-                src.StatusChangedAt,
-                src.IsInvoiceCreated
-            ));
+        config.NewConfig<CreateBookingRequest, CreateBookingCommand>();
 
-        config
-            .NewConfig<CreateBookingRequest, CreateBookingCommand>()
-            .ConstructUsing(src => new CreateBookingCommand(
-                Guid.Empty,
-                src.UserId,
-                src.ProductUnitId,
-                src.LocationId,
-                src.StartAt,
-                src.EndAt,
-                src.ActualReturnAt,
-                src.DepositAmount,
-                src.TotalRentalCost,
-                src.BookingStatus,
-                src.StatusChangedAt
-            ));
-
-        config
-            .NewConfig<UpdateBookingRequest, UpdateBookingCommand>()
-            .ConstructUsing(src => new UpdateBookingCommand(
-                Guid.Empty,
-                src.UserId,
-                src.ProductUnitId,
-                src.LocationId,
-                src.StartAt,
-                src.EndAt,
-                src.ActualReturnAt,
-                src.DepositAmount,
-                src.TotalRentalCost,
-                src.BookingStatus,
-                src.StatusChangedAt
-            ));
+        config.NewConfig<UpdateBookingRequest, UpdateBookingCommand>();
 
         config.NewConfig<CreateBookingCommand, Booking>();
 

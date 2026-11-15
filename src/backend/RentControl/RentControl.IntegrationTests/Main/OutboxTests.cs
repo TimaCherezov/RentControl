@@ -1,4 +1,3 @@
-using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -27,6 +26,7 @@ public class OutboxTests(MainApiFixture fixture)
             MarketValue = 1000m,
             DailyRate = 100m,
             HourlyRate = 10m,
+            DepositOverride = 500m,
         };
         var unit = new ProductUnit
         {
@@ -51,21 +51,17 @@ public class OutboxTests(MainApiFixture fixture)
 
         try
         {
-            const decimal depositAmount = 500m;
+            const decimal expectedAmount = 600m;
             using var request = new HttpRequestMessage(HttpMethod.Post, "/api/bookings");
             request.Content = JsonContent.Create(new
             {
-                productUnitId = unit.Id,
+                productId = product.Id,
                 locationId = location.Id,
-                userId = user.Id,
-                startAt = DateTimeOffset.UtcNow.AddDays(1),
-                endAt = DateTimeOffset.UtcNow.AddDays(2),
-                depositAmount,
-                bookingStatus = (int)BookingStatusEnum.Pending,
-                statusChangedAt = DateTimeOffset.UtcNow,
+                startAt = new DateTimeOffset(2027, 1, 2, 0, 0, 0, TimeSpan.Zero),
+                endAt = new DateTimeOffset(2027, 1, 3, 0, 0, 0, TimeSpan.Zero),
             });
             request.Headers.Authorization = new AuthenticationHeaderValue(
-                "Bearer", fixture.CreateAccessToken(Guid.NewGuid()));
+                "Bearer", fixture.CreateAccessToken(user.Id));
 
             var response = await fixture.Client.SendAsync(request);
             var responseBody = await response.Content.ReadAsStringAsync();
@@ -81,7 +77,7 @@ public class OutboxTests(MainApiFixture fixture)
             var delivered = await probe.Received.WaitAsync(cts.Token);
 
             Assert.Equal(created.Id, delivered.BookingId);
-            Assert.Equal(depositAmount, delivered.Amount);
+            Assert.Equal(expectedAmount, delivered.Amount);
         }
         finally
         {

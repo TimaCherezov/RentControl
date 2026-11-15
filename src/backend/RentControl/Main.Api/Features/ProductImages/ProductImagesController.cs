@@ -6,15 +6,19 @@ using Main.Api.Features.ProductImages.GetMain;
 using Main.Api.Features.ProductImages.Update;
 using Mapster;
 using MassTransit.Mediator;
+using Main.Model.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Main.Api.Features.ProductImages;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ProductImagesController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<ActionResult<ProductImageDto>> Create(
         [FromBody] CreateProductImageRequest request,
         CancellationToken ct
@@ -40,6 +44,7 @@ public class ProductImagesController(IMediator mediator) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateProductImageRequest request,
@@ -54,6 +59,7 @@ public class ProductImagesController(IMediator mediator) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var command = new DeleteProductImageCommand(id);
@@ -69,11 +75,11 @@ public class ProductImagesController(IMediator mediator) : ControllerBase
     {
         var command = new GetAllProductImageCommand(productId);
         var client = mediator.CreateRequestClient<GetAllProductImageCommand>();
-        var response = await client.GetResponse<List<ProductImageDto>>(
+        var response = await client.GetResponse<GetAllProductImageResponse>(
             command,
             cancellationToken: ct
         );
-        return Ok(response.Message);
+        return Ok(response.Message.Images);
     }
 
     [HttpGet("product/{productId:guid}/main")]

@@ -1,19 +1,22 @@
 using Main.Api.Features.ProductUnits.Create;
 using Main.Api.Features.ProductUnits.Delete;
 using Main.Api.Features.ProductUnits.Get;
-using Main.Api.Features.ProductUnits.GetAvailable;
 using Main.Api.Features.ProductUnits.Update;
 using Mapster;
 using MassTransit.Mediator;
+using Main.Model.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Main.Api.Features.ProductUnits;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ProductUnitsController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<ActionResult<ProductUnitDto>> Create(
         [FromBody] CreateProductUnitRequest request,
         CancellationToken ct
@@ -38,24 +41,8 @@ public class ProductUnitsController(IMediator mediator) : ControllerBase
         return Ok(response.Message);
     }
 
-    [HttpGet("available")]
-    public async Task<ActionResult<List<ProductUnitDto>>> GetAvailable(
-        [FromQuery] GetAvailableProductUnitsRequest request,
-        CancellationToken ct
-    )
-    {
-        var command = request.Adapt<GetAvailableProductUnitsCommand>();
-
-        var client = mediator.CreateRequestClient<GetAvailableProductUnitsCommand>();
-        var response = await client.GetResponse<List<ProductUnitDto>>(
-            command,
-            cancellationToken: ct
-        );
-
-        return Ok(response.Message);
-    }
-
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateProductUnitRequest request,
@@ -70,6 +57,7 @@ public class ProductUnitsController(IMediator mediator) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var command = new DeleteProductUnitCommand(id);
