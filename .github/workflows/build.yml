@@ -83,6 +83,7 @@ jobs:
 
       - name: AI-ревью (OpenCodeReview, glm-5.3-flash)
         if: steps.key.outputs.skip != 'true'
+        continue-on-error: true
         # Пин на полный commit SHA (теги мутабельны): action получает секрет
         # ZAI_API_KEY, поэтому компрометация ссылки = утечка ключа.
         uses: alibaba/open-code-review@375f64cd6f67a48a135da83cfcf59c52669a09cb # v1.13.3
