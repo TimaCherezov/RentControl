@@ -1,5 +1,6 @@
 using Main.Api.Auth.CurrentUser;
 using Main.Api.Exceptions;
+using Main.Api.Features.Bookings.Pricing;
 using Main.Api.Features.ProductImages;
 using Main.Api.Mappers;
 using Main.Model.Models;
@@ -14,6 +15,7 @@ public class CreateBookingConsumer(
     IMainUnitOfWork uow,
     IPublishEndpoint publishEndpoint,
     ICurrentUserService currentUserService,
+    IRentalPricingService pricingService,
     IOptions<ImageStorageOptions> imageStorageOptions,
     IOptions<BookingOptions> bookingOptions
 ) : IConsumer<CreateBookingCommand>
@@ -52,6 +54,11 @@ public class CreateBookingConsumer(
                         $"ProductUnit with ID: {productUnitId} not found."
                     ); // pessimistic lock
 
+                var quote = pricingService.Calculate(
+                    product,
+                    command.StartAt,
+                    command.EndAt);
+
                 if (productUnit.ProductId != command.ProductId)
                     throw new InvalidOperationException(
                         $"Product unit with ID: {productUnit.Id} does not belong to product with ID: {command.ProductId}."
@@ -87,7 +94,8 @@ public class CreateBookingConsumer(
                     LocationId = productUnit.LocationId,
                     StartAt = command.StartAt,
                     EndAt = command.EndAt,
-                    DepositAmount = product.CalculateDeposit(bookingOptions.Value.DepositRate),
+                    DepositAmount = quote.DepositAmount,
+                    TotalRentalCost = quote.RentalCost,
                     BookingStatus = BookingStatusEnum.Pending,
                     StatusChangedAt = DateTimeOffset.UtcNow,
                 };
@@ -95,7 +103,7 @@ public class CreateBookingConsumer(
                 uow.Bookings.Add(bookingModel);
 
                 await publishEndpoint.Publish(
-                    new OrderCreated(bookingModel.Id, bookingModel.DepositAmount), //TODO: + аренда
+                    new OrderCreated(bookingModel.Id, quote.TotalAmount),
                     ct
                 );
                 return bookingModel;

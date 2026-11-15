@@ -1,4 +1,3 @@
-using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -52,14 +51,14 @@ public class OutboxTests(MainApiFixture fixture)
 
         try
         {
-            const decimal depositAmount = 500m;
+            const decimal expectedAmount = 600m;
             using var request = new HttpRequestMessage(HttpMethod.Post, "/api/bookings");
             request.Content = JsonContent.Create(new
             {
                 productId = product.Id,
                 locationId = location.Id,
-                startAt = DateTimeOffset.UtcNow.AddDays(1),
-                endAt = DateTimeOffset.UtcNow.AddDays(2),
+                startAt = new DateTimeOffset(2027, 1, 2, 0, 0, 0, TimeSpan.Zero),
+                endAt = new DateTimeOffset(2027, 1, 3, 0, 0, 0, TimeSpan.Zero),
             });
             request.Headers.Authorization = new AuthenticationHeaderValue(
                 "Bearer", fixture.CreateAccessToken(user.Id));
@@ -78,7 +77,7 @@ public class OutboxTests(MainApiFixture fixture)
             var delivered = await probe.Received.WaitAsync(cts.Token);
 
             Assert.Equal(created.Id, delivered.BookingId);
-            Assert.Equal(depositAmount, delivered.Amount);
+            Assert.Equal(expectedAmount, delivered.Amount);
         }
         finally
         {

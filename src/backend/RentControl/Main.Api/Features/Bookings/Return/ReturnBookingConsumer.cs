@@ -1,5 +1,4 @@
 using Main.Api.Exceptions;
-using Main.Api.Features.Bookings.Pricing;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using MassTransit;
@@ -9,8 +8,7 @@ namespace Main.Api.Features.Bookings.Return;
 
 public class ReturnBookingConsumer(
 	IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
-	IBookingStatusStateService bookingStatusService,
-	IRentalPricingService pricingService)
+	IBookingStatusStateService bookingStatusService)
 	: IConsumer<ReturnBookingCommand>
 {
 	public async Task Consume(ConsumeContext<ReturnBookingCommand> context)
@@ -29,16 +27,6 @@ public class ReturnBookingConsumer(
 					booking,
 					context.CancellationToken
 			);
-
-			if (booking.ActualReturnAt is { } actualReturnAt)
-			{
-				var quote = pricingService.Calculate(
-					booking.ProductUnit.Product,
-					booking.StartAt,
-					actualReturnAt);
-
-				booking.TotalRentalCost = quote.RentalCost;
-			}
 		}, context.CancellationToken);
 	}
 }
