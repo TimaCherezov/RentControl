@@ -3,6 +3,7 @@ using Main.Api.Features.Products;
 using Main.Api.Features.Products.Create;
 using Main.Api.Features.Products.GetMaxAvailableDuration;
 using Main.Api.Features.Products.GetPage;
+using Main.Api.Features.Products.GetQuote;
 using Main.Api.Features.Products.Update;
 using Main.Api.Features.ProductImages;
 using Main.Model.Models;
@@ -43,5 +44,7 @@ public static class ProductMapConfig
         config.NewConfig<GetPageProductRequest, GetPageProductCommand>();
 
         config.NewConfig<GetMaxAvailableDurationRequest, GetMaxAvailableDurationCommand>();
+
+        config.NewConfig<GetQuoteProductRequest, GetQuoteProductCommand>();
     }
 }
