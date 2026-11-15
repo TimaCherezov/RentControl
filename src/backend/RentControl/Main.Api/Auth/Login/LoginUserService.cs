@@ -29,7 +29,7 @@ public class LoginUserService(
                 throw new UnauthorizedAccessException("Invalid Password");
             }
 
-            var jwt = jwtTokenService.GenerateToken(user.Id);
+            var jwt = jwtTokenService.GenerateToken(user.Id, user.Role);
             var refresh = jwtTokenService.GenerateRefreshToken();
             var refreshHash = jwtTokenService.HashRefreshToken(refresh);
 

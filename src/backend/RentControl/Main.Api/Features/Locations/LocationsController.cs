@@ -5,16 +5,20 @@ using Main.Api.Features.Locations.GetPage;
 using Main.Api.Features.Locations.Update;
 using Mapster;
 using MassTransit.Mediator;
+using Main.Model.Models;
 using Microsoft.AspNetCore.Mvc;
 using RentControl.Common.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Main.Api.Features.Locations;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class LocationsController(IMediator mediator) : ControllerBase
 {
 	[HttpPost]
+	[Authorize(Roles = nameof(RoleEnum.Admin))]
 	public async Task<ActionResult<LocationDto>> Create(
 		[FromBody] CreateLocationRequest request,
 		CancellationToken ct)
@@ -52,6 +56,7 @@ public class LocationsController(IMediator mediator) : ControllerBase
 	}
 
 	[HttpPut("{id:guid}")]
+	[Authorize(Roles = nameof(RoleEnum.Admin))]
 	public async Task<IActionResult> Update(
 		Guid id,
 		[FromBody] UpdateLocationRequest request,
@@ -65,6 +70,7 @@ public class LocationsController(IMediator mediator) : ControllerBase
 	}
 
 	[HttpDelete("{id:guid}")]
+	[Authorize(Roles = nameof(RoleEnum.Admin))]
 	public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
 	{
 		var command = new DeleteLocationCommand(id);
