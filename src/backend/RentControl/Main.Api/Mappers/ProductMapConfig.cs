@@ -7,6 +7,7 @@ using Main.Api.Features.Products.GetQuote;
 using Main.Api.Features.Products.Update;
 using Main.Api.Features.ProductImages;
 using Main.Model.Models;
+using Main.Model.Repositories;
 using Mapster;
 
 namespace Main.Api.Mappers;
@@ -25,7 +26,7 @@ public static class ProductMapConfig
             p.WeeklyRate,
             p.MonthlyRate,
             p.Description,
-            Images: p.Images.ToDto(imageStorageOptions)
+            Images: p.Images.SortForDisplay().ToDto(imageStorageOptions)
         );
 
     public static List<ProductDto> ToDto(this IEnumerable<Product> b, ImageStorageOptions imageStorageOptions, BookingOptions bookingOptions) =>
