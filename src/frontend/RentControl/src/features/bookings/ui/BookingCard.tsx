@@ -8,7 +8,6 @@ export function BookingCard({ booking }: { booking: BookingDto }) {
   return (
     <Link
       to={`/bookings/${booking.id}`}
-      state={{ from: "bookings" }}
       className="block rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <Card className="flex gap-4 text-start transition-shadow hover:shadow-lg">
