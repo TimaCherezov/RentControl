@@ -45,30 +45,6 @@ export function ProductDetailPage() {
   return (
     <Container className="py-8">
       <Stack gap="lg">
-        <div className="flex items-center">
-          <Button
-            variant="primary"
-            aria-label="Назад к каталогу"
-            className="size-10 px-0"
-            onClick={() => navigate("/products")}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M19 12H5" />
-              <path d="m12 19-7-7 7-7" />
-            </svg>
-          </Button>
-        </div>
-
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
           <ProductGallery images={product.images} name={product.name} />
           <Stack gap="md">
