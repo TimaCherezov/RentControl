@@ -61,8 +61,13 @@ if (IsEnabled(ServiceNames.PaymentsApi))
 
 if (IsEnabled(ServiceNames.RealtimeApi))
 {
-    builder.AddProject<Projects.Realtime_Api>(ServiceNames.RealtimeApi)
+    var realtimeApi = builder.AddProject<Projects.Realtime_Api>(ServiceNames.RealtimeApi)
         .WithReference(rabbitmq).WaitFor(rabbitmq);
+
+    if (mainApi is not null)
+    {
+        realtimeApi.WithReference(mainApi);
+    }
 }
 
 builder.Build().Run();

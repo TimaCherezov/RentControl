@@ -1,13 +1,13 @@
-using Main.Api.Auth.CurrentUser;
-using Main.Api.Auth.Login;
-using Main.Api.Auth.Logout;
-using Main.Api.Auth.Refresh;
-using Main.Api.Auth.Register;
+using Main.Api.Features.Auth.CurrentUser;
+using Main.Api.Features.Auth.Login;
+using Main.Api.Features.Auth.Logout;
+using Main.Api.Features.Auth.Refresh;
+using Main.Api.Features.Auth.Register;
 using Main.Model.Models;
 using Microsoft.AspNetCore.Identity;
 using RentControl.ServiceDefaults;
 
-namespace Main.Api.Auth;
+namespace Main.Api.Features.Auth;
 
 public static class AuthServiceCollectionExtensions
 {

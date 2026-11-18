@@ -1,8 +1,8 @@
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Main.Api;
-using Main.Api.Auth;
-using Main.Api.Auth.Register;
+using Main.Api.Features.Auth;
+using Main.Api.Features.Auth.Register;
 using Main.Api.Features.Bookings;
 using Main.Api.Features.Bookings.Cancel;
 using Main.Api.Features.Bookings.Complete;

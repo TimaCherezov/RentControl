@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Main.Api.Auth;
-using Main.Api.Auth.Login;
-using Main.Api.Auth.Register;
+using Main.Api.Features.Auth;
+using Main.Api.Features.Auth.Login;
+using Main.Api.Features.Auth.Register;
 using RentControl.IntegrationTests.Main.Infrastructure;
 
 namespace RentControl.IntegrationTests.Main;

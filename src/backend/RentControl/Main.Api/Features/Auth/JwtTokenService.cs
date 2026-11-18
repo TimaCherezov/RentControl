@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using RentControl.ServiceDefaults;
 
-namespace Main.Api.Auth;
+namespace Main.Api.Features.Auth;
 
 public class JwtTokenService(
     JwtSigningKeyProvider signingKeys,
