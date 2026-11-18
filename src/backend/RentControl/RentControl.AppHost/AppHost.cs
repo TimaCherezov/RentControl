@@ -55,7 +55,9 @@ if (IsEnabled(ServiceNames.PaymentsApi))
 
     if (mainApi is not null)
     {
-        paymentsApi.WithReference(mainApi);
+        paymentsApi
+            .WithReference(mainApi)
+            .WaitFor(mainApi);
     }
 }
 
@@ -66,7 +68,9 @@ if (IsEnabled(ServiceNames.RealtimeApi))
 
     if (mainApi is not null)
     {
-        realtimeApi.WithReference(mainApi);
+        realtimeApi
+            .WithReference(mainApi)
+            .WaitFor(mainApi);
     }
 }
 

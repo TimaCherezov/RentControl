@@ -22,7 +22,7 @@ public sealed class RealtimeApiFixture : IAsyncLifetime
     public string RabbitMqConnectionString => _rabbit.GetConnectionString();
     public BookingNotificationProbe NotificationProbe => _notificationProbe;
 
-    public HttpClient Client { get; private set; } = null!;
+    public HttpClient? Client { get; private set; }
 
     public async Task InitializeAsync()
     {
@@ -59,7 +59,7 @@ public sealed class RealtimeApiFixture : IAsyncLifetime
     {
         try
         {
-            Client.Dispose();
+            Client?.Dispose();
         }
         finally
         {
