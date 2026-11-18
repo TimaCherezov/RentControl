@@ -1,7 +1,6 @@
 using Main.Api.Features.ProductUnits.Create;
 using Main.Api.Features.ProductUnits.Delete;
 using Main.Api.Features.ProductUnits.Get;
-using Main.Api.Features.ProductUnits.GetAvailable;
 using Main.Api.Features.ProductUnits.Update;
 using Mapster;
 using MassTransit.Mediator;
@@ -34,23 +33,6 @@ public class ProductUnitsController(IMediator mediator) : ControllerBase
 
         var client = mediator.CreateRequestClient<GetProductUnitCommand>();
         var response = await client.GetResponse<ProductUnitDto>(command, cancellationToken: ct);
-
-        return Ok(response.Message);
-    }
-
-    [HttpGet("available")]
-    public async Task<ActionResult<List<ProductUnitDto>>> GetAvailable(
-        [FromQuery] GetAvailableProductUnitsRequest request,
-        CancellationToken ct
-    )
-    {
-        var command = request.Adapt<GetAvailableProductUnitsCommand>();
-
-        var client = mediator.CreateRequestClient<GetAvailableProductUnitsCommand>();
-        var response = await client.GetResponse<List<ProductUnitDto>>(
-            command,
-            cancellationToken: ct
-        );
 
         return Ok(response.Message);
     }

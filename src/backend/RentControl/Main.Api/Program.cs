@@ -4,12 +4,12 @@ using Main.Api;
 using Main.Api.Auth;
 using Main.Api.Auth.Register;
 using Main.Api.Features.Bookings;
-using Main.Api.Features.Bookings.Create;
-using Main.Api.Features.Bookings.Get;
-using Main.Api.Features.Bookings.GetPage;
 using Main.Api.Features.Bookings.Cancel;
 using Main.Api.Features.Bookings.Complete;
 using Main.Api.Features.Bookings.Confirm;
+using Main.Api.Features.Bookings.Create;
+using Main.Api.Features.Bookings.Get;
+using Main.Api.Features.Bookings.GetPage;
 using Main.Api.Features.Bookings.Issue;
 using Main.Api.Features.Bookings.Overdue;
 using Main.Api.Features.Bookings.ReadyForPickup;
@@ -20,6 +20,7 @@ using Main.Api.Features.Locations.Delete;
 using Main.Api.Features.Locations.Get;
 using Main.Api.Features.Locations.GetPage;
 using Main.Api.Features.Locations.Update;
+using Main.Api.Features.ProductImages;
 using Main.Api.Features.ProductImages.Create;
 using Main.Api.Features.ProductImages.Delete;
 using Main.Api.Features.ProductImages.Get;
@@ -29,18 +30,20 @@ using Main.Api.Features.ProductImages.Update;
 using Main.Api.Features.Products.Create;
 using Main.Api.Features.Products.Delete;
 using Main.Api.Features.Products.Get;
+using Main.Api.Features.Products.GetMaxAvailableDuration;
 using Main.Api.Features.Products.GetPage;
 using Main.Api.Features.Products.Update;
 using Main.Api.Features.ProductUnits.Create;
 using Main.Api.Features.ProductUnits.Delete;
 using Main.Api.Features.ProductUnits.Get;
-using Main.Api.Features.ProductUnits.GetAvailable;
 using Main.Api.Features.ProductUnits.Update;
 using Main.Api.Features.Validation;
 using Main.Api.Middleware;
 using Main.Model;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -51,7 +54,9 @@ builder.AddMainDatabase("maindb");
 
 builder.Services.AddAuth(builder.Configuration);
 builder.Services.AddMapster();
-builder.Services.AddBookings();
+builder.Services.AddBookings(builder.Configuration);
+
+builder.Services.AddProductImages(builder.Configuration);
 
 builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
@@ -66,6 +71,7 @@ builder.Services.AddMediator(cfg =>
     cfg.AddConsumer<GetPageProductConsumer>();
     cfg.AddConsumer<GetProductConsumer>();
     cfg.AddConsumer<DeleteProductConsumer>();
+    cfg.AddConsumer<GetMaxAvailableDurationConsumer>();
 
     cfg.AddConsumer<CreateBookingConsumer>();
     cfg.AddConsumer<UpdateBookingConsumer>();
@@ -87,7 +93,6 @@ builder.Services.AddMediator(cfg =>
 
     cfg.AddConsumer<CreateProductUnitConsumer>();
     cfg.AddConsumer<GetProductUnitConsumer>();
-    cfg.AddConsumer<GetAvailableProductUnitsConsumer>();
     cfg.AddConsumer<UpdateProductUnitConsumer>();
     cfg.AddConsumer<DeleteProductUnitConsumer>();
 
@@ -115,10 +120,12 @@ builder.Services.AddMassTransit(cfg =>
         outbox.UseBusOutbox();
     });
 
-    cfg.UsingRabbitMq((_, rmq) =>
-    {
-        rmq.Host(builder.Configuration.GetConnectionString("rabbitmq"));
-    });
+    cfg.UsingRabbitMq(
+        (_, rmq) =>
+        {
+            rmq.Host(builder.Configuration.GetConnectionString("rabbitmq"));
+        }
+    );
 });
 
 var app = builder.Build();
@@ -131,6 +138,18 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+var storageOptions = app.Services.GetRequiredService<IOptions<ImageStorageOptions>>().Value;
+var uploadsPath = Path.GetFullPath(storageOptions.LocalPath, app.Environment.ContentRootPath);
+Directory.CreateDirectory(uploadsPath);
+
+app.UseStaticFiles(
+    new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(uploadsPath),
+        RequestPath = storageOptions.RequestPath,
+    }
+);
 
 app.MapDefaultEndpoints();
 

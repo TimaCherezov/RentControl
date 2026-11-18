@@ -82,7 +82,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
         CancellationToken ct
     )
     {
-        var command = request.Adapt<CreateBookingCommand>() with { Id = Guid.NewGuid() };
+        var command = request.Adapt<CreateBookingCommand>();
         var client = mediator.CreateRequestClient<CreateBookingCommand>();
         var response = await client.GetResponse<BookingDto>(command, ct);
         return Created($"api/bookings/{response.Message.Id}", response.Message);
