@@ -24,11 +24,6 @@ jobs:
       - name: Build
         run: dotnet build src/backend/RentControl/RentControl.sln --no-restore -c Release
 
-  # Docker-образы сервисов собираем и пушим в GHCR только на пуш в main:
-  # до мержа образ никому не нужен (достаточно dotnet build выше), а на каждый
-  # пуш в PR — лишние минуты раннеров. После успешного билда (needs: build).
-  # Теги: latest (последний зелёный мерж в main) + короткий sha коммита
-  # (воспроизводимая версия для деплоя/отката).
   docker:
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -36,7 +31,6 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
-      # публикация образов в GHCR
       packages: write
     strategy:
       fail-fast: false
@@ -45,8 +39,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # GHCR требует lowercase-путь образа: TimaCherezov/RentControl ->
-      # timacherezov/rentcontrol, Main.Api -> main.api. bash-оператор ,, .
       - name: Имя образа и тег
         id: image
         env:
@@ -65,14 +57,12 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          # контекст — каталог solution'а: пути в Dockerfile'ах относительны него
           context: src/backend/RentControl
           file: src/backend/RentControl/${{ matrix.service }}/Dockerfile
           push: true
           tags: |
             ${{ steps.image.outputs.name }}:latest
             ${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}
-          # кэш слоёв buildkit в кэше Actions, отдельный scope на сервис
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
 
