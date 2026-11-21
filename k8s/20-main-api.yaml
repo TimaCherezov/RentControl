@@ -1,8 +1,3 @@
-# ── Main.Api ────────────────────────────────────────────────────────────────
-# Главный HTTP-API: аутентификация (JWT), бронирования, продукты, локации,
-# картинки. Публикует OrderCreated в RabbitMQ через транзакционный outbox.
-# При старте (Development) накатывает миграции maindb — поэтому даём поду
-# до 2 минут на запуск (startupProbe), прежде чем k8s сочтёт его больным.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -12,7 +7,7 @@ spec:
   accessModes: ["ReadWriteOnce"]
   resources:
     requests:
-      storage: 100Mi # загруженные картинки товаров
+      storage: 100Mi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -22,7 +17,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate # один под на томе uploads: пересоздаём вместо rolling
+    type: Recreate
   selector:
     matchLabels:
       app: main-api
@@ -31,9 +26,8 @@ spec:
       labels:
         app: main-api
     spec:
+      # контейнер работает без root (USER $APP_UID), том нужен ему
       initContainers:
-        # Основной контейнер работает без root (USER $APP_UID в Dockerfile),
-        # а свежий том по умолчанию принадлежит root — раздаём права до старта
         - name: fix-uploads-permissions
           image: busybox:1.37
           command: ["sh", "-c", "chown -R 1654:1654 /app/uploads"]
@@ -52,17 +46,12 @@ spec:
                 name: app-config
             - secretRef:
                 name: app-secrets
-          # Пробы — это k8s-механизм «сам проверяет здоровье»:
-          #   startup  — дать время на старт+миграции, не убивая под;
-          #   readiness — не готов → k8s не направляет на него трафик;
-          #   liveness — завис → k8s перезапускает контейнер.
-          # Эндпоинты /health и /alive даёт RentControl.ServiceDefaults.
           startupProbe:
             httpGet:
               path: /alive
               port: http
             periodSeconds: 5
-            failureThreshold: 24 # до 2 минут на старт
+            failureThreshold: 24
           readinessProbe:
             httpGet:
               path: /health
@@ -84,13 +73,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: main-api # DNS-имя внутри кластера: http://main-api (JWKS, service discovery)
+  name: main-api
   namespace: rentcontrol
 spec:
-  type: NodePort # NodePort = ClusterIP + порт наружу на IP виртуалки minikube
+  type: NodePort
   selector:
     app: main-api
   ports:
-    - port: 80 # внутри кластера: http://main-api
+    - port: 80
       targetPort: http
-      nodePort: 30080 # снаружи: http://<minikube-ip>:30080
+      nodePort: 30080

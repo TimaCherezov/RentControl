@@ -1,7 +1,3 @@
-# ── Main.Worker ─────────────────────────────────────────────────────────────
-# Фоновый консьюмер: слушает InvoiceCreated и PaymentSucceeded, двигает статус
-# бронирования и публикует OrderChanged. HTTP не слушает вовсе, поэтому у пода
-# нет Service и HTTP-проб: если контейнер умрёт — Deployment его перезапустит.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
