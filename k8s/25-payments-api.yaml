@@ -1,8 +1,3 @@
-# ── Payments.Api ────────────────────────────────────────────────────────────
-# Инвойсы и оплата. Слушает OrderCreated из RabbitMQ (создаёт инвойс),
-# публикует InvoiceCreated / PaymentSucceeded. За JWT-проверкой ходит
-# в main-api (/.well-known/jwks.json) — адрес задаёт ServiceDiscovery__MainApi.
-# При старте накатывает миграции paymentsdb.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

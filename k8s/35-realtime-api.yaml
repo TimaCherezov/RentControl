@@ -1,6 +1,3 @@
-# ── Realtime.Api ────────────────────────────────────────────────────────────
-# Пока шаблонный сервис (только /weatherforecast): сюда в будущем переедет
-# SignalR-консьюмер OrderChanged. Деплоим для полноты стека.
 apiVersion: apps/v1
 kind: Deployment
 metadata:

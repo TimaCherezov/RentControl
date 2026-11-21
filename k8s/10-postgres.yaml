@@ -1,22 +1,13 @@
-# ── Postgres ────────────────────────────────────────────────────────────────
-# Один инстанс Postgres с двумя БД: maindb (Main.Api + Main.Worker, включая
-# outbox-таблицы) и paymentsdb (Payments.Api). Базы создаёт init-скрипт при
-# ПЕРВОЙ инициализации тома; таблицы накатывают сами сервисы миграциями.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-init
   namespace: rentcontrol
 data:
-  # Официальный образ postgres исполняет все *.sql из этого каталога
-  # один раз — при создании кластера БД на пустом томе
   init.sql: |
     CREATE DATABASE maindb;
     CREATE DATABASE paymentsdb;
 ---
-# PVC — «заявка на диск». minikube выдаёт диск автоматически (стандартный
-# StorageClass). Данные переживают перезапуск пода, но НЕ переживают
-# `kubectl delete namespace` / `minikube delete`.
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -36,7 +27,7 @@ metadata:
 spec:
   replicas: 1
   strategy:
-    type: Recreate # с томом ReadWriteOnce проще пересоздать под, чем катить rolling-обновление
+    type: Recreate
   selector:
     matchLabels:
       app: postgres
@@ -57,12 +48,9 @@ spec:
                 secretKeyRef:
                   name: app-secrets
                   key: postgres-password
-            # Том hostpath в minikube содержит служебный каталог lost+found,
-            # а initdb отказывается инициализировать непустой каталог.
-            # Поэтому данные кладём в подкаталог pgdata
+            # initdb не инициализирует непустой каталог тома
             - name: PGDATA
               value: /var/lib/postgresql/data/pgdata
-          # pg_isready — штатная утилита образа: «БД принимает подключения?»
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres"]
@@ -84,15 +72,13 @@ spec:
           configMap:
             name: postgres-init
 ---
-# Service — стабильный адрес группы подов. Имя сервиса становится DNS-именем
-# внутри кластера: отсюда Host=postgres в строках подключения.
 apiVersion: v1
 kind: Service
 metadata:
   name: postgres
   namespace: rentcontrol
 spec:
-  type: ClusterIP # доступен только внутри кластера — наружу БД не светим
+  type: ClusterIP
   selector:
     app: postgres
   ports:

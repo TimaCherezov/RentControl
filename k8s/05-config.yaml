@@ -1,25 +1,12 @@
-# ── Конфигурация всех сервисов ──────────────────────────────────────────────
-# ConfigMap  — несекретные настройки: каждый ключ становится переменной
-#              окружения пода (ServiceDiscovery__MainApi → ServiceDiscovery:MainApi
-#              в конфиге .NET — двойное подчёркивание означает вложенность).
-# Secret     — пароли и строки подключения с паролями. В проде их шифруют
-#              внешними средствами, у нас локально — значения-заглушки.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: app-config
   namespace: rentcontrol
 data:
-  # Development-режим включает: автамиграции БД при старте (Main.Api/Program.cs)
-  # и health-эндпоинты /health, /alive (ServiceDefaults/Extensions.cs)
   ASPNETCORE_ENVIRONMENT: "Development"
   DOTNET_ENVIRONMENT: "Development"
-  # Payments.Api ходит в Main.Api за публичным ключом JWT (/.well-known/jwks.json).
-  # main-api — DNS-имя Service'а; кластерный DNS заменяет Aspire service discovery
   ServiceDiscovery__MainApi: "http://main-api"
-  # Базовый URL картинок, которые main-api возвращает клиентам.
-  # localhost:30080 — NodePort main-api, опубликованный из виртуалки на хост
-  # (--ports в deploy.sh)
   Storage__ImageBaseUrl: "http://localhost:30080/images"
 ---
 apiVersion: v1
@@ -28,16 +15,10 @@ metadata:
   name: app-secrets
   namespace: rentcontrol
 type: Opaque
-stringData: # значения пишем как есть — k8s сам закодирует в base64
-  # Пароль суперпользователя Postgres (его же использует контейнер postgres)
+stringData:
   postgres-password: "rc-local-pass"
-  # Строки подключения в формате Npgsql. postgres — DNS-имя Service'а БД.
-  # Две логические БД на одном сервере, как и в Aspire-версии
   ConnectionStrings__maindb: "Host=postgres;Port=5432;Database=maindb;Username=postgres;Password=rc-local-pass"
   ConnectionStrings__paymentsdb: "Host=postgres;Port=5432;Database=paymentsdb;Username=postgres;Password=rc-local-pass"
-  # MassTransit принимает URI-формат для RabbitMQ
   ConnectionStrings__rabbitmq: "amqp://rentcontrol:rc-rabbit-pass@rabbitmq:5672"
-  # Учётка брокера: встроенный guest/guest работает только изнутри контейнера,
-  # поэтому создаём свою — её же используют поды при подключении
   rabbitmq-user: "rentcontrol"
   rabbitmq-password: "rc-rabbit-pass"
