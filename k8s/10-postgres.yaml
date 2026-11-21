@@ -1,0 +1,100 @@
+# ── Postgres ────────────────────────────────────────────────────────────────
+# Один инстанс Postgres с двумя БД: maindb (Main.Api + Main.Worker, включая
+# outbox-таблицы) и paymentsdb (Payments.Api). Базы создаёт init-скрипт при
+# ПЕРВОЙ инициализации тома; таблицы накатывают сами сервисы миграциями.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: rentcontrol
+data:
+  # Официальный образ postgres исполняет все *.sql из этого каталога
+  # один раз — при создании кластера БД на пустом томе
+  init.sql: |
+    CREATE DATABASE maindb;
+    CREATE DATABASE paymentsdb;
+---
+# PVC — «заявка на диск». minikube выдаёт диск автоматически (стандартный
+# StorageClass). Данные переживают перезапуск пода, но НЕ переживают
+# `kubectl delete namespace` / `minikube delete`.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: rentcontrol
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: rentcontrol
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # с томом ReadWriteOnce проще пересоздать под, чем катить rolling-обновление
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:17.6
+          ports:
+            - containerPort: 5432
+              name: pg
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: postgres-password
+            # Том hostpath в minikube содержит служебный каталог lost+found,
+            # а initdb отказывается инициализировать непустой каталог.
+            # Поэтому данные кладём в подкаталог pgdata
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          # pg_isready — штатная утилита образа: «БД принимает подключения?»
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "postgres"]
+            periodSeconds: 10
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-data
+        - name: init
+          configMap:
+            name: postgres-init
+---
+# Service — стабильный адрес группы подов. Имя сервиса становится DNS-именем
+# внутри кластера: отсюда Host=postgres в строках подключения.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: rentcontrol
+spec:
+  type: ClusterIP # доступен только внутри кластера — наружу БД не светим
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: pg

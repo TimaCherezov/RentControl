@@ -1,0 +1,96 @@
+# ── Main.Api ────────────────────────────────────────────────────────────────
+# Главный HTTP-API: аутентификация (JWT), бронирования, продукты, локации,
+# картинки. Публикует OrderCreated в RabbitMQ через транзакционный outbox.
+# При старте (Development) накатывает миграции maindb — поэтому даём поду
+# до 2 минут на запуск (startupProbe), прежде чем k8s сочтёт его больным.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: main-api-uploads
+  namespace: rentcontrol
+spec:
+  accessModes: ["ReadWriteOnce"]
+  resources:
+    requests:
+      storage: 100Mi # загруженные картинки товаров
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: main-api
+  namespace: rentcontrol
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate # один под на томе uploads: пересоздаём вместо rolling
+  selector:
+    matchLabels:
+      app: main-api
+  template:
+    metadata:
+      labels:
+        app: main-api
+    spec:
+      initContainers:
+        # Основной контейнер работает без root (USER $APP_UID в Dockerfile),
+        # а свежий том по умолчанию принадлежит root — раздаём права до старта
+        - name: fix-uploads-permissions
+          image: busybox:1.37
+          command: ["sh", "-c", "chown -R 1654:1654 /app/uploads"]
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+      containers:
+        - name: main-api
+          image: rentcontrol/main-api:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          # Пробы — это k8s-механизм «сам проверяет здоровье»:
+          #   startup  — дать время на старт+миграции, не убивая под;
+          #   readiness — не готов → k8s не направляет на него трафик;
+          #   liveness — завис → k8s перезапускает контейнер.
+          # Эндпоинты /health и /alive даёт RentControl.ServiceDefaults.
+          startupProbe:
+            httpGet:
+              path: /alive
+              port: http
+            periodSeconds: 5
+            failureThreshold: 24 # до 2 минут на старт
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /alive
+              port: http
+            periodSeconds: 20
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: main-api-uploads
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: main-api # DNS-имя внутри кластера: http://main-api (JWKS, service discovery)
+  namespace: rentcontrol
+spec:
+  type: NodePort # NodePort = ClusterIP + порт наружу на IP виртуалки minikube
+  selector:
+    app: main-api
+  ports:
+    - port: 80 # внутри кластера: http://main-api
+      targetPort: http
+      nodePort: 30080 # снаружи: http://<minikube-ip>:30080
