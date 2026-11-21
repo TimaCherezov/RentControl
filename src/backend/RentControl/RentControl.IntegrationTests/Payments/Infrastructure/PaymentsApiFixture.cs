@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Payments.Model;
+using DotNet.Testcontainers.Builders;
 using RentControl.IntegrationTests.Infrastructure;
 using RentControl.ServiceDefaults;
 using Testcontainers.PostgreSql;
@@ -51,7 +52,13 @@ public sealed class PaymentsApiFixture : IAsyncLifetime
         _postgres = new PostgreSqlBuilder(TestImages.Postgres)
             .WithDatabase(DatabaseName)
             .Build();
-        _rabbit = new RabbitMqBuilder(TestImages.RabbitMq).Build();
+        // Порт брокера отвечает ещё до полной загрузки Erlang-приложения:
+        // соединения в этом окне рвутся и паблиши молча теряются. Ждём лог
+        // полной загрузки; rabbitmq-diagnostics exec'ом нельзя — он под root
+        // перетирает .erlang.cookie и брокер падает.
+        _rabbit = new RabbitMqBuilder(TestImages.RabbitMq)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Server startup complete"))
+            .Build();
         try
         {
             await _postgres.StartAsync();
