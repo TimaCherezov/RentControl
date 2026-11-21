@@ -104,7 +104,7 @@ jobs:
           git push origin "${{ needs.version.outputs.tag }}"
 
   docker:
-    needs: [release-tag]
+    needs: [release-tag, version]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
