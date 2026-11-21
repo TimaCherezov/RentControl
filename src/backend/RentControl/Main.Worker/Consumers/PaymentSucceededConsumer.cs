@@ -26,7 +26,12 @@ public class PaymentSucceededConsumer(
         booking.BookingStatus = BookingStatusEnum.Confirmed;
         booking.StatusChangedAt = DateTimeOffset.UtcNow;
         await uow.SaveChangesAsync(ct);
-        await context.Publish(new OrderChanged(booking.Id, booking.BookingStatus.ToString()), ct);
+        await context.Publish(
+            new OrderChanged(
+                booking.Id,
+                booking.UserId,
+                booking.BookingStatus.ToString()),
+            ct);
 
         logger.LogInformation("Бронь {BookingId} подтверждена: счёт оплачен", booking.Id);
     }

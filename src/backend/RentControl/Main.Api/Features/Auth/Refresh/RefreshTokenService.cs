@@ -1,10 +1,11 @@
+using Main.Api.Features.Auth;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using Microsoft.Extensions.Options;
-using RentControl.ServiceDefaults;
 using RentControl.Common.UnitOfWork;
+using RentControl.ServiceDefaults;
 
-namespace Main.Api.Auth.Refresh;
+namespace Main.Api.Features.Auth.Refresh;
 
 public class RefreshTokenService(
     IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,

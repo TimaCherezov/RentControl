@@ -8,6 +8,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <PackageReference Include="MassTransit" Version="8.5.12" />
+        <PackageReference Include="MassTransit.RabbitMQ" Version="8.5.12" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.0" />
     </ItemGroup>
 
@@ -19,6 +21,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Realtime.Model\Realtime.Model.csproj" />
+      <ProjectReference Include="..\RentControl.Common\RentControl.Common.csproj" />
       <ProjectReference Include="..\RentControl.ServiceDefaults\RentControl.ServiceDefaults.csproj" />
     </ItemGroup>
 
