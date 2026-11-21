@@ -41,8 +41,7 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
         {
             var bus = probeHost.Services.GetRequiredService<IBus>();
 
-            await bus.Publish(new InvoiceCreated(bookingId));
-            var first = await probe.NextAsync(TimeSpan.FromSeconds(30));
+            var first = await PublishUntilReceived(bus, new InvoiceCreated(bookingId), probe);
             Assert.Equal(bookingId, first.BookingId);
             Assert.Equal(nameof(BookingStatusEnum.Pending), first.Status);
 
@@ -52,8 +51,7 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
                 Assert.True(booking.IsInvoiceCreated);
             }
 
-            await bus.Publish(new PaymentSucceeded(bookingId));
-            var second = await probe.NextAsync(TimeSpan.FromSeconds(30));
+            var second = await PublishUntilReceived(bus, new PaymentSucceeded(bookingId), probe);
             Assert.Equal(bookingId, second.BookingId);
             Assert.Equal(nameof(BookingStatusEnum.Confirmed), second.Status);
 
@@ -69,6 +67,35 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
             probeHost.Dispose();
             await worker.StopAsync();
             worker.Dispose();
+        }
+    }
+
+    // На холодном старте паблиш может уйти в exchange до того, как воркер объявит
+    // биндинг своей очереди — fanout без биндинга молча теряет сообщение. Публикуем
+    // повторно до получения: консьюмеры воркера идемпотентны, дубликаты безопасны.
+    private static async Task<OrderChanged> PublishUntilReceived<T>(IBus bus, T message, OrderChangedProbe probe)
+        where T : class
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(60);
+        while (true)
+        {
+            await bus.Publish(message);
+
+            var remaining = deadline - DateTime.UtcNow;
+            if (remaining <= TimeSpan.Zero)
+            {
+                throw new TimeoutException(
+                    $"OrderChanged не получен за 60 секунд повторных публикаций {typeof(T).Name}.");
+            }
+
+            try
+            {
+                return await probe.NextAsync(TimeSpan.FromSeconds(5));
+            }
+            catch (TimeoutException) when (DateTime.UtcNow < deadline)
+            {
+                // сообщение потерялось на холодном старте — публикуем ещё раз
+            }
         }
     }
 
