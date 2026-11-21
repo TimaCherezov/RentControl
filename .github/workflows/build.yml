@@ -65,19 +65,34 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: read
     outputs:
-      tag: ${{ steps.calver.outputs.tag }}
+      tag: ${{ steps.next.outputs.tag }}
     steps:
-      - id: calver
-        run: echo "tag=v$(date -u +%Y.%m.%d).${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+
+      - id: next
+        run: |
+          git fetch --tags --quiet
+          latest=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
+          if [ -z "$latest" ]; then
+            echo "tag=v0.1.0" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$(echo "$latest" | awk -F. -v OFS=. '{$NF++; print}')" >> "$GITHUB_OUTPUT"
+          fi
 
   release-tag:
     needs: [version]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
