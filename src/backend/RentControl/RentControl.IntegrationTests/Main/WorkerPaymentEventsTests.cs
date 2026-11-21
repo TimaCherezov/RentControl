@@ -1,16 +1,12 @@
-extern alias MainWorker;
-
 using System.Threading.Channels;
 using Main.Model;
 using Main.Model.Models;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RentControl.Common.IntegrationEvents;
 using RentControl.IntegrationTests.Main.Infrastructure;
-using MainWorker.Main.Worker;
 
 namespace RentControl.IntegrationTests.Main;
 
@@ -22,18 +18,6 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
     {
         var bookingId = await SeedBookingAsync();
 
-        var workerBuilder = Host.CreateApplicationBuilder();
-        workerBuilder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["ConnectionStrings:maindb"] = fixture.ConnectionString,
-            ["ConnectionStrings:rabbitmq"] = fixture.RabbitMqConnectionString,
-        });
-        workerBuilder.Services.AddLogging();
-        workerBuilder.AddMainDatabase("maindb", disableRetry: true);
-        workerBuilder.AddMainWorkerBus();
-        var worker = workerBuilder.Build();
-        await worker.StartAsync();
-
         var probe = new OrderChangedProbe();
         var probeHost = StartProbeHost(fixture.RabbitMqConnectionString, probe);
         await probeHost.StartAsync();
@@ -41,7 +25,8 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
         {
             var bus = probeHost.Services.GetRequiredService<IBus>();
 
-            var first = await PublishUntilReceived(bus, new InvoiceCreated(bookingId), probe);
+            await bus.Publish(new InvoiceCreated(bookingId));
+            var first = await probe.NextAsync(TimeSpan.FromSeconds(30));
             Assert.Equal(bookingId, first.BookingId);
             Assert.Equal(nameof(BookingStatusEnum.Pending), first.Status);
 
@@ -51,7 +36,8 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
                 Assert.True(booking.IsInvoiceCreated);
             }
 
-            var second = await PublishUntilReceived(bus, new PaymentSucceeded(bookingId), probe);
+            await bus.Publish(new PaymentSucceeded(bookingId));
+            var second = await probe.NextAsync(TimeSpan.FromSeconds(30));
             Assert.Equal(bookingId, second.BookingId);
             Assert.Equal(nameof(BookingStatusEnum.Confirmed), second.Status);
 
@@ -65,37 +51,6 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
         {
             await probeHost.StopAsync();
             probeHost.Dispose();
-            await worker.StopAsync();
-            worker.Dispose();
-        }
-    }
-
-    // На холодном старте паблиш может уйти в exchange до того, как воркер объявит
-    // биндинг своей очереди — fanout без биндинга молча теряет сообщение. Публикуем
-    // повторно до получения: консьюмеры воркера идемпотентны, дубликаты безопасны.
-    private static async Task<OrderChanged> PublishUntilReceived<T>(IBus bus, T message, OrderChangedProbe probe)
-        where T : class
-    {
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(60);
-        while (true)
-        {
-            await bus.Publish(message);
-
-            var remaining = deadline - DateTime.UtcNow;
-            if (remaining <= TimeSpan.Zero)
-            {
-                throw new TimeoutException(
-                    $"OrderChanged не получен за 60 секунд повторных публикаций {typeof(T).Name}.");
-            }
-
-            try
-            {
-                return await probe.NextAsync(TimeSpan.FromSeconds(5));
-            }
-            catch (TimeoutException) when (DateTime.UtcNow < deadline)
-            {
-                // сообщение потерялось на холодном старте — публикуем ещё раз
-            }
         }
     }
 
