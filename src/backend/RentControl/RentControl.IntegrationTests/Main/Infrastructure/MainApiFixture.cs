@@ -1,11 +1,14 @@
 extern alias MainApi;
+extern alias MainWorker;
 
 using MainApiProgram = MainApi::Program;
 
 using Main.Model;
+using MainWorker.Main.Worker;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using RentControl.IntegrationTests.Infrastructure;
 using RentControl.ServiceDefaults;
 using Testcontainers.PostgreSql;
@@ -16,6 +19,8 @@ namespace RentControl.IntegrationTests.Main.Infrastructure;
 /// <summary>
 /// Main.Api целиком в памяти (WebApplicationFactory) + реальный Postgres в контейнере.
 /// Миграции Main.Model накатываются при старте фикстуры.
+/// Там же стартует Main.Worker: его endpoint'ы и биндинги в брокере готовы до запуска
+/// тестов — паблиш событий из тела теста не гоняется с поднятием консьюмера.
 /// </summary>
 public sealed class MainApiFixture : IAsyncLifetime
 {
@@ -25,6 +30,7 @@ public sealed class MainApiFixture : IAsyncLifetime
     private PostgreSqlContainer _postgres = null!;
     private RabbitMqContainer _rabbit = null!;
     private IntegrationTestFactory<MainApiProgram> _factory = null!;
+    private IHost _worker = null!;
 
     /// <summary>Готовый клиент к Main.Api.</summary>
     public HttpClient Client { get; private set; } = null!;
@@ -62,6 +68,9 @@ public sealed class MainApiFixture : IAsyncLifetime
             });
 
             Client = _factory.CreateClient();
+
+            _worker = CreateWorkerHost(ConnectionString, RabbitMqConnectionString);
+            await _worker.StartAsync();
         }
         catch
         {
@@ -80,6 +89,12 @@ public sealed class MainApiFixture : IAsyncLifetime
             if (_factory is not null)
             {
                 await _factory.DisposeAsync();
+            }
+
+            if (_worker is not null)
+            {
+                await _worker.StopAsync();
+                _worker.Dispose();
             }
         }
         finally
@@ -114,6 +129,22 @@ public sealed class MainApiFixture : IAsyncLifetime
     private string GetJwtSetting(string key) =>
         _factory.Services.GetRequiredService<IConfiguration>()[$"{JwtOptions.Section}:{key}"]
         ?? throw new InvalidOperationException($"В конфигурации Main.Api не найден Jwt:{key}");
+
+    /// <summary>Поднимает Main.Worker на тех же тестовых Postgres и RabbitMQ.</summary>
+    private static IHost CreateWorkerHost(string connectionString, string rabbitMqConnectionString)
+    {
+        var builder = Host.CreateApplicationBuilder();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:maindb"] = connectionString,
+            ["ConnectionStrings:rabbitmq"] = rabbitMqConnectionString,
+        });
+        builder.Services.AddLogging();
+        builder.AddMainDatabase("maindb", disableRetry: true);
+        builder.AddMainWorkerBus();
+
+        return builder.Build();
+    }
 
     private async Task MigrateAsync()
     {

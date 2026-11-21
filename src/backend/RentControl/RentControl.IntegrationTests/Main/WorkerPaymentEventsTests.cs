@@ -1,16 +1,12 @@
-extern alias MainWorker;
-
 using System.Threading.Channels;
 using Main.Model;
 using Main.Model.Models;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RentControl.Common.IntegrationEvents;
 using RentControl.IntegrationTests.Main.Infrastructure;
-using MainWorker.Main.Worker;
 
 namespace RentControl.IntegrationTests.Main;
 
@@ -21,18 +17,6 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
     public async Task InvoiceCreated_ThenPaymentSucceeded_UpdatesBooking_AndPublishesOrderChanged()
     {
         var bookingId = await SeedBookingAsync();
-
-        var workerBuilder = Host.CreateApplicationBuilder();
-        workerBuilder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
-        {
-            ["ConnectionStrings:maindb"] = fixture.ConnectionString,
-            ["ConnectionStrings:rabbitmq"] = fixture.RabbitMqConnectionString,
-        });
-        workerBuilder.Services.AddLogging();
-        workerBuilder.AddMainDatabase("maindb", disableRetry: true);
-        workerBuilder.AddMainWorkerBus();
-        var worker = workerBuilder.Build();
-        await worker.StartAsync();
 
         var probe = new OrderChangedProbe();
         var probeHost = StartProbeHost(fixture.RabbitMqConnectionString, probe);
@@ -67,8 +51,6 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
         {
             await probeHost.StopAsync();
             probeHost.Dispose();
-            await worker.StopAsync();
-            worker.Dispose();
         }
     }
 
