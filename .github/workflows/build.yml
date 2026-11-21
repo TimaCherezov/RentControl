@@ -101,6 +101,24 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
 
+  cleanup-images:
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Удаление старых версий образов (держим последние 5)
+        uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          owner: ${{ github.repository_owner }}
+          packages: rentcontrol/main.api,rentcontrol/payments.api,rentcontrol/realtime.api,rentcontrol/main.worker
+          keep-n-tagged: 5
+          delete-untagged: true
+          delete-partial-images: true
+
   # AI-ревью PR через OpenCodeReview (https://github.com/alibaba/open-code-review).
   # Запускается при создании PR в main и на каждый пуш в него — только после
   # успешного билда (needs: build). Action сам ставит OCR, конфигурирует LLM,
