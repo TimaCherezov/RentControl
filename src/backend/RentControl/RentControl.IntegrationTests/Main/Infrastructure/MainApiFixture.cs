@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using DotNet.Testcontainers.Builders;
 using RentControl.IntegrationTests.Infrastructure;
 using RentControl.ServiceDefaults;
 using Testcontainers.PostgreSql;
@@ -53,7 +54,9 @@ public sealed class MainApiFixture : IAsyncLifetime
         _postgres = new PostgreSqlBuilder(TestImages.Postgres)
             .WithDatabase(DatabaseName)
             .Build();
-        _rabbit = new RabbitMqBuilder(TestImages.RabbitMq).Build();
+        _rabbit = new RabbitMqBuilder(TestImages.RabbitMq)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Server startup complete"))
+            .Build();
         try
         {
             await _postgres.StartAsync();
