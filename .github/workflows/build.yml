@@ -73,8 +73,23 @@ jobs:
       - id: calver
         run: echo "tag=v$(date -u +%Y.%m.%d).${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
 
+  release-tag:
+    needs: [version]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Git-тег версии
+        run: |
+          git tag "${{ needs.version.outputs.tag }}"
+          git push origin "${{ needs.version.outputs.tag }}"
+
   docker:
-    needs: [e2e-tests, version]
+    needs: [release-tag]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -115,21 +130,6 @@ jobs:
             ${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
-
-  release-tag:
-    needs: [docker, version]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Git-тег версии
-        run: |
-          git tag "${{ needs.version.outputs.tag }}"
-          git push origin "${{ needs.version.outputs.tag }}"
 
   cleanup-images:
     needs: docker
