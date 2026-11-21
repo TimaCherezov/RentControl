@@ -60,8 +60,21 @@ jobs:
       - name: Run e2e tests
         run: dotnet test src/backend/RentControl/RentControl.E2ETests --no-restore -c Release
 
-  docker:
+  version:
     needs: e2e-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.calver.outputs.tag }}
+    steps:
+      - id: calver
+        run: echo "tag=v$(date -u +%Y.%m.%d).${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+
+  docker:
+    needs: [e2e-tests, version]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -98,9 +111,25 @@ jobs:
           push: true
           tags: |
             ${{ steps.image.outputs.name }}:latest
+            ${{ steps.image.outputs.name }}:${{ needs.version.outputs.tag }}
             ${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
+
+  release-tag:
+    needs: [docker, version]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Git-тег версии
+        run: |
+          git tag "${{ needs.version.outputs.tag }}"
+          git push origin "${{ needs.version.outputs.tag }}"
 
   cleanup-images:
     needs: docker
