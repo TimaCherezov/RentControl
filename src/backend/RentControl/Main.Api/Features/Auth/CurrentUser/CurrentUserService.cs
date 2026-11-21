@@ -1,6 +1,6 @@
 using System.Security.Claims;
 
-namespace Main.Api.Auth.CurrentUser;
+namespace Main.Api.Features.Auth.CurrentUser;
 
 public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {

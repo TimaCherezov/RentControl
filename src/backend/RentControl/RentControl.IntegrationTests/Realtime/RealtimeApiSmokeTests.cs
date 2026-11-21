@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using RentControl.IntegrationTests.Realtime.Infrastructure;
 
 namespace RentControl.IntegrationTests.Realtime;
@@ -8,10 +7,12 @@ namespace RentControl.IntegrationTests.Realtime;
 public class RealtimeApiSmokeTests(RealtimeApiFixture fixture)
 {
     [Fact]
-    public async Task WeatherForecast_ReturnsOk()
+    public async Task BookingHub_ReturnsUnauthorizedWithoutToken()
     {
-        var response = await fixture.Client.GetAsync("/weatherforecast");
+        var response = await fixture.Client.PostAsync(
+            "/hubs/bookings/negotiate",
+            content: null);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 }

@@ -1,6 +1,6 @@
 using FluentValidation;
 
-namespace Main.Api.Auth.Register;
+namespace Main.Api.Features.Auth.Register;
 
 public class RegisterUserValidator : AbstractValidator<RegisterUserRequest>
 {

@@ -106,6 +106,7 @@ public static class JwtAuthorizationExtensions
         services
             .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
+            {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
@@ -116,7 +117,22 @@ public static class JwtAuthorizationExtensions
                     ValidAudience = settings.Audience,
                     ValidateLifetime = true,
                     RequireExpirationTime = true
-                });
+                };
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        if (!string.IsNullOrEmpty(accessToken)
+                            && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    }
+                };
+            });
 
         services.AddAuthorization();
     }

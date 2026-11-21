@@ -1,11 +1,12 @@
+using Main.Api.Features.Auth;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using RentControl.ServiceDefaults;
 using RentControl.Common.UnitOfWork;
+using RentControl.ServiceDefaults;
 
-namespace Main.Api.Auth.Login;
+namespace Main.Api.Features.Auth.Login;
 
 public class LoginUserService(
     IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,

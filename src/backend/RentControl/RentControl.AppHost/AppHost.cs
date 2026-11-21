@@ -55,14 +55,23 @@ if (IsEnabled(ServiceNames.PaymentsApi))
 
     if (mainApi is not null)
     {
-        paymentsApi.WithReference(mainApi);
+        paymentsApi
+            .WithReference(mainApi)
+            .WaitFor(mainApi);
     }
 }
 
 if (IsEnabled(ServiceNames.RealtimeApi))
 {
-    builder.AddProject<Projects.Realtime_Api>(ServiceNames.RealtimeApi)
+    var realtimeApi = builder.AddProject<Projects.Realtime_Api>(ServiceNames.RealtimeApi)
         .WithReference(rabbitmq).WaitFor(rabbitmq);
+
+    if (mainApi is not null)
+    {
+        realtimeApi
+            .WithReference(mainApi)
+            .WaitFor(mainApi);
+    }
 }
 
 builder.Build().Run();
