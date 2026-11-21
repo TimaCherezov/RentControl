@@ -6,6 +6,7 @@ public static class ServiceNames
     public const string MainWorker = "main-worker";
     public const string PaymentsApi = "payments-api";
     public const string RealtimeApi = "realtime-api";
+    public const string Front = "front";
 
-    public static readonly string[] All = [MainApi, MainWorker, PaymentsApi, RealtimeApi];
+    public static readonly string[] All = [MainApi, MainWorker, PaymentsApi, RealtimeApi, Front];
 }

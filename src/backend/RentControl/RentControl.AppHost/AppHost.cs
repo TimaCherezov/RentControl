@@ -13,6 +13,13 @@ if (unknown.Length > 0)
 }
 
 var enabled = requested.Length == 0 ? ServiceNames.All : requested;
+
+// Фронт ходит в оба API — они должны подниматься вместе с ним.
+if (enabled.Contains(ServiceNames.Front))
+{
+    enabled = enabled.Union([ServiceNames.MainApi, ServiceNames.PaymentsApi]).ToArray();
+}
+
 bool IsEnabled(string name) => enabled.Contains(name);
 
 var postgres = builder.AddPostgres("postgres")
@@ -25,6 +32,7 @@ var rabbitmq = builder.AddRabbitMQ("rabbitmq")
     .WithLifetime(ContainerLifetime.Persistent);
 
 IResourceBuilder<ProjectResource>? mainApi = null;
+IResourceBuilder<ProjectResource>? paymentsApi = null;
 
 if (IsEnabled(ServiceNames.MainApi) || IsEnabled(ServiceNames.MainWorker))
 {
@@ -49,7 +57,7 @@ if (IsEnabled(ServiceNames.PaymentsApi))
 {
     var paymentsDb = postgres.AddDatabase("paymentsdb");
 
-    var paymentsApi = builder.AddProject<Projects.Payments_Api>(ServiceNames.PaymentsApi)
+    paymentsApi = builder.AddProject<Projects.Payments_Api>(ServiceNames.PaymentsApi)
         .WithReference(paymentsDb).WaitFor(paymentsDb)
         .WithReference(rabbitmq).WaitFor(rabbitmq);
 
@@ -72,6 +80,14 @@ if (IsEnabled(ServiceNames.RealtimeApi))
             .WithReference(mainApi)
             .WaitFor(mainApi);
     }
+}
+
+if (IsEnabled(ServiceNames.Front))
+{
+    builder.AddViteApp(ServiceNames.Front, "../../../frontend/RentControl")
+        .WithExternalHttpEndpoints()
+        .WithReference(mainApi!).WaitFor(mainApi!)
+        .WithReference(paymentsApi!).WaitFor(paymentsApi!);
 }
 
 builder.Build().Run();
