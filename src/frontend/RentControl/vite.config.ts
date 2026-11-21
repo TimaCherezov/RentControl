@@ -9,12 +9,19 @@ export default defineConfig({
     proxy: {
       "/api/invoices": {
         target:
-          process.env.VITE_PAYMENTS_API_TARGET ?? "https://localhost:7287",
+          process.env["services__payments-api__https__0"] ||
+          process.env["services__payments-api__http__0"] ||
+          process.env.VITE_PAYMENTS_API_TARGET ||
+          "https://localhost:7287",
         changeOrigin: true,
         secure: false,
       },
       "/api": {
-        target: process.env.VITE_API_TARGET ?? "https://localhost:7275",
+        target:
+          process.env["services__main-api__https__0"] ||
+          process.env["services__main-api__http__0"] ||
+          process.env.VITE_API_TARGET ||
+          "https://localhost:7275",
         changeOrigin: true,
         secure: false,
       },
