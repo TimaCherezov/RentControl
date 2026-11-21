@@ -6,8 +6,10 @@ using RentControl.Common.UnitOfWork;
 
 namespace Main.Api.Features.Bookings.Complete;
 
-public class CompleteBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IBookingStatusStateService bookingStatusService)
-    : IConsumer<CompleteBookingCommand>
+public class CompleteBookingConsumer(
+	IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
+	IBookingStatusStateService bookingStatusService)
+	: IConsumer<CompleteBookingCommand>
 {
 	public async Task Consume(ConsumeContext<CompleteBookingCommand> context)
 	{

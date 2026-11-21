@@ -3,19 +3,25 @@ using Main.Api.Features.Products.Delete;
 using Main.Api.Features.Products.Get;
 using Main.Api.Features.Products.GetMaxAvailableDuration;
 using Main.Api.Features.Products.GetPage;
+using Main.Api.Features.Products.GetQuote;
 using Main.Api.Features.Products.Update;
+using Main.Api.Features.Bookings.Pricing;
 using Mapster;
 using MassTransit.Mediator;
+using Main.Model.Models;
 using Microsoft.AspNetCore.Mvc;
 using RentControl.Common.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Main.Api.Features.Products;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class ProductsController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<ActionResult<ProductDto>> Create(
         [FromBody] CreateProductRequest request,
         CancellationToken ct
@@ -72,7 +78,23 @@ public class ProductsController(IMediator mediator) : ControllerBase
         return Ok(response.Message);
     }
 
+    [HttpGet("{id:guid}/quote")]
+    public async Task<ActionResult<BookingQuote>> GetQuote(
+        Guid id,
+        [FromQuery] GetQuoteProductRequest request,
+        CancellationToken ct
+    )
+    {
+        var command = request.Adapt<GetQuoteProductCommand>() with { Id = id };
+
+        var client = mediator.CreateRequestClient<GetQuoteProductCommand>();
+        var response = await client.GetResponse<BookingQuote>(command, ct);
+
+        return Ok(response.Message);
+    }
+
     [HttpDelete("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> Delete(Guid id, CancellationToken ct)
     {
         var command = new DeleteProductCommand(id);
@@ -81,6 +103,7 @@ public class ProductsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateProductRequest request,

@@ -11,7 +11,6 @@ public class UpdateBookingValidator : AbstractValidator<UpdateBookingCommand>
         RuleFor(x => x.ProductUnitId).Id();
         RuleFor(x => x.LocationId).Id();
         RuleFor(x => x.DepositAmount).NonNegative();
-        RuleFor(x => x.UserId).Id();
         RuleFor(x => x.EndAt).NotInPast();
         RuleFor(x => x.StartAt)
             .NotInPast()

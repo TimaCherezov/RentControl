@@ -9,18 +9,22 @@ using Main.Api.Features.Bookings.Overdue;
 using Main.Api.Features.Bookings.ReadyForPickup;
 using Main.Api.Features.Bookings.Return;
 using Main.Api.Features.Bookings.Update;
+using Main.Model.Models;
 using Mapster;
 using MassTransit.Mediator;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RentControl.Common.DTOs;
 
 namespace Main.Api.Features.Bookings;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class BookingsController(IMediator mediator) : ControllerBase
 {
     [HttpPost("{id:guid}/issuance")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsIssuedAsync(Guid id, CancellationToken ct)
     {
         var command = new IssueBookingCommand(id);
@@ -29,6 +33,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/return")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsReturnedAsync(Guid id, CancellationToken ct)
     {
         var command = new ReturnBookingCommand(id);
@@ -37,6 +42,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/confirm")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsConfirmedAsync(Guid id, CancellationToken ct)
     {
         var command = new ConfirmBookingCommand(id);
@@ -61,6 +67,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/overdue")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsOverdueAsync(Guid id, CancellationToken ct)
     {
         var command = new OverdueBookingCommand(id);
@@ -69,6 +76,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPost("{id:guid}/complete")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> MarkAsCompletedAsync(Guid id, CancellationToken ct)
     {
         var command = new CompleteBookingCommand(id);
@@ -89,6 +97,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Roles = nameof(RoleEnum.Admin))]
     public async Task<IActionResult> Update(
         Guid id,
         [FromBody] UpdateBookingRequest request,

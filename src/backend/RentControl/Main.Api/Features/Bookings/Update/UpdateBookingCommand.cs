@@ -4,7 +4,6 @@ namespace Main.Api.Features.Bookings.Update;
 
 public record UpdateBookingCommand(
     Guid Id,
-    Guid UserId,
     Guid ProductUnitId,
     Guid LocationId,
     DateTimeOffset StartAt,

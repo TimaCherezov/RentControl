@@ -32,6 +32,7 @@ using Main.Api.Features.Products.Delete;
 using Main.Api.Features.Products.Get;
 using Main.Api.Features.Products.GetMaxAvailableDuration;
 using Main.Api.Features.Products.GetPage;
+using Main.Api.Features.Products.GetQuote;
 using Main.Api.Features.Products.Update;
 using Main.Api.Features.ProductUnits.Create;
 using Main.Api.Features.ProductUnits.Delete;
@@ -72,6 +73,7 @@ builder.Services.AddMediator(cfg =>
     cfg.AddConsumer<GetProductConsumer>();
     cfg.AddConsumer<DeleteProductConsumer>();
     cfg.AddConsumer<GetMaxAvailableDurationConsumer>();
+    cfg.AddConsumer<GetQuoteProductConsumer>();
 
     cfg.AddConsumer<CreateBookingConsumer>();
     cfg.AddConsumer<UpdateBookingConsumer>();
