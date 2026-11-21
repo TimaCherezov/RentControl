@@ -1,0 +1,7 @@
+# Namespace — «папка» внутри кластера: все объекты RentControl будут жить
+# в отдельном пространстве имён, чтобы не смешиваться с системными подами.
+# Удаление namespace (teardown.sh) сносит всё его содержимое одним махом.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: rentcontrol
