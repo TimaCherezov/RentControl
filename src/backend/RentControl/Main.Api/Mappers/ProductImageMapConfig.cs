@@ -15,7 +15,6 @@ public static class ProductImageMapConfig
         new ProductImageDto(
             pi.Id,
             pi.ProductId,
-            pi.StorageKey,
             pi.IsMain,
             pi.CreatedAt,
             pi.AltText,

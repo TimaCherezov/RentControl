@@ -7,16 +7,17 @@ public class ProductImageRepository(MainDbContext dbContext) : IProductImageRepo
 {
     public void Add(ProductImage productImage) => dbContext.ProductImages.Add(productImage);
 
-    public Task<List<ProductImage>> GetAllByProductIdAsync(
+    public async Task<List<ProductImage>> GetAllByProductIdAsync(
         Guid productId,
         CancellationToken cancellationToken = default
-    ) =>
-        dbContext
+    )
+    {
+        var list = await dbContext
             .ProductImages.Where(pi => pi.ProductId == productId)
-            .OrderByDescending(pi => pi.IsMain)
-            .ThenBy(pi => pi.CreatedAt)
-            .ThenBy(pi => pi.Id)
             .ToListAsync(cancellationToken);
+
+        return list.SortForDisplay().ToList();
+    }
 
     public Task<ProductImage?> GetByIdAsync(
         Guid id,

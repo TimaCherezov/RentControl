@@ -8,19 +8,22 @@ using Microsoft.Extensions.Options;
 
 namespace Main.Api.Features.Bookings.GetPage;
 
-public class GetPageBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IOptions<ImageStorageOptions> imageStorageOptions)
-    : IConsumer<GetPageBookingCommand>
+public class GetPageBookingConsumer(
+    IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
+    IOptions<ImageStorageOptions> imageStorageOptions
+) : IConsumer<GetPageBookingCommand>
 {
     public async Task Consume(ConsumeContext<GetPageBookingCommand> context)
     {
         var command = context.Message;
+        var userId = command.UserId;
 
         var bookingPageList = await uowFactory.ExecuteAsync(async uow =>
         {
             var pageList = await uow.Bookings.GetPageAsync(
                 command.PageNumber,
                 command.PageSize,
-                command.UserId,
+                userId,
                 command.Status
             );
             return pageList;

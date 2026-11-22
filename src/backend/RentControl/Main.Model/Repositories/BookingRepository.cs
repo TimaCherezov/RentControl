@@ -37,7 +37,8 @@ public class BookingRepository(MainDbContext dbContext) : IBookingRepository
         var bookings = await query
             .Include(b => b.ProductUnit.Product.Images.Where(i => i.IsMain))
             .Include(b => b.Location)
-            .OrderBy(b => b.StartAt)
+            .OrderByDescending(b => b.StartAt)
+            .ThenBy(b => b.Id)
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(cancellationToken);

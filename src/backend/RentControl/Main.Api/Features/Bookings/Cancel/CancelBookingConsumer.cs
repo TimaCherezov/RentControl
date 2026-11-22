@@ -19,6 +19,10 @@ public class CancelBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactor
 
 			if (booking is null)
 				throw new ObjectNotFoundException($"Booking with ID: {command.Id} not found.");
+            
+            var userId = command.UserId;
+            if (userId != booking.UserId)
+                throw new InvalidOperationException("Access to this booking is denied.");
 
 			await bookingStatusService.SwitchBookingStatusAsync(
 					BookingStatusEnum.Cancelled,

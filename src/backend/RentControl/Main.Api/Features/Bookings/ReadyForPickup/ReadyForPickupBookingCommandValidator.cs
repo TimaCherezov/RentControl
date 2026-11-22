@@ -8,5 +8,6 @@ public class ReadyForPickupBookingCommandValidator : AbstractValidator<ReadyForP
     public ReadyForPickupBookingCommandValidator()
     {
         RuleFor(x => x.Id).Id();
+        RuleFor(x => x.UserId).Id();
     }
 }

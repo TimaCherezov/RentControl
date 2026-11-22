@@ -4,7 +4,6 @@ namespace Main.Api.Features.Bookings.Update;
 
 public sealed class UpdateBookingRequest
 {
-    public Guid UserId { get; set; }
     public Guid ProductUnitId { get; set; }
     public Guid LocationId { get; set; }
     public DateTimeOffset StartAt { get; set; }

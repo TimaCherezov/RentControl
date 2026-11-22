@@ -1,3 +1,3 @@
 namespace Main.Api.Features.Bookings.Cancel;
 
-public record CancelBookingCommand(Guid Id);
+public record CancelBookingCommand(Guid Id, Guid UserId);

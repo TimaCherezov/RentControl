@@ -1,4 +1,5 @@
 using Main.Api.Exceptions;
+using Main.Api.Features.Bookings.Pricing;
 using Main.Api.Features.ProductImages;
 using Main.Api.Mappers;
 using Main.Model.Models;
@@ -12,6 +13,7 @@ namespace Main.Api.Features.Bookings.Create;
 public class CreateBookingConsumer(
     IMainUnitOfWork uow,
     IPublishEndpoint publishEndpoint,
+    IRentalPricingService pricingService,
     IOptions<ImageStorageOptions> imageStorageOptions,
     IOptions<BookingOptions> bookingOptions
 ) : IConsumer<CreateBookingCommand>
@@ -20,6 +22,7 @@ public class CreateBookingConsumer(
     {
         var ct = context.CancellationToken;
         var command = context.Message;
+        var userId = command.UserId;
 
         var booking = await uow.ExecuteInTransactionAsync(
             async () =>
@@ -48,6 +51,11 @@ public class CreateBookingConsumer(
                     ?? throw new ObjectNotFoundException(
                         $"ProductUnit with ID: {productUnitId} not found."
                     ); // pessimistic lock
+
+                var quote = pricingService.Calculate(
+                    product,
+                    command.StartAt,
+                    command.EndAt);
 
                 if (productUnit.ProductId != command.ProductId)
                     throw new InvalidOperationException(
@@ -80,11 +88,12 @@ public class CreateBookingConsumer(
                 {
                     Id = Guid.NewGuid(),
                     ProductUnitId = productUnit.Id,
-                    UserId = command.UserId,
+                    UserId = userId,
                     LocationId = productUnit.LocationId,
                     StartAt = command.StartAt,
                     EndAt = command.EndAt,
-                    DepositAmount = product.CalculateDeposit(bookingOptions.Value.DepositRate),
+                    DepositAmount = quote.DepositAmount,
+                    TotalRentalCost = quote.RentalCost,
                     BookingStatus = BookingStatusEnum.Pending,
                     StatusChangedAt = DateTimeOffset.UtcNow,
                 };
@@ -92,7 +101,7 @@ public class CreateBookingConsumer(
                 uow.Bookings.Add(bookingModel);
 
                 await publishEndpoint.Publish(
-                    new OrderCreated(bookingModel.Id, bookingModel.DepositAmount), //TODO: + аренда
+                    new OrderCreated(bookingModel.Id, quote.TotalAmount),
                     ct
                 );
                 return bookingModel;

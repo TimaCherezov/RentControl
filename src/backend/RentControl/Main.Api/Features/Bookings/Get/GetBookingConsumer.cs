@@ -30,6 +30,10 @@ public class GetBookingConsumer(
             context.CancellationToken
         );
 
+        var userId = command.UserId;
+        if (userId != booking.UserId)
+            throw new InvalidOperationException("Access to this booking is denied.");
+
         var response = booking.ToDto(imageStorageOptions.Value);
 
         await context.RespondAsync(response);

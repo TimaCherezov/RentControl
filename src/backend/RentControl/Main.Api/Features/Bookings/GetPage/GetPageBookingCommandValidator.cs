@@ -7,9 +7,9 @@ public class GetPageBookingCommandValidator : AbstractValidator<GetPageBookingCo
 {
     public GetPageBookingCommandValidator()
     {
-        RuleFor(x => x.UserId).OptionalId();
         RuleFor(x => x.Status).OptionalIsInEnum();
         RuleFor(x => x.PageNumber).GreaterThan(0);
         RuleFor(x => x.PageSize).GreaterThan(0);
+        RuleFor(x => x.UserId).Id();
     }
 }
