@@ -7,3 +7,10 @@ export class ApiError extends Error {
     this.statusCode = statusCode;
   }
 }
+
+export class AutoLoginError extends Error {
+  constructor(message = "Не удалось выполнить вход после регистрации") {
+    super(message);
+    this.name = "AutoLoginError";
+  }
+}

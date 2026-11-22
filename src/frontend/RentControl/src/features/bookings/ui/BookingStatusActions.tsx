@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Button, Stack } from "../../../shared/ui";
 import { BookingStatus } from "../../../types/booking";
 import type { BookingDto } from "../../../types/booking";
@@ -11,6 +12,19 @@ export function BookingStatusActions({ booking }: { booking: BookingDto }) {
   const cancel = useMarkAsCancelled(booking.id);
   const ready = useMarkAsReadyForPickup(booking.id);
   const pay = usePayBooking(booking.id);
+
+  const { reset: resetCancel } = cancel;
+  const { reset: resetReady } = ready;
+  const { reset: resetPay } = pay;
+
+  useEffect(() => {
+    resetCancel();
+    resetReady();
+    resetPay();
+    // Сбрасываем ошибки мутаций при смене статуса брони,
+    // иначе старая ошибка одной кнопки висит над другой.
+  }, [booking.bookingStatus, resetCancel, resetReady, resetPay]);
+
   const error = cancel.error ?? ready.error ?? pay.error;
 
   return (

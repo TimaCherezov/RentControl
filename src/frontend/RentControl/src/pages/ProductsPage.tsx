@@ -31,7 +31,7 @@ export function ProductsPage() {
           isLoading={isLoading}
           error={error}
         />
-        {data && data.totalCount > PAGE_SIZE && (
+        {data && data.totalPages > 1 && (
           <Pagination
             page={data.pageNumber}
             pageSize={data.pageSize}

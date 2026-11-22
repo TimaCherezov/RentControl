@@ -25,6 +25,10 @@ export function Modal({
 
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
+
+    return () => {
+      if (dialog.open) dialog.close();
+    };
   }, [open]);
 
   return (

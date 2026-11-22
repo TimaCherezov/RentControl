@@ -17,6 +17,7 @@ import {
   setAccessToken,
 } from "../../lib/authToken";
 import { refreshAccessToken } from "../../lib/http";
+import { AutoLoginError } from "../../lib/errors";
 import type { UserResponse } from "../../types/auth";
 import { AuthContext, type AuthStatus } from "./useAuth";
 
@@ -72,15 +73,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const tokens = await loginRequest({ email, password });
     setAccessToken(tokens.accessToken);
 
-    const currentUser = await getCurrentUser();
-    setUser(currentUser);
-    setStatus("authenticated");
+    try {
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
+      setStatus("authenticated");
+    } catch (error) {
+      clearAccessToken();
+      throw error;
+    }
   }, []);
 
   const register = useCallback(
     async (name: string, email: string, password: string) => {
       await registerRequest({ name, email, password });
-      await login(email, password);
+
+      try {
+        await login(email, password);
+      } catch (error) {
+        throw new AutoLoginError(
+          error instanceof Error
+            ? error.message
+            : "Не удалось выполнить вход после регистрации",
+        );
+      }
     },
     [login],
   );
@@ -88,7 +103,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     try {
       await logoutRequest();
-    } catch {}
+    } catch (error) {
+      console.error("Не удалось выполнить logout", error);
+    }
 
     clearAccessToken();
     setUser(null);

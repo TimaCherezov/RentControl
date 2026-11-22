@@ -5,7 +5,9 @@ import { useAuth } from "./useAuth";
 export function PublicOnly() {
   const { status } = useAuth();
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? "/";
+  const rawFrom = (location.state as { from?: string } | null)?.from ?? "/";
+  const from =
+    rawFrom.startsWith("/") && !rawFrom.startsWith("//") ? rawFrom : "/";
 
   if (status === "loading") {
     return (

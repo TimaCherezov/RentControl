@@ -9,7 +9,7 @@ import {
   Stack,
 } from "../shared/ui";
 import { useAuth } from "../app/auth/useAuth";
-import { ApiError } from "../lib/errors";
+import { ApiError, AutoLoginError } from "../lib/errors";
 
 export function RegisterPage() {
   const { register } = useAuth();
@@ -28,11 +28,15 @@ export function RegisterPage() {
     try {
       await register(name, email, password);
     } catch (submitError) {
-      setError(
-        submitError instanceof ApiError
-          ? submitError.message
-          : "Не удалось зарегистрироваться",
-      );
+      if (submitError instanceof AutoLoginError) {
+        setError(
+          "Аккаунт создан, но выполнить вход не удалось. Войдите вручную.",
+        );
+      } else if (submitError instanceof ApiError) {
+        setError(submitError.message);
+      } else {
+        setError("Не удалось зарегистрироваться");
+      }
     } finally {
       setIsSubmitting(false);
     }

@@ -14,7 +14,8 @@ export function ImageWithFallback({
   name,
   className,
 }: ImageWithFallbackProps) {
-  const [failed, setFailed] = useState(false);
+  const [failedSrc, setFailedSrc] = useState<string | null | undefined>(null);
+  const failed = failedSrc === src;
 
   if (!src || failed) {
     return (
@@ -34,7 +35,7 @@ export function ImageWithFallback({
       src={src}
       alt={alt ?? name}
       loading="lazy"
-      onError={() => setFailed(true)}
+      onError={() => setFailedSrc(src)}
       className={cn("size-full object-cover", className)}
     />
   );

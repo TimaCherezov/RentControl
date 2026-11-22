@@ -16,6 +16,10 @@ export function Pagination({
   onPageChange,
   className,
 }: PaginationProps) {
+  if (totalCount <= 0 || pageSize <= 0) {
+    return null;
+  }
+
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   return (
