@@ -1,4 +1,4 @@
-namespace Main.Api.Auth.Refresh;
+namespace Main.Api.Features.Auth.Refresh;
 
 public interface IRefreshTokenService
 {

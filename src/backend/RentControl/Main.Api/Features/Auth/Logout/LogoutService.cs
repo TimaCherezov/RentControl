@@ -1,7 +1,7 @@
 using Main.Model.UnitOfWork;
 using RentControl.Common.UnitOfWork;
 
-namespace Main.Api.Auth.Logout;
+namespace Main.Api.Features.Auth.Logout;
 
 public class LogoutService(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IJwtTokenService jwtTokenService) : ILogoutService
 {

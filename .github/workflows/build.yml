@@ -60,8 +60,51 @@ jobs:
       - name: Run e2e tests
         run: dotnet test src/backend/RentControl/RentControl.E2ETests --no-restore -c Release
 
-  docker:
+  version:
     needs: e2e-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.next.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: next
+        run: |
+          git fetch --tags --quiet
+          latest=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
+          if [ -z "$latest" ]; then
+            echo "tag=v0.1.0" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$(echo "$latest" | awk -F. -v OFS=. '{$NF++; print}')" >> "$GITHUB_OUTPUT"
+          fi
+
+  release-tag:
+    needs: [version]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Git-тег версии
+        run: |
+          git tag "${{ needs.version.outputs.tag }}"
+          git push origin "${{ needs.version.outputs.tag }}"
+
+  docker:
+    needs: [release-tag, version]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -98,9 +141,28 @@ jobs:
           push: true
           tags: |
             ${{ steps.image.outputs.name }}:latest
+            ${{ steps.image.outputs.name }}:${{ needs.version.outputs.tag }}
             ${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
+
+  cleanup-images:
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Удаление старых версий образов (держим последние 5)
+        uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          owner: ${{ github.repository_owner }}
+          packages: rentcontrol/main.api,rentcontrol/payments.api,rentcontrol/realtime.api,rentcontrol/main.worker
+          keep-n-tagged: 5
+          delete-untagged: true
+          delete-partial-images: true
 
   # AI-ревью PR через OpenCodeReview (https://github.com/alibaba/open-code-review).
   # Запускается при создании PR в main и на каждый пуш в него — только после

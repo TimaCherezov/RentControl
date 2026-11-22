@@ -1,6 +1,6 @@
 using Main.Model.Models;
 
-namespace Main.Api.Auth;
+namespace Main.Api.Features.Auth;
 
 public interface IJwtTokenService
 {

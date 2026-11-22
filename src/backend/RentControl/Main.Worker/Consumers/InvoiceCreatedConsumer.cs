@@ -24,7 +24,12 @@ public class InvoiceCreatedConsumer(
 
         booking.IsInvoiceCreated = true;
         await uow.SaveChangesAsync(ct);
-        await context.Publish(new OrderChanged(booking.Id, booking.BookingStatus.ToString()), ct);
+        await context.Publish(
+            new OrderChanged(
+                booking.Id,
+                booking.UserId,
+                booking.BookingStatus.ToString()),
+            ct);
 
         logger.LogInformation("Бронь {BookingId} готова к оплате: счёт выставлен", booking.Id);
     }

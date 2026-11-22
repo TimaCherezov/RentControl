@@ -1,9 +1,9 @@
-using Main.Api.Auth;
-using Main.Api.Auth.CurrentUser;
-using Main.Api.Auth.Login;
-using Main.Api.Auth.Logout;
-using Main.Api.Auth.Refresh;
-using Main.Api.Auth.Register;
+using Main.Api.Features.Auth;
+using Main.Api.Features.Auth.CurrentUser;
+using Main.Api.Features.Auth.Login;
+using Main.Api.Features.Auth.Logout;
+using Main.Api.Features.Auth.Refresh;
+using Main.Api.Features.Auth.Register;
 using Main.Model.UnitOfWork;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -74,10 +74,8 @@ public class AuthController(
     public async Task<IActionResult> CurrentUser(CancellationToken cancellationToken)
     {
         var userId = currentUserService.GetUserId();
-        var user = await uowFactory.ExecuteAsync(async uow =>
-        {
-            return await uow.Users.GetByIdAsync(userId, cancellationToken);
-        }, cancellationToken);
+        var user = await uowFactory.ExecuteAsync(async uow 
+            => await uow.Users.GetByIdAsync(userId, cancellationToken), cancellationToken);
 
         if (user == null)
         {

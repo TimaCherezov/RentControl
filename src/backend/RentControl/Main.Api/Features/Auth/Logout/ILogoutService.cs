@@ -1,4 +1,4 @@
-namespace Main.Api.Auth.Logout;
+namespace Main.Api.Features.Auth.Logout;
 
 public interface ILogoutService
 {

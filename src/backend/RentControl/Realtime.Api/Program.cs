@@ -1,50 +1,43 @@
+using MassTransit;
+using Realtime.Api.Consumers;
+using Realtime.Api.Hubs;
+using RentControl.ServiceDefaults;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddServiceDefaults();
-
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddJwtAuthorizationFromJwks(builder.Configuration);
+builder.Services.AddSignalR();
 builder.Services.AddOpenApi();
+
+builder.Services.AddMassTransit(configurator =>
+{
+    configurator.AddConsumer<OrderChangedConsumer>();
+
+    configurator.UsingRabbitMq((context, rabbitMq) =>
+    {
+        rabbitMq.Host(
+            builder.Configuration.GetConnectionString("rabbitmq"));
+        rabbitMq.ConfigureEndpoints(context);
+    });
+});
 
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-    {
-        var forecast = Enumerable.Range(1, 5).Select(index =>
-                new WeatherForecast
-                (
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-            .ToArray();
-        return forecast;
-    })
-    .WithName("GetWeatherForecast");
+app.MapHub<BookingHub>("/hubs/bookings")
+    .RequireAuthorization();
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
-
-// Точка входа для WebApplicationFactory в интеграционных тестах.
-public partial class Program
-{
-}
+public partial class Program;

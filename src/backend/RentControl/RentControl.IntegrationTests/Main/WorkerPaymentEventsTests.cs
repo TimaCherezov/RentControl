@@ -16,7 +16,7 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
     [Fact]
     public async Task InvoiceCreated_ThenPaymentSucceeded_UpdatesBooking_AndPublishesOrderChanged()
     {
-        var bookingId = await SeedBookingAsync();
+        var (bookingId, userId) = await SeedBookingAsync();
 
         var probe = new OrderChangedProbe();
         var probeHost = StartProbeHost(fixture.RabbitMqConnectionString, probe);
@@ -28,6 +28,7 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
             await bus.Publish(new InvoiceCreated(bookingId));
             var first = await probe.NextAsync(TimeSpan.FromSeconds(30));
             Assert.Equal(bookingId, first.BookingId);
+            Assert.Equal(userId, first.UserId);
             Assert.Equal(nameof(BookingStatusEnum.Pending), first.Status);
 
             await using (var db = fixture.CreateDbContext())
@@ -39,6 +40,7 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
             await bus.Publish(new PaymentSucceeded(bookingId));
             var second = await probe.NextAsync(TimeSpan.FromSeconds(30));
             Assert.Equal(bookingId, second.BookingId);
+            Assert.Equal(userId, second.UserId);
             Assert.Equal(nameof(BookingStatusEnum.Confirmed), second.Status);
 
             await using (var db = fixture.CreateDbContext())
@@ -54,7 +56,7 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
         }
     }
 
-    private async Task<Guid> SeedBookingAsync()
+    private async Task<(Guid BookingId, Guid UserId)> SeedBookingAsync()
     {
         var suffix = Guid.NewGuid().ToString("N");
         var user = new User { Id = Guid.NewGuid(), Name = "worker-test", Email = $"wt-{suffix}@test.local", PasswordHash = "hash" };
@@ -94,7 +96,7 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
         db.Bookings.Add(booking);
         await db.SaveChangesAsync();
 
-        return booking.Id;
+        return (booking.Id, user.Id);
     }
 
     private static IHost StartProbeHost(string rabbitMqConnectionString, OrderChangedProbe probe)

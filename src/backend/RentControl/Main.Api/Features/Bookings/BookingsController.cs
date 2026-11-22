@@ -1,4 +1,4 @@
-using Main.Api.Auth.CurrentUser;
+using Main.Api.Features.Auth.CurrentUser;
 using Main.Api.Features.Bookings.Cancel;
 using Main.Api.Features.Bookings.Complete;
 using Main.Api.Features.Bookings.Confirm;

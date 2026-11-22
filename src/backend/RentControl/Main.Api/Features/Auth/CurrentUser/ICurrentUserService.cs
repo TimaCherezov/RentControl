@@ -1,4 +1,4 @@
-namespace Main.Api.Auth.CurrentUser;
+namespace Main.Api.Features.Auth.CurrentUser;
 
 public interface ICurrentUserService
 {

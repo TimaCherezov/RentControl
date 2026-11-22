@@ -3,7 +3,7 @@ using Main.Model.UnitOfWork;
 using Microsoft.AspNetCore.Identity;
 using RentControl.Common.UnitOfWork;
 
-namespace Main.Api.Auth.Register;
+namespace Main.Api.Features.Auth.Register;
 
 public class RegisterUserService(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IPasswordHasher<User> passwordHasher) : IRegisterUserService
 {
