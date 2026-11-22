@@ -1,3 +1,4 @@
+using Main.Api.Auth.CurrentUser;
 using Main.Api.Features.Bookings.Cancel;
 using Main.Api.Features.Bookings.Complete;
 using Main.Api.Features.Bookings.Confirm;
@@ -21,7 +22,7 @@ namespace Main.Api.Features.Bookings;
 [Authorize]
 [ApiController]
 [Route("api/[controller]")]
-public class BookingsController(IMediator mediator) : ControllerBase
+public class BookingsController(IMediator mediator, ICurrentUserService currentUserService) : ControllerBase
 {
     [HttpPost("{id:guid}/issuance")]
     [Authorize(Roles = nameof(RoleEnum.Admin))]
@@ -53,7 +54,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     [HttpPost("{id:guid}/cancel")]
     public async Task<IActionResult> MarkAsCancelledAsync(Guid id, CancellationToken ct)
     {
-        var command = new CancelBookingCommand(id);
+        var command = new CancelBookingCommand(id, currentUserService.GetUserId());
         await mediator.Send(command, ct);
         return NoContent();
     }
@@ -61,7 +62,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     [HttpPost("{id:guid}/ready-for-pickup")]
     public async Task<IActionResult> MarkAsReadyForPickupAsync(Guid id, CancellationToken ct)
     {
-        var command = new ReadyForPickupBookingCommand(id);
+        var command = new ReadyForPickupBookingCommand(id, currentUserService.GetUserId());
         await mediator.Send(command, ct);
         return NoContent();
     }
@@ -90,7 +91,8 @@ public class BookingsController(IMediator mediator) : ControllerBase
         CancellationToken ct
     )
     {
-        var command = request.Adapt<CreateBookingCommand>();
+        var command = request.Adapt<CreateBookingCommand>()
+            with { UserId = currentUserService.GetUserId() };
         var client = mediator.CreateRequestClient<CreateBookingCommand>();
         var response = await client.GetResponse<BookingDto>(command, ct);
         return Created($"api/bookings/{response.Message.Id}", response.Message);
@@ -112,7 +114,7 @@ public class BookingsController(IMediator mediator) : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<BookingDto>> Get(Guid id, CancellationToken ct)
     {
-        var command = new GetBookingCommand(id);
+        var command = new GetBookingCommand(id, currentUserService.GetUserId());
         var client = mediator.CreateRequestClient<GetBookingCommand>();
         var response = await client.GetResponse<BookingDto>(command, ct);
         return Ok(response.Message);
@@ -124,7 +126,8 @@ public class BookingsController(IMediator mediator) : ControllerBase
         CancellationToken ct
     )
     {
-        var command = request.Adapt<GetPageBookingCommand>();
+        var command = request.Adapt<GetPageBookingCommand>()
+            with { UserId = currentUserService.GetUserId() };
         var client = mediator.CreateRequestClient<GetPageBookingCommand>();
         var response = await client.GetResponse<PagedResponse<BookingDto>>(command, ct);
         return Ok(response.Message);

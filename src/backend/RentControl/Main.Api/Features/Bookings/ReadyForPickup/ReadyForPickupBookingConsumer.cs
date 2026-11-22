@@ -4,6 +4,7 @@ using Main.Model.UnitOfWork;
 using MassTransit;
 using RentControl.Common.UnitOfWork;
 
+
 namespace Main.Api.Features.Bookings.ReadyForPickup;
 
 public class ReadyForPickupBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactory, IBookingStatusStateService bookingStatusService)
@@ -19,6 +20,10 @@ public class ReadyForPickupBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> u
 
 			if (booking is null)
 				throw new ObjectNotFoundException($"Booking with ID: {command.Id} not found.");
+
+            var userId = command.UserId;
+            if (userId != booking.UserId)
+                throw new InvalidOperationException("Access to this booking is denied.");
 
 			await bookingStatusService.SwitchBookingStatusAsync(
 					BookingStatusEnum.ReadyForPickup,

@@ -1,4 +1,3 @@
-using Main.Api.Auth.CurrentUser;
 using Main.Model.UnitOfWork;
 using MassTransit;
 using RentControl.Common.DTOs;
@@ -11,14 +10,13 @@ namespace Main.Api.Features.Bookings.GetPage;
 
 public class GetPageBookingConsumer(
     IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
-    ICurrentUserService currentUserService,
     IOptions<ImageStorageOptions> imageStorageOptions
 ) : IConsumer<GetPageBookingCommand>
 {
     public async Task Consume(ConsumeContext<GetPageBookingCommand> context)
     {
         var command = context.Message;
-        var userId = currentUserService.GetUserId();
+        var userId = command.UserId;
 
         var bookingPageList = await uowFactory.ExecuteAsync(async uow =>
         {

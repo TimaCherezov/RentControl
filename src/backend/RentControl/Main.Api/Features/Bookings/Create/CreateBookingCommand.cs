@@ -4,5 +4,6 @@ public record CreateBookingCommand(
     Guid ProductId,
     Guid? LocationId,
     DateTimeOffset StartAt,
-    DateTimeOffset EndAt
+    DateTimeOffset EndAt,
+    Guid UserId
 );

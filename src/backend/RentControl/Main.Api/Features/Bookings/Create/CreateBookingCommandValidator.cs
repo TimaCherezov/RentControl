@@ -10,6 +10,7 @@ public class CreateBookingCommandValidator : AbstractValidator<CreateBookingComm
     {
         var maxDuration = bookingOptions.Value.MaxBookingDuration;
         RuleFor(x => x.ProductId).Id();
+        RuleFor(x => x.UserId).Id();
         RuleFor(x => x.LocationId).OptionalId();
         RuleFor(x => x.EndAt).NotInPast();
         RuleFor(x => x.StartAt)

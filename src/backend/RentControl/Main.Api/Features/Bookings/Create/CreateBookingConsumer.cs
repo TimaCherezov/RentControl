@@ -1,4 +1,3 @@
-using Main.Api.Auth.CurrentUser;
 using Main.Api.Exceptions;
 using Main.Api.Features.Bookings.Pricing;
 using Main.Api.Features.ProductImages;
@@ -14,7 +13,6 @@ namespace Main.Api.Features.Bookings.Create;
 public class CreateBookingConsumer(
     IMainUnitOfWork uow,
     IPublishEndpoint publishEndpoint,
-    ICurrentUserService currentUserService,
     IRentalPricingService pricingService,
     IOptions<ImageStorageOptions> imageStorageOptions,
     IOptions<BookingOptions> bookingOptions
@@ -24,7 +22,7 @@ public class CreateBookingConsumer(
     {
         var ct = context.CancellationToken;
         var command = context.Message;
-        var userId = currentUserService.GetUserId();
+        var userId = command.UserId;
 
         var booking = await uow.ExecuteInTransactionAsync(
             async () =>

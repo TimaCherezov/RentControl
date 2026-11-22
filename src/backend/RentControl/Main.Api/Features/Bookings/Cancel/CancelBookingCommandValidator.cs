@@ -8,5 +8,6 @@ public class CancelBookingCommandValidator : AbstractValidator<CancelBookingComm
     public CancelBookingCommandValidator()
     {
         RuleFor(x => x.Id).Id();
+        RuleFor(x => x.UserId).Id();
     }
 }

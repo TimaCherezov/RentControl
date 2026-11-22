@@ -8,5 +8,6 @@ public class GetBookingCommandValidator : AbstractValidator<GetBookingCommand>
     public GetBookingCommandValidator()
     {
         RuleFor(x => x.Id).Id();
+        RuleFor(x => x.UserId).Id();
     }
 }

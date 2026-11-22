@@ -1,3 +1,3 @@
 namespace Main.Api.Features.Bookings.Get;
 
-public record GetBookingCommand(Guid Id);
+public record GetBookingCommand(Guid Id, Guid UserId);
