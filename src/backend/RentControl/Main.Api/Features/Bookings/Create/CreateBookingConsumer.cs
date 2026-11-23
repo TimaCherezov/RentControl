@@ -42,7 +42,7 @@ public class CreateBookingConsumer(
                         command.LocationId,
                         ct
                     )
-                    ?? throw new InvalidOperationException(
+                    ?? throw new UnprocessableEntityException(
                         $"Could not find a suitable product unit. ProductId: {command.ProductId}, StartAt: {command.StartAt:O}, EndAt: {command.EndAt:O}"
                     );
 
@@ -58,17 +58,17 @@ public class CreateBookingConsumer(
                     command.EndAt);
 
                 if (productUnit.ProductId != command.ProductId)
-                    throw new InvalidOperationException(
+                    throw new UnprocessableEntityException(
                         $"Product unit with ID: {productUnit.Id} does not belong to product with ID: {command.ProductId}."
                     );
 
                 if (!StatesExtensions.IsRentable(productUnit.State))
-                    throw new InvalidOperationException(
+                    throw new UnprocessableEntityException(
                         $"Product unit with ID: {productUnit.Id} is not rentable in state '{productUnit.State}'."
                     );
 
                 if (command.LocationId != null && productUnit.LocationId != command.LocationId)
-                    throw new InvalidOperationException(
+                    throw new UnprocessableEntityException(
                         $"Product unit with ID: {productUnit.Id} belongs to location {productUnit.LocationId}, not the requested location {command.LocationId}."
                     );
 
@@ -80,7 +80,7 @@ public class CreateBookingConsumer(
                         ct
                     )
                 )
-                    throw new InvalidOperationException(
+                    throw new ConflictException(
                         $"Product unit with ID: {productUnitId} is already booked for the period {command.StartAt:O} – {command.EndAt:O}."
                     );
 

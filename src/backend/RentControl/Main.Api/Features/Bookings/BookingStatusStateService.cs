@@ -1,4 +1,5 @@
 using Main.Model.Models;
+using Main.Api.Exceptions;
 
 namespace Main.Api.Features.Bookings;
 
@@ -10,7 +11,7 @@ public class BookingStatusStateService : IBookingStatusStateService
         CancellationToken ct
     )
     {
-        var exception = new InvalidOperationException(
+        var exception = new UnprocessableEntityException(
             $"Invalid booking status transition. Cannot change status for booking ID {booking.Id} from '{booking.BookingStatus}' to '{targetStatus}'."
         );
         var now = DateTimeOffset.UtcNow;
@@ -50,7 +51,8 @@ public class BookingStatusStateService : IBookingStatusStateService
                     throw exception;
                 break;
             default:
-                throw new ArgumentException("Invalid target status.");
+                throw new UnprocessableEntityException(
+                    $"Invalid target status: '{targetStatus}'.");
         }
 
         booking.BookingStatus = targetStatus;

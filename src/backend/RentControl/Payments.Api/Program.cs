@@ -55,12 +55,14 @@ builder.Services.AddHttpClient("main-api", client =>
 builder.Services.AddOpenApi();
 
 builder.Services.AddControllers();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
 app.MapDefaultEndpoints();
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {

@@ -4,24 +4,18 @@ using Main.Api.Features.Auth.Login;
 using Main.Api.Features.Auth.Logout;
 using Main.Api.Features.Auth.Refresh;
 using Main.Api.Features.Auth.Register;
-using Main.Model.UnitOfWork;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using RentControl.ServiceDefaults;
-using RentControl.Common.UnitOfWork;
+using MassTransit.Mediator;
 
 namespace Main.Api.Controllers;
 
 [Route("api/auth")]
 [ApiController]
 public class AuthController(
-    IRegisterUserService registerUserService,
-    ILoginUserService loginUserService,
-    IRefreshTokenService refreshTokenService,
-    ILogoutService logoutService,
-    ICurrentUserService currentUserService,
-    IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
+    IMediator mediator,
     IOptions<JwtOptions> jwtSettings) : ControllerBase
 {
     private const string RefreshCookieName = "refresh_token";
@@ -30,16 +24,18 @@ public class AuthController(
     [HttpPost("register")]
     public async Task<IActionResult> RegisterUser([FromBody] RegisterUserRequest request, CancellationToken cancellationToken)
     {
-        var response = await registerUserService.RegisterAsync(request, cancellationToken);
-        return Ok(response);
+        var client = mediator.CreateRequestClient<RegisterUserRequest>();
+        var response = await client.GetResponse<UserResponse>(request, cancellationToken);
+        return Ok(response.Message);
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginUserRequest request, CancellationToken cancellationToken)
     {
-        var response = await loginUserService.LoginAsync(request, cancellationToken);
-        SetRefreshCookie(response.RefreshToken);
-        return Ok(response);
+        var client = mediator.CreateRequestClient<LoginUserRequest>();
+        var response = await client.GetResponse<TokenPairResponse>(request, cancellationToken);
+        SetRefreshCookie(response.Message.RefreshToken);
+        return Ok(response.Message);
     }
 
     [HttpPost("refresh")]
@@ -51,9 +47,12 @@ public class AuthController(
             return Unauthorized(new { error = "Refresh token is missing" });
         }
 
-        var result = await refreshTokenService.RefreshAsync(refreshToken, cancellationToken);
-        SetRefreshCookie(result.RefreshToken);
-        return Ok(result);
+        var client = mediator.CreateRequestClient<RefreshUserRequest>();
+        var response = await client.GetResponse<TokenPairResponse>(
+            new RefreshUserRequest(refreshToken),
+            cancellationToken);
+        SetRefreshCookie(response.Message.RefreshToken);
+        return Ok(response.Message);
     }
 
     [HttpPost("logout")]
@@ -62,7 +61,7 @@ public class AuthController(
         var refreshToken = Request.Cookies[RefreshCookieName];
         if (!string.IsNullOrEmpty(refreshToken))
         {
-            await logoutService.LogoutAsync(refreshToken, cancellationToken);
+            await mediator.Send(new LogoutUserRequest(refreshToken), cancellationToken);
         }
 
         Response.Cookies.Delete(RefreshCookieName, RefreshCookieOptions);
@@ -73,16 +72,11 @@ public class AuthController(
     [HttpGet("current-user")]
     public async Task<IActionResult> CurrentUser(CancellationToken cancellationToken)
     {
-        var userId = currentUserService.GetUserId();
-        var user = await uowFactory.ExecuteAsync(async uow 
-            => await uow.Users.GetByIdAsync(userId, cancellationToken), cancellationToken);
-
-        if (user == null)
-        {
-            return Unauthorized(new { error = "User not found" });
-        }
-
-        return Ok(new UserResponse(user.Id, user.Name, user.Email));
+        var client = mediator.CreateRequestClient<CurrentUserRequest>();
+        var response = await client.GetResponse<UserResponse>(
+            new CurrentUserRequest(),
+            cancellationToken);
+        return Ok(response.Message);
     }
 
     private void SetRefreshCookie(string token) =>

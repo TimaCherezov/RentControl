@@ -56,7 +56,7 @@ public class UpdateProductImageConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowF
                     }
                     else
                     {
-                        throw new InvalidOperationException(
+                        throw new ConflictException(
                             $"Cannot unset IsMain for product image {productImage.Id}: "
                                 + $"no other image of product {productImage.ProductId} is available to become the main one."
                         );
