@@ -101,6 +101,115 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.service }}
           cache-to: type=gha,scope=${{ matrix.service }},mode=max
 
+
+  deploy:
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 15
+    environment:
+      name: staging
+    permissions:
+      contents: read
+      packages: read
+    env:
+      NAMESPACE: rentcontrol
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Проверка локального Minikube
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          context=$(kubectl config current-context)
+
+          if [ "$context" != "minikube" ]; then
+            echo "Текущий kubectl context: $context. Нужен minikube."
+            exit 1
+          fi
+
+          minikube status
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Применение инфраструктурных манифестов
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          kubectl apply -f k8s/00-namespace.yaml
+          kubectl apply -f k8s/05-config.yaml
+          kubectl apply -f k8s/10-postgres.yaml
+          kubectl apply -f k8s/15-rabbitmq.yaml
+
+      - name: Создание pull secret для GHCR
+        shell: bash
+        env:
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          kubectl create secret docker-registry ghcr-pull \
+            --namespace "$NAMESPACE" \
+            --docker-server=ghcr.io \
+            --docker-username="$GHCR_USERNAME" \
+            --docker-password="$GHCR_TOKEN" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Деплой приложений
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${GITHUB_SHA:0:7}"
+          repository="${GITHUB_REPOSITORY,,}"
+
+          kubectl apply -f k8s/20-main-api.yaml
+          kubectl apply -f k8s/25-payments-api.yaml
+          kubectl apply -f k8s/30-main-worker.yaml
+          kubectl apply -f k8s/35-realtime-api.yaml
+
+          for deployment in main-api payments-api main-worker realtime-api; do
+            kubectl patch deployment "$deployment" \
+              --namespace "$NAMESPACE" \
+              --type merge \
+              --patch '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"ghcr-pull"}]}}}}'
+          done
+
+          kubectl set image deployment/main-api \
+            --namespace "$NAMESPACE" \
+            "main-api=ghcr.io/$repository/main.api:$tag"
+
+          kubectl set image deployment/payments-api \
+            --namespace "$NAMESPACE" \
+            "payments-api=ghcr.io/$repository/payments.api:$tag"
+
+          kubectl set image deployment/main-worker \
+            --namespace "$NAMESPACE" \
+            "main-worker=ghcr.io/$repository/main.worker:$tag"
+
+          kubectl set image deployment/realtime-api \
+            --namespace "$NAMESPACE" \
+            "realtime-api=ghcr.io/$repository/realtime.api:$tag"
+
+      - name: Ожидание rollout
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for deployment in main-api payments-api main-worker realtime-api; do
+            kubectl rollout status "deployment/$deployment" \
+              --namespace "$NAMESPACE" \
+              --timeout=180s
+          done
+
+          kubectl get deployments,pods,services \
+            --namespace "$NAMESPACE"
+
+
   # AI-ревью PR через OpenCodeReview (https://github.com/alibaba/open-code-review).
   # Запускается при создании PR в main и на каждый пуш в него — только после
   # успешного билда (needs: build). Action сам ставит OCR, конфигурирует LLM,
