@@ -13,9 +13,9 @@ public class RefreshUserConsumer(
     IJwtTokenService jwtTokenService,
     IOptions<JwtOptions> jwtSettings) : IConsumer<RefreshUserRequest>
 {
-    public Task Consume(ConsumeContext<RefreshUserRequest> context)
+    public async Task Consume(ConsumeContext<RefreshUserRequest> context)
     {
-        return uowFactory.ExecuteAsync(async uow =>
+        var response = await uowFactory.ExecuteAsync(async uow =>
         {
             var request = context.Message;
             var tokenHash = jwtTokenService.HashRefreshToken(request.RefreshToken);
@@ -49,7 +49,9 @@ public class RefreshUserConsumer(
                 ExpiresAt = DateTime.UtcNow.Add(jwtSettings.Value.RefreshTokenExpiry)
             });
 
-            await context.RespondAsync(new TokenPairResponse(accessToken, refreshToken));
+            return new TokenPairResponse(accessToken, refreshToken);
         }, context.CancellationToken);
+
+        await context.RespondAsync(response);
     }
 }

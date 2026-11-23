@@ -15,9 +15,9 @@ public class LoginUserConsumer(
     IJwtTokenService jwtTokenService,
     IOptions<JwtOptions> jwtSettings) : IConsumer<LoginUserRequest>
 {
-    public Task Consume(ConsumeContext<LoginUserRequest> context)
+    public async Task Consume(ConsumeContext<LoginUserRequest> context)
     {
-        return uowFactory.ExecuteAsync(async uow =>
+        var response = await uowFactory.ExecuteAsync(async uow =>
         {
             var request = context.Message;
             var user = await uow.Users.GetByEmailAsync(
@@ -48,8 +48,9 @@ public class LoginUserConsumer(
                 ExpiresAt = DateTime.UtcNow.Add(jwtSettings.Value.RefreshTokenExpiry)
             });
 
-            await context.RespondAsync(
-                new TokenPairResponse(accessToken, refreshToken));
+            return new TokenPairResponse(accessToken, refreshToken);
         }, context.CancellationToken);
+
+        await context.RespondAsync(response);
     }
 }

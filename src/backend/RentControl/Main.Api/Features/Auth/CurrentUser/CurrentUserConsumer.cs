@@ -9,11 +9,11 @@ public class CurrentUserConsumer(
     ICurrentUserService currentUserService,
     IUnitOfWorkFactory<IMainUnitOfWork> uowFactory) : IConsumer<CurrentUserRequest>
 {
-    public Task Consume(ConsumeContext<CurrentUserRequest> context)
+    public async Task Consume(ConsumeContext<CurrentUserRequest> context)
     {
         var userId = currentUserService.GetUserId();
 
-        return uowFactory.ExecuteAsync(async uow =>
+        var response = await uowFactory.ExecuteAsync(async uow =>
         {
             var user = await uow.Users.GetByIdAsync(userId, context.CancellationToken);
             if (user is null)
@@ -21,7 +21,9 @@ public class CurrentUserConsumer(
                 throw new UnauthorizedRequestException("User not found");
             }
 
-            await context.RespondAsync(new UserResponse(user.Id, user.Name, user.Email));
+            return new UserResponse(user.Id, user.Name, user.Email);
         }, context.CancellationToken);
+
+        await context.RespondAsync(response);
     }
 }

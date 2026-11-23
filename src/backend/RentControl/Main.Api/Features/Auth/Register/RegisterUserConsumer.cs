@@ -11,9 +11,9 @@ public class RegisterUserConsumer(
     IUnitOfWorkFactory<IMainUnitOfWork> uowFactory,
     IPasswordHasher<User> passwordHasher) : IConsumer<RegisterUserRequest>
 {
-    public Task Consume(ConsumeContext<RegisterUserRequest> context)
+    public async Task Consume(ConsumeContext<RegisterUserRequest> context)
     {
-        return uowFactory.ExecuteAsync(async uow =>
+        var response = await uowFactory.ExecuteAsync(async uow =>
         {
             var request = context.Message;
             var existingUser = await uow.Users.GetByEmailAsync(
@@ -26,6 +26,7 @@ public class RegisterUserConsumer(
 
             var user = new User
             {
+                Id = Guid.NewGuid(),
                 PasswordHash = null!,
                 Name = request.Name.Trim(),
                 Email = request.Email,
@@ -34,8 +35,9 @@ public class RegisterUserConsumer(
             user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
             uow.Users.Add(user);
 
-            await context.RespondAsync(
-                new UserResponse(user.Id, user.Name, user.Email));
+            return new UserResponse(user.Id, user.Name, user.Email);
         }, context.CancellationToken);
+
+        await context.RespondAsync(response);
     }
 }
