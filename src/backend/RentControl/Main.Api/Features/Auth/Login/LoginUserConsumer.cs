@@ -37,7 +37,7 @@ public class LoginUserConsumer(
                 throw new UnauthorizedRequestException("Invalid Password");
             }
 
-            var accessToken = jwtTokenService.GenerateToken(user.Id);
+            var accessToken = jwtTokenService.GenerateToken(user.Id, user.Role);
             var refreshToken = jwtTokenService.GenerateRefreshToken();
 
             uow.RefreshTokens.Add(new RefreshToken

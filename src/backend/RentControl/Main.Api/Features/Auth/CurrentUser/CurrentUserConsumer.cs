@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Main.Api.Exceptions;
 using Main.Model.UnitOfWork;
 using MassTransit;
@@ -7,18 +6,12 @@ using RentControl.Common.UnitOfWork;
 namespace Main.Api.Features.Auth.CurrentUser;
 
 public class CurrentUserConsumer(
-    IHttpContextAccessor httpContextAccessor,
+    ICurrentUserService currentUserService,
     IUnitOfWorkFactory<IMainUnitOfWork> uowFactory) : IConsumer<CurrentUserRequest>
 {
     public Task Consume(ConsumeContext<CurrentUserRequest> context)
     {
-        var idValue = httpContextAccessor.HttpContext?.User
-            .FindFirstValue(ClaimTypes.NameIdentifier);
-
-        if (!Guid.TryParse(idValue, out var userId))
-        {
-            throw new UnauthorizedRequestException("Missing/invalid NameIdentifier claim.");
-        }
+        var userId = currentUserService.GetUserId();
 
         return uowFactory.ExecuteAsync(async uow =>
         {

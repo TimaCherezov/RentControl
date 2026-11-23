@@ -36,7 +36,7 @@ public class RefreshUserConsumer(
                 throw new UnauthorizedRequestException("User not found");
             }
 
-            var accessToken = jwtTokenService.GenerateToken(user.Id);
+            var accessToken = jwtTokenService.GenerateToken(user.Id, user.Role);
             var refreshToken = jwtTokenService.GenerateRefreshToken();
 
             currentToken.RevokedAt = DateTime.UtcNow;

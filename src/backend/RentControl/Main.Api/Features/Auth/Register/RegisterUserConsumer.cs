@@ -28,7 +28,8 @@ public class RegisterUserConsumer(
             {
                 PasswordHash = null!,
                 Name = request.Name.Trim(),
-                Email = request.Email
+                Email = request.Email,
+                Role = RoleEnum.Client
             };
             user.PasswordHash = passwordHasher.HashPassword(user, request.Password);
             uow.Users.Add(user);
