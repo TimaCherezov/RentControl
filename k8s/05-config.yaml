@@ -8,6 +8,7 @@ data:
   DOTNET_ENVIRONMENT: "Development"
   ServiceDiscovery__MainApi: "http://main-api"
   Storage__ImageBaseUrl: "http://localhost:30080/images"
+  RabbitMQ__Host: rabbitmq
 ---
 apiVersion: v1
 kind: Secret
