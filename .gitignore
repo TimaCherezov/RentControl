@@ -83,3 +83,4 @@ pnpm-debug.log*
 
 # ===== Local uploads =====
 uploads/
+/actions-runner/
