@@ -1,19 +1,21 @@
 using System.Security.Claims;
+using Main.Api.Exceptions;
 
 namespace Main.Api.Features.Auth.CurrentUser;
 
-public class CurrentUserService(IHttpContextAccessor httpContextAccessor) : ICurrentUserService
+public class CurrentUserService(
+    IHttpContextAccessor httpContextAccessor) : ICurrentUserService
 {
     public Guid GetUserId()
     {
-        var idStr = httpContextAccessor.HttpContext?.User
+        var idValue = httpContextAccessor.HttpContext?.User
             .FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (!Guid.TryParse(idStr, out var id))
+        if (!Guid.TryParse(idValue, out var userId))
         {
-            throw new UnauthorizedAccessException("Missing/invalid NameIdentifier claim.");
+            throw new UnauthorizedRequestException("Missing/invalid NameIdentifier claim.");
         }
 
-        return id;
+        return userId;
     }
 }

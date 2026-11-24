@@ -5,6 +5,10 @@ namespace Main.Model.Repositories;
 public interface IProductUnitRepository
 {
     Task<ProductUnit?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<ProductUnit?> GetByProductAndSerialNumberAsync(
+        Guid productId,
+        string serialNumber,
+        CancellationToken cancellationToken = default);
     void Add(ProductUnit productUnit);
     void Remove(ProductUnit productUnit);
     Task<TimeSpan> GetMaxAvailableDurationAsync(

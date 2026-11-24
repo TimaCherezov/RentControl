@@ -1,7 +1,10 @@
 using FluentValidation;
-using FluentValidation.AspNetCore;
 using Main.Api;
 using Main.Api.Features.Auth;
+using Main.Api.Features.Auth.CurrentUser;
+using Main.Api.Features.Auth.Login;
+using Main.Api.Features.Auth.Logout;
+using Main.Api.Features.Auth.Refresh;
 using Main.Api.Features.Auth.Register;
 using Main.Api.Features.Bookings;
 using Main.Api.Features.Bookings.Cancel;
@@ -59,14 +62,21 @@ builder.Services.AddBookings(builder.Configuration);
 
 builder.Services.AddProductImages(builder.Configuration);
 
-builder.Services.AddFluentValidationAutoValidation();
 builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+builder.Services.AddExceptionHandler<ApiExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 builder.Services.AddMediator(cfg =>
 {
+    cfg.AddConsumer<RegisterUserConsumer>();
+    cfg.AddConsumer<LoginUserConsumer>();
+    cfg.AddConsumer<RefreshUserConsumer>();
+    cfg.AddConsumer<LogoutUserConsumer>();
+    cfg.AddConsumer<CurrentUserConsumer>();
+
     cfg.AddConsumer<CreateProductConsumer>();
     cfg.AddConsumer<UpdateProductConsumer>();
     cfg.AddConsumer<GetPageProductConsumer>();
@@ -139,7 +149,7 @@ if (app.Environment.IsDevelopment())
     await dbContext.Database.MigrateAsync();
 }
 
-app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseExceptionHandler();
 
 var storageOptions = app.Services.GetRequiredService<IOptions<ImageStorageOptions>>().Value;
 var uploadsPath = Path.GetFullPath(storageOptions.LocalPath, app.Environment.ContentRootPath);

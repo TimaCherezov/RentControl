@@ -10,6 +10,19 @@ public class ProductUnitRepository(MainDbContext dbContext) : IProductUnitReposi
 
     public void Remove(ProductUnit productUnit) => dbContext.ProductUnits.Remove(productUnit);
 
+    public Task<ProductUnit?> GetByProductAndSerialNumberAsync(
+        Guid productId,
+        string serialNumber,
+        CancellationToken cancellationToken = default) =>
+        dbContext.ProductUnits
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                productUnit =>
+                    productUnit.ProductId == productId
+                    && productUnit.SerialNumber == serialNumber,
+                cancellationToken);
+
+
     /// <summary>
     /// Использовать только внутри UOW/транзакции.
     /// </summary>

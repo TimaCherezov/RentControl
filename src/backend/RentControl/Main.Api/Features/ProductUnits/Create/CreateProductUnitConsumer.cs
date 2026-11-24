@@ -1,5 +1,6 @@
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
+using Main.Api.Exceptions;
 using Mapster;
 using MassTransit;
 using RentControl.Common.UnitOfWork;
@@ -14,11 +15,21 @@ public class CreateProductUnitConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFa
         var command = context.Message;
 
         var productUnit = await uowFactory.ExecuteAsync(
-            uow =>
+            async uow =>
             {
+                var existing = await uow.ProductUnits.GetByProductAndSerialNumberAsync(
+                    command.ProductId,
+                    command.SerialNumber,
+                    context.CancellationToken);
+                if (existing is not null)
+                {
+                    throw new ConflictException(
+                        $"Product unit with serial number '{command.SerialNumber}' already exists for product with ID: {command.ProductId}.");
+                }
+
                 var productUnitModel = command.Adapt<ProductUnit>();
                 uow.ProductUnits.Add(productUnitModel);
-                return Task.FromResult(productUnitModel);
+                return productUnitModel;
             },
             context.CancellationToken
         );
