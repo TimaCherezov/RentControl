@@ -43,6 +43,12 @@ internal class ProductImageBuilder
         return this;
     }
 
+    public ProductImageBuilder WithAltText(string? altText)
+    {
+        _altText = altText;
+        return this;
+    }
+
     public ProductImage Build() => new()
     {
         Id = _id,
