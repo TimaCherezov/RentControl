@@ -32,6 +32,6 @@ internal class ProductBuilder
     {
         MarketValue = _marketValue,
         DepositOverride = _depositOverride,
-        Images = _images,
+        Images = _images.ToList(),
     };
 }
