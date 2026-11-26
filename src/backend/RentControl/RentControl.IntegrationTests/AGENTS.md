@@ -29,7 +29,7 @@ public class MyFeatureTests(MainApiFixture fixture)
     [Fact]
     public async Task MyScenario()
     {
-        var response = await fixture.Client.GetAsync("/weatherforecast");
+        var response = await fixture.Client.GetAsync("/alive");
         // ...
     }
 }

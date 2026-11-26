@@ -44,7 +44,7 @@ import xml.etree.ElementTree as ET
 from fnmatch import fnmatch
 
 EXCLUDE = ['Microsoft.AspNetCore.OpenApi.Generated*', 'System.Runtime.CompilerServices*',
-           'WeatherForecast', '*.Migrations*']
+           '*.Migrations*']
 PROJECTS = ['Main.Api', 'Main.Model', 'Main.Worker', 'Payments.Api', 'Payments.Model',
             'Realtime.Api', 'Realtime.Model', 'RentControl.Common', 'RentControl.ServiceDefaults']
 
@@ -84,7 +84,7 @@ EOF
 Что исключено и почему:
 
 - `assemblyfilters` (зашит в `PROJECTS`): только прод-сборки решения; тестовые проекты и `RentControl.AppHost` (dev-оркестрация, не прод-код) не включаем. Без фильтра в merged попадают все загруженные сборки (тест-фреймворки, NuGet) и итог падает до ~24%.
-- `classfilters` (`EXCLUDE`): source-gen OpenAPI (`Microsoft.AspNetCore.OpenApi.Generated*` — сборка OpenAPI-документа и XML-комментарии), компиляторные артефакты (`System.Runtime.CompilerServices*`), остаток шаблона `WeatherForecast`, EF-миграции и снапшоты модели (`*.Migrations*`). Всё это генерируется тулингом — тестами на него не влияем; без исключений картина врёт в обе стороны: генерация занимает больше половины Payments.Api (сборка выглядела на ~45% вместо ~99%), а хорошо «покрываемые» миграции маскируют реальные дыры (Main.Model выглядела на ~94% при репозиториях в 4–43%).
+- `classfilters` (`EXCLUDE`): source-gen OpenAPI (`Microsoft.AspNetCore.OpenApi.Generated*` — сборка OpenAPI-документа и XML-комментарии), компиляторные артефакты (`System.Runtime.CompilerServices*`), EF-миграции и снапшоты модели (`*.Migrations*`). Всё это генерируется тулингом — тестами на него не влияем; без исключений картина врёт в обе стороны: генерация занимает больше половины Payments.Api (сборка выглядела на ~45% вместо ~99%), а хорошо «покрываемые» миграции маскируют реальные дыры (Main.Model выглядела на ~94% при репозиториях в 4–43%).
 - Ловушка паттерна: классы называются ровно `Microsoft.AspNetCore.OpenApi.Generated` (без суффикса), поэтому маска `...Generated*`, а не `...Generated.*`.
 
 Ориентир для самопроверки (2026-11-26; прогон 208 юнитов + 16 интеграционных + 7 e2e, всё зелёное):
@@ -120,7 +120,7 @@ reportgenerator \
   -targetdir:"src/backend/RentControl/RentControl.UnitTests/TestResults/coverage-report" \
   -reporttypes:TextSummary \
   -assemblyfilters:"+Main.Api;+Main.Model;+Main.Worker;+Payments.Api;+Payments.Model;+Realtime.Api;+Realtime.Model;+RentControl.Common;+RentControl.ServiceDefaults" \
-  -classfilters:"+*;-Microsoft.AspNetCore.OpenApi.Generated*;-System.Runtime.CompilerServices*;-WeatherForecast;-*.Migrations*;-*.Migrations.*"
+  -classfilters:"+*;-Microsoft.AspNetCore.OpenApi.Generated*;-System.Runtime.CompilerServices*;-*.Migrations*;-*.Migrations.*"
 ```
 
 Итог — `Summary.txt` внутри `targetdir`.
@@ -133,7 +133,7 @@ reportgenerator \
   -targetdir:"$OUT/report" \
   -reporttypes:TextSummary \
   -assemblyfilters:"+Main.Api;+Main.Model;+Main.Worker;+Payments.Api;+Payments.Model;+Realtime.Api;+Realtime.Model;+RentControl.Common;+RentControl.ServiceDefaults" \
-  -classfilters:"+*;-Microsoft.AspNetCore.OpenApi.Generated*;-System.Runtime.CompilerServices*;-WeatherForecast;-*.Migrations*;-*.Migrations.*"
+  -classfilters:"+*;-Microsoft.AspNetCore.OpenApi.Generated*;-System.Runtime.CompilerServices*;-*.Migrations*;-*.Migrations.*"
 ```
 
 Итог — `$OUT/report/Summary.txt`.
