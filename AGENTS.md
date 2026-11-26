@@ -33,6 +33,8 @@ AppHost поднимает и фронт: vite dev-сервер с прокси 
 
 E2E-тесты живут в `src/backend/RentControl/RentControl.E2ETests`; правила их написания — в [RentControl.E2ETests/AGENTS.md](src/backend/RentControl/RentControl.E2ETests/AGENTS.md).
 
+Посчитать покрытие тестами (юнитами по классам или совокупно всеми уровнями) — рецепт в [docs/coverage.md](docs/coverage.md).
+
 Поменял контракт или стык между сервисами — прогони e2e локально перед PR:
 
 ```bash
