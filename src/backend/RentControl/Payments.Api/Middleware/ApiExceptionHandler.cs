@@ -11,6 +11,14 @@ public class ApiExceptionHandler(
         Exception exception,
         CancellationToken cancellationToken)
     {
+        if (exception is MassTransit.RequestException
+            {
+                InnerException: not null
+            } requestException)
+        {
+            exception = requestException.InnerException;
+        }
+
         if (exception is not ApiException apiException)
         {
             logger.LogError(exception, "Unhandled exception");
