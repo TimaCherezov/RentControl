@@ -1,4 +1,3 @@
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Xunit;
@@ -62,6 +61,4 @@ public static class TestUsers
         await RegisterAsync(mainApi, email, Password, cancellationToken);
         return await GetAccessTokenAsync(mainApi, email, Password, cancellationToken);
     }
-
-    public static AuthenticationHeaderValue Bearer(string accessToken) => new("Bearer", accessToken);
 }

@@ -14,13 +14,17 @@ public static class Polling
         TimeSpan? timeout = null,
         TimeSpan? interval = null)
     {
-        var deadline = DateTimeOffset.UtcNow + (timeout ?? TimeSpan.FromSeconds(60));
+        var effectiveTimeout = timeout ?? TimeSpan.FromSeconds(60);
+        var deadline = DateTimeOffset.UtcNow + effectiveTimeout;
         var delay = interval ?? TimeSpan.FromMilliseconds(500);
+
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(
+            TestContext.Current.CancellationToken);
+        timeoutCts.CancelAfter(effectiveTimeout);
 
         while (true)
         {
-            var cancellationToken = TestContext.Current.CancellationToken;
-            var result = await probe(cancellationToken);
+            var result = await probe(timeoutCts.Token);
 
             if (result is not null)
             {
@@ -30,10 +34,10 @@ public static class Polling
             if (DateTimeOffset.UtcNow >= deadline)
             {
                 throw new TimeoutException(
-                    $"Условие не выполнено за {timeout ?? TimeSpan.FromSeconds(60)}: {failureDescription}");
+                    $"Условие не выполнено за {effectiveTimeout}: {failureDescription}");
             }
 
-            await Task.Delay(delay, cancellationToken);
+            await Task.Delay(delay, timeoutCts.Token);
         }
     }
 }
