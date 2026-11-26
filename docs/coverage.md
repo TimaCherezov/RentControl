@@ -26,7 +26,8 @@ reportgenerator \
   -reports:"src/backend/RentControl/RentControl.UnitTests/TestResults/*/coverage.cobertura.xml" \
   -targetdir:"src/backend/RentControl/RentControl.UnitTests/TestResults/coverage-report" \
   -reporttypes:TextSummary \
-  -assemblyfilters:"+Main.Api;+Main.Model;+Main.Worker;+RentControl.Common"
+  -assemblyfilters:"+Main.Api;+Main.Model;+Main.Worker;+Payments.Api;+Payments.Model;+Realtime.Api;+Realtime.Model;+RentControl.Common;+RentControl.ServiceDefaults" \
+  -classfilters:"+*;-Microsoft.AspNetCore.OpenApi.Generated*;-System.Runtime.CompilerServices*;-WeatherForecast"
 ```
 
 Итог — `Summary.txt` внутри `targetdir`: общий процент и разбивка по классам.
@@ -61,15 +62,16 @@ reportgenerator \
   -reports:"$OUT/merged.cobertura.xml" \
   -targetdir:"$OUT/report" \
   -reporttypes:TextSummary \
-  -assemblyfilters:"+Main.Api;+Main.Model;+Main.Worker;+Payments.Api;+Payments.Model;+Realtime.Api;+Realtime.Model;+RentControl.Common;+RentControl.ServiceDefaults;+RentControl.AppHost"
+  -assemblyfilters:"+Main.Api;+Main.Model;+Main.Worker;+Payments.Api;+Payments.Model;+Realtime.Api;+Realtime.Model;+RentControl.Common;+RentControl.ServiceDefaults" \
+  -classfilters:"+*;-Microsoft.AspNetCore.OpenApi.Generated*;-System.Runtime.CompilerServices*;-WeatherForecast"
 ```
 
-- `assemblyfilters` обязателен: в merged-отчёт попадают все загруженные сборки (тест-фреймворки, NuGet); без фильтра итог падает с ~83% до ~24%.
+- `assemblyfilters` обязателен: в merged-отчёт попадают все загруженные сборки (тест-фреймворки, NuGet); без фильтра итог падает до ~24%. Тестовые проекты и `RentControl.AppHost` (dev-оркестрация, не прод-код) в фильтры не включаем.
+- `classfilters` убирает сгенерированный и шаблонный код из подсчёта: source-gen OpenAPI (`Microsoft.AspNetCore.OpenApi.Generated*`, поддержка XML-комментариев), компиляторные артефакты (`System.Runtime.CompilerServices*`) и остаток шаблона `WeatherForecast`. Без него картина врёт: генерация занимает больше половины Payments.Api, и сборка выглядит на ~45% вместо ~99% по бизнес-коду. Ловушка паттерна: классы называются ровно `Microsoft.AspNetCore.OpenApi.Generated` (без суффикса), поэтому маска — `...Generated*`, а не `...Generated.*`.
 - Результат — `$OUT/report/Summary.txt`: общий процент по проектам решения и разбивка по классам.
 
 ## Нюансы
 
 - Числа coverlet и dotnet-coverage для одного и того же кода слегка расходятся (по-разному считают «покрываемые строки»). Не смешивай их в одном отчёте; для сравнения прогонов бери один инструмент.
 - e2e склонен к флейту (#68): упавший тест не мешает сбору — `dotnet-coverage` пишет отчёт и после неуспешного прогона.
-- Тестовые проекты (`*.Tests`, `AppHost`-ассемблы тестов) в фильтры не включаем — они не прод-код.
-- Ориентир для самопроверки (2026-11-26): совокупно ~83% строк по проектам решения, юнит-only по Main.Api ~60%.
+- Ориентир для самопроверки (2026-11-26): совокупно ~89% строк и ~86% веток по бизнес-кодам решения; юнит-only: Main.Api ~60%, Payments.Api ~41%, Realtime.Api ~33%.
