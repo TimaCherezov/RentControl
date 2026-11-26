@@ -1,6 +1,6 @@
 using Main.Model.Models;
 
-namespace RentControl.UnitTests.MainTests;
+namespace RentControl.UnitTests.MainTests.Model;
 
 public class StatesExtensionsTests
 {
