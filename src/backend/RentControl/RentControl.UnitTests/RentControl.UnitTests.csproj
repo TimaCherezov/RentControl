@@ -20,6 +20,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Main.Api\Main.Api.csproj" />
+      <ProjectReference Include="..\Payments.Api\Payments.Api.csproj" />
+      <ProjectReference Include="..\Realtime.Api\Realtime.Api.csproj" />
+      <ProjectReference Include="..\Main.Worker\Main.Worker.csproj" />
       <ProjectReference Include="..\Main.Model\Main.Model.csproj" />
       <ProjectReference Include="..\Payments.Model\Payments.Model.csproj" />
       <ProjectReference Include="..\Realtime.Model\Realtime.Model.csproj" />
