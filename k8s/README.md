@@ -35,7 +35,7 @@
 |---|---|
 | Main.Api | `http://localhost:30080` |
 | Payments.Api | `http://localhost:30081` |
-| Realtime.Api | `http://localhost:30082/weatherforecast` |
+| Realtime.Api | `http://localhost:30082/alive` |
 | RabbitMQ UI | `http://localhost:30672` — логин `rentcontrol` / `rc-rabbit-pass` |
 
 Адреса — это NodePort'ы, опубликованные из виртуалки на хост флагом `--ports`

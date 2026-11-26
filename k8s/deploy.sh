@@ -48,7 +48,7 @@ echo
 echo "════════════════ Готово ════════════════"
 echo " Main.Api      http://localhost:30080   (/health)"
 echo " Payments.Api  http://localhost:30081"
-echo " Realtime.Api  http://localhost:30082/weatherforecast"
+echo " Realtime.Api  http://localhost:30082/alive"
 echo " RabbitMQ UI   http://localhost:30672   (rentcontrol / rc-rabbit-pass)"
 echo
 echo " Поды:         kubectl -n ${NS} get pods"

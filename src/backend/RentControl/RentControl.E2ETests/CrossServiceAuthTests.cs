@@ -11,7 +11,6 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
 {
     private const string Issuer = "RentControl";
     private const string Audience = "RentControl";
-    private const string ProtectedEndpoint = "weatherforecast";
     private const string RefreshCookieName = "refresh_token";
     private const string Password = "e2e-password-123";
 
@@ -20,13 +19,12 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
     {
         var accessToken = await GetMainAccessTokenAsync();
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, ProtectedEndpoint);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        using var request = CreatePayInvoiceRequest(accessToken);
 
         using var response = await fixture.PaymentsApi.SendAsync(
             request, TestContext.Current.CancellationToken);
 
-        Assert.True(response.IsSuccessStatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -60,13 +58,12 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
         Assert.False(string.IsNullOrWhiteSpace(accessToken),
             "Main не вернул accessToken после refresh");
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, ProtectedEndpoint);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+        using var request = CreatePayInvoiceRequest(accessToken);
 
         using var response = await fixture.PaymentsApi.SendAsync(
             request, TestContext.Current.CancellationToken);
 
-        Assert.True(response.IsSuccessStatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
@@ -74,8 +71,7 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
     {
         var forgedToken = JwtTokenCreator.CreateTokenSignedByForeignKey(Issuer, Audience);
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, ProtectedEndpoint);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", forgedToken);
+        using var request = CreatePayInvoiceRequest(forgedToken);
 
         using var response = await fixture.PaymentsApi.SendAsync(
             request, TestContext.Current.CancellationToken);
@@ -86,13 +82,22 @@ public sealed class CrossServiceAuthTests(AppHostFixture fixture)
     [Fact]
     public async Task Payments_RejectsMalformedToken()
     {
-        using var request = new HttpRequestMessage(HttpMethod.Get, ProtectedEndpoint);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "not-a-jwt");
+        using var request = CreatePayInvoiceRequest("not-a-jwt");
 
         using var response = await fixture.PaymentsApi.SendAsync(
             request, TestContext.Current.CancellationToken);
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    private static HttpRequestMessage CreatePayInvoiceRequest(string accessToken)
+    {
+        var bookingId = Guid.NewGuid();
+        var request = new HttpRequestMessage(
+            HttpMethod.Post, $"api/invoices/by-booking/{bookingId}/pay");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        return request;
     }
 
     private async Task<string> GetMainAccessTokenAsync()
