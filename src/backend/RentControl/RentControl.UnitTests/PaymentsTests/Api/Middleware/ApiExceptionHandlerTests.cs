@@ -68,6 +68,7 @@ public class ApiExceptionHandlerTests
 
         Assert.False(handled);
         Assert.Equal(200, context.Response.StatusCode);
+        Assert.Equal(string.Empty, await ReadBody(context));
     }
 
     [Fact]
@@ -82,6 +83,7 @@ public class ApiExceptionHandlerTests
 
         Assert.False(handled);
         Assert.Equal(200, context.Response.StatusCode);
+        Assert.Equal(string.Empty, await ReadBody(context));
     }
 
     private static DefaultHttpContext CreateHttpContext()
@@ -94,7 +96,12 @@ public class ApiExceptionHandlerTests
     private static async Task<string> ReadBody(HttpContext context)
     {
         context.Response.Body.Position = 0;
-        using var reader = new StreamReader(context.Response.Body);
+        using var reader = new StreamReader(
+            context.Response.Body,
+            System.Text.Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: false,
+            bufferSize: -1,
+            leaveOpen: true);
         return await reader.ReadToEndAsync();
     }
 }

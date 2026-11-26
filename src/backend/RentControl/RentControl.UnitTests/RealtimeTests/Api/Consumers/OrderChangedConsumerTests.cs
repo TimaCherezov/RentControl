@@ -49,6 +49,9 @@ public class OrderChangedConsumerTests
         await consumer.Consume(context.Object);
 
         Assert.Equal($"user:{UserId}", _sentToGroup);
+        _clientProxy.Verify(
+            p => p.SendCoreAsync(It.IsAny<string>(), It.IsAny<object?[]>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     [Fact]
@@ -63,6 +66,9 @@ public class OrderChangedConsumerTests
         var notification = Assert.IsType<BookingChangedNotification>(_sentArgs?[0]);
         Assert.Equal(BookingId, notification.BookingId);
         Assert.Equal(Status, notification.Status);
+        _clientProxy.Verify(
+            p => p.SendCoreAsync(It.IsAny<string>(), It.IsAny<object?[]>(), It.IsAny<CancellationToken>()),
+            Times.Once);
     }
 
     private OrderChangedConsumer CreateConsumer() =>
