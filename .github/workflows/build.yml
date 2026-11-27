@@ -131,16 +131,36 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [Main.Api, Payments.Api, Realtime.Api, Main.Worker]
+        include:
+          - service: Main.Api
+            image: main.api
+            context: src/backend/RentControl
+            dockerfile: src/backend/RentControl/Main.Api/Dockerfile
+          - service: Payments.Api
+            image: payments.api
+            context: src/backend/RentControl
+            dockerfile: src/backend/RentControl/Payments.Api/Dockerfile
+          - service: Realtime.Api
+            image: realtime.api
+            context: src/backend/RentControl
+            dockerfile: src/backend/RentControl/Realtime.Api/Dockerfile
+          - service: Main.Worker
+            image: main.worker
+            context: src/backend/RentControl
+            dockerfile: src/backend/RentControl/Main.Worker/Dockerfile
+          - service: front
+            image: front
+            context: src/frontend/RentControl
+            dockerfile: src/frontend/RentControl/Dockerfile
     steps:
       - uses: actions/checkout@v4
 
       - name: Имя образа и тег
         id: image
         env:
-          SERVICE: ${{ matrix.service }}
+          IMAGE: ${{ matrix.image }}
         run: |
-          echo "name=ghcr.io/${GITHUB_REPOSITORY,,}/${SERVICE,,}" >> "$GITHUB_OUTPUT"
+          echo "name=ghcr.io/${GITHUB_REPOSITORY,,}/${IMAGE}" >> "$GITHUB_OUTPUT"
           echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v3
@@ -153,8 +173,8 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
-          context: src/backend/RentControl
-          file: src/backend/RentControl/${{ matrix.service }}/Dockerfile
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: |
             ${{ steps.image.outputs.name }}:latest
@@ -232,8 +252,9 @@ jobs:
           kubectl apply -f k8s/25-payments-api.yaml
           kubectl apply -f k8s/30-main-worker.yaml
           kubectl apply -f k8s/35-realtime-api.yaml
+          kubectl apply -f k8s/40-front.yaml
 
-          for deployment in main-api payments-api main-worker realtime-api; do
+          for deployment in main-api payments-api main-worker realtime-api front; do
             kubectl patch deployment "$deployment" \
               --namespace "$NAMESPACE" \
               --type merge \
@@ -256,12 +277,16 @@ jobs:
             --namespace "$NAMESPACE" \
             "realtime-api=ghcr.io/$repository/realtime.api:$tag"
 
+          kubectl set image deployment/front \
+            --namespace "$NAMESPACE" \
+            "front=ghcr.io/$repository/front:$tag"
+
       - name: Ожидание rollout
         shell: bash
         run: |
           set -euo pipefail
 
-          for deployment in main-api payments-api main-worker realtime-api; do
+          for deployment in main-api payments-api main-worker realtime-api front; do
             kubectl rollout status "deployment/$deployment" \
               --namespace "$NAMESPACE" \
               --timeout=180s
@@ -269,6 +294,13 @@ jobs:
 
           kubectl get deployments,pods,services \
             --namespace "$NAMESPACE"
+
+      - name: Check frontend via localhost
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --retry 10 --retry-connrefused --retry-delay 3 \
+            http://127.0.0.1:30083/
 
   cleanup-images:
     needs: docker
@@ -283,7 +315,7 @@ jobs:
         uses: dataaxiom/ghcr-cleanup-action@v1
         with:
           owner: ${{ github.repository_owner }}
-          packages: rentcontrol/main.api,rentcontrol/payments.api,rentcontrol/realtime.api,rentcontrol/main.worker
+          packages: rentcontrol/main.api,rentcontrol/payments.api,rentcontrol/realtime.api,rentcontrol/main.worker,rentcontrol/front
           keep-n-tagged: 5
           delete-untagged: true
           delete-partial-images: true

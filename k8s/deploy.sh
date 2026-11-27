@@ -16,7 +16,8 @@ if ! minikube status >/dev/null 2>&1; then
   # runtime=docker: kubelet берёт образы из того же демона, куда собираем;
   # ports: Docker Desktop не маршрутизирует IP ноды к хосту, публикуем на localhost
   minikube start --driver=docker --cpus=4 --memory=6g --container-runtime=docker \
-    --ports=30080:30080 --ports=30081:30081 --ports=30082:30082 --ports=30672:30672
+    --ports=30080:30080 --ports=30081:30081 --ports=30082:30082 --ports=30083:30083 \
+    --ports=30672:30672
 fi
 
 eval "$(minikube -p minikube docker-env --shell bash)"
@@ -25,6 +26,9 @@ for svc in "${SERVICES[@]}"; do
   echo "── Собираю образ $tag:local ..."
   docker build -f "src/backend/RentControl/$svc/Dockerfile" -t "$tag:local" src/backend/RentControl
 done
+
+echo "── Собираю образ rentcontrol/front:local ..."
+docker build -f src/frontend/RentControl/Dockerfile -t rentcontrol/front:local src/frontend/RentControl
 
 kubectl apply -f k8s/00-namespace.yaml
 kubectl apply -f k8s/05-config.yaml
@@ -40,12 +44,14 @@ kubectl apply -f k8s/20-main-api.yaml
 kubectl apply -f k8s/25-payments-api.yaml
 kubectl apply -f k8s/30-main-worker.yaml
 kubectl apply -f k8s/35-realtime-api.yaml
-for d in main-api payments-api main-worker realtime-api; do
+kubectl apply -f k8s/40-front.yaml
+for d in front main-api payments-api main-worker realtime-api; do
   kubectl -n "$NS" rollout status --timeout="$TIMEOUT" "deployment/$d"
 done
 
 echo
 echo "════════════════ Готово ════════════════"
+echo " Front         http://localhost:30083   (UI)"
 echo " Main.Api      http://localhost:30080   (/health)"
 echo " Payments.Api  http://localhost:30081"
 echo " Realtime.Api  http://localhost:30082/alive"

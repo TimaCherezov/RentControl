@@ -28,11 +28,12 @@
 ./k8s/deploy.sh        # сборка образов + деплой всего стека (первый раз ~15–20 минут)
 ```
 
-Скрипт: поднимает кластер → собирает 4 образа внутри minikube → применяет манифесты
+Скрипт: поднимает кластер → собирает 5 образов внутри minikube → применяет манифесты
 по порядку (конфиг → postgres/rabbitmq → сервисы) → ждёт готовности → печатает адреса.
 
 | Что | Адрес |
 |---|---|
+| Front (UI) | `http://localhost:30083` |
 | Main.Api | `http://localhost:30080` |
 | Payments.Api | `http://localhost:30081` |
 | Realtime.Api | `http://localhost:30082/alive` |
@@ -50,7 +51,7 @@
 | **ConfigMap** `app-config` | env-переменные без секретов (`ASPNETCORE_ENVIRONMENT`, `ServiceDiscovery__MainApi`, …). Ключи с `__` превращаются в `Раздел:Подраздел` конфига .NET |
 | **Secret** `app-secrets` | пароли и строки подключения (`ConnectionStrings__maindb`, …) |
 | **Deployment** | менеджер подов: держит 1 реплику, перезапускает упавших, катит обновления |
-| **Pod** | контейнер сервиса (postgres, rabbitmq, main-api, payments-api, main-worker, realtime-api) |
+| **Pod** | контейнер сервиса (postgres, rabbitmq, main-api, payments-api, main-worker, realtime-api, front) |
 | **Service** | стабильное DNS-имя группы подов: `http://main-api`, `Host=postgres`, `amqp://rabbitmq` |
 | **NodePort** | тип Service: открывает порт наружу виртуалки (30080–30672) — то, что видно в браузере |
 | **PVC** | «заявка на диск»: данные postgres/rabbitmq и картинки товаров переживают перезапуск подов |
@@ -58,6 +59,12 @@
 
 Имена сервисов (`main-api`, `postgres`, `rabbitmq`) совпадают с тем, что Aspire даёт локально,
 поэтому конфиги кода не менялись — только переменные окружения.
+
+**Front** — это nginx с собранной в docker вёрсткой (`src/frontend/RentControl/Dockerfile`):
+multi-stage сборка `node → vite build → nginx`, SPA-fallback на `index.html` и прокси
+`/api` → `main-api`, `/api/invoices` → `payments-api` — как vite-прокси в dev-режиме.
+Адреса бэкендов настраиваются env-переменными образа `MAIN_API_UPSTREAM` и
+`PAYMENTS_API_UPSTREAM`; по умолчанию это имена k8s-сервисов.
 
 ## Зачем подам `ASPNETCORE_ENVIRONMENT=Development`
 
@@ -89,6 +96,11 @@ eval $(minikube docker-env)   # направить docker CLI на демон в
 docker build -f src/backend/RentControl/Main.Api/Dockerfile \
   -t rentcontrol/main-api:local src/backend/RentControl
 kubectl -n rentcontrol rollout restart deployment/main-api
+
+# фронт:
+docker build -f src/frontend/RentControl/Dockerfile \
+  -t rentcontrol/front:local src/frontend/RentControl
+kubectl -n rentcontrol rollout restart deployment/front
 ```
 
 `eval $(minikube docker-env)` настраивает переменные окружения, и `docker build` кладёт
@@ -132,4 +144,6 @@ minikube delete        # (опционально) снести и сам кла�
 - Development-режим в подах (см. выше) — миграции «изнутри» сервиса;
 - пароли-заглушки в Secret закоммичены в репозиторий — для локала ок, в проде так нельзя;
 - NodePort'ы опубликованы в deploy.sh фиксированными флагами `--ports`; если добавишь
-  новый NodePort в манифестах — добавь и `--ports`, иначе хост его не увидит.
+  новый NodePort в манифестах — добавь и `--ports`, иначе хост его не увидит
+  (у уже созданного кластера `minikube start` новые порты не подхватит — понадобится
+  `minikube delete` и запуск deploy.sh заново).
