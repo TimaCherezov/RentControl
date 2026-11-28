@@ -3,8 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Main.Model.Models;
 using MassTransit;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using RentControl.Common.IntegrationEvents;
 using RentControl.IntegrationTests.Infrastructure;
 using RentControl.IntegrationTests.Main.Infrastructure;
@@ -47,71 +45,41 @@ public class OutboxTests(MainApiFixture fixture)
         }
 
         var probe = new OrderCreatedProbe();
-        var probeHost = StartProbeHost(fixture.RabbitMqConnectionString, probe);
-        await probeHost.StartAsync();
+        await using var _ = await MassTransitTestHost.StartConsumerAsync(
+            fixture.RabbitMqConnectionString,
+            "outbox-tests-probe",
+            probe);
 
-        try
+        const decimal expectedAmount = 600m;
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/bookings");
+        request.Content = JsonContent.Create(new
         {
-            const decimal expectedAmount = 600m;
-            using var request = new HttpRequestMessage(HttpMethod.Post, "/api/bookings");
-            request.Content = JsonContent.Create(new
-            {
-                productId = product.Id,
-                locationId = location.Id,
-                startAt = new DateTimeOffset(2027, 1, 2, 0, 0, 0, TimeSpan.Zero),
-                endAt = new DateTimeOffset(2027, 1, 3, 0, 0, 0, TimeSpan.Zero),
-            });
-            request.Headers.Authorization = new AuthenticationHeaderValue(
-                "Bearer", fixture.CreateAccessToken(user.Id));
+            productId = product.Id,
+            locationId = location.Id,
+            startAt = new DateTimeOffset(2027, 1, 2, 0, 0, 0, TimeSpan.Zero),
+            endAt = new DateTimeOffset(2027, 1, 3, 0, 0, 0, TimeSpan.Zero),
+        });
+        request.Headers.Authorization = new AuthenticationHeaderValue(
+            "Bearer", fixture.CreateAccessToken(user.Id));
 
-            var response = await fixture.Client.SendAsync(request);
-            var responseBody = await response.Content.ReadAsStringAsync();
-            Assert.True(response.IsSuccessStatusCode,
-                $"POST /api/bookings вернул {(int)response.StatusCode}: {responseBody}");
+        var response = await fixture.Client.SendAsync(request);
+        var responseBody = await response.Content.ReadAsStringAsync();
+        Assert.True(response.IsSuccessStatusCode,
+            $"POST /api/bookings вернул {(int)response.StatusCode}: {responseBody}");
 
-            var created = JsonSerializer.Deserialize<BookingResponse>(
-                responseBody,
-                new JsonSerializerOptions(JsonSerializerDefaults.Web));
-            Assert.NotNull(created);
+        var created = JsonSerializer.Deserialize<BookingResponse>(
+            responseBody,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+        Assert.NotNull(created);
 
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            var delivered = await probe.Received.WaitAsync(cts.Token);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var delivered = await probe.Received.WaitAsync(cts.Token);
 
-            Assert.Equal(created.Id, delivered.BookingId);
-            Assert.Equal(expectedAmount, delivered.Amount);
-        }
-        finally
-        {
-            await probeHost.StopAsync();
-            probeHost.Dispose();
-        }
+        Assert.Equal(created.Id, delivered.BookingId);
+        Assert.Equal(expectedAmount, delivered.Amount);
     }
 
     private sealed record BookingResponse(Guid Id);
-
-    private static IHost StartProbeHost(string rabbitMqConnectionString, OrderCreatedProbe probe)
-    {
-        var hostBuilder = Host.CreateApplicationBuilder();
-        hostBuilder.Services.AddLogging();
-        hostBuilder.Services.WaitMassTransitUntilStarted();
-        hostBuilder.Services.AddSingleton(probe);
-
-        hostBuilder.Services.AddMassTransit(cfg =>
-        {
-            cfg.AddConsumer<OrderCreatedProbe>();
-
-            cfg.UsingRabbitMq((context, rmq) =>
-            {
-                rmq.Host(rabbitMqConnectionString);
-                rmq.ReceiveEndpoint("outbox-tests-probe", e =>
-                {
-                    e.ConfigureConsumer<OrderCreatedProbe>(context);
-                });
-            });
-        });
-
-        return hostBuilder.Build();
-    }
 
     private sealed class OrderCreatedProbe : IConsumer<OrderCreated>
     {
