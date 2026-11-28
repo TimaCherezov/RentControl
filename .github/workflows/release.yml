@@ -1,0 +1,243 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.next.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: next
+        run: |
+          git fetch --tags --quiet
+          latest=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
+          if [ -z "$latest" ]; then
+            echo "tag=v0.1.0" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=$(echo "$latest" | awk -F. -v OFS=. '{$NF++; print}')" >> "$GITHUB_OUTPUT"
+          fi
+
+  release-tag:
+    needs: [version]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Git-тег версии
+        run: |
+          git tag "${{ needs.version.outputs.tag }}"
+          git push origin "${{ needs.version.outputs.tag }}"
+
+  docker:
+    needs: [release-tag, version]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: Main.Api
+            image: main.api
+            context: src/backend/RentControl
+            dockerfile: src/backend/RentControl/Main.Api/Dockerfile
+          - service: Payments.Api
+            image: payments.api
+            context: src/backend/RentControl
+            dockerfile: src/backend/RentControl/Payments.Api/Dockerfile
+          - service: Realtime.Api
+            image: realtime.api
+            context: src/backend/RentControl
+            dockerfile: src/backend/RentControl/Realtime.Api/Dockerfile
+          - service: Main.Worker
+            image: main.worker
+            context: src/backend/RentControl
+            dockerfile: src/backend/RentControl/Main.Worker/Dockerfile
+          - service: front
+            image: front
+            context: src/frontend/RentControl
+            dockerfile: src/frontend/RentControl/Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Имя образа и тег
+        id: image
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: |
+          echo "name=ghcr.io/${GITHUB_REPOSITORY,,}/${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:latest
+            ${{ steps.image.outputs.name }}:${{ needs.version.outputs.tag }}
+            ${{ steps.image.outputs.name }}:${{ steps.image.outputs.tag }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+
+  deploy:
+    needs: docker
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 15
+    environment:
+      name: staging
+    permissions:
+      contents: read
+      packages: read
+    env:
+      NAMESPACE: rentcontrol
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Проверка локального Minikube
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          context=$(kubectl config current-context)
+
+          if [ "$context" != "minikube" ]; then
+            echo "Текущий kubectl context: $context. Нужен minikube."
+            exit 1
+          fi
+
+          minikube status
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Применение инфраструктурных манифестов
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          kubectl apply -f k8s/00-namespace.yaml
+          kubectl apply -f k8s/05-config.yaml
+          kubectl apply -f k8s/10-postgres.yaml
+          kubectl apply -f k8s/15-rabbitmq.yaml
+
+      - name: Создание pull secret для GHCR
+        shell: bash
+        env:
+          GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          kubectl create secret docker-registry ghcr-pull \
+            --namespace "$NAMESPACE" \
+            --docker-server=ghcr.io \
+            --docker-username="$GHCR_USERNAME" \
+            --docker-password="$GHCR_TOKEN" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Деплой приложений
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${GITHUB_SHA:0:7}"
+          repository="${GITHUB_REPOSITORY,,}"
+
+          kubectl apply -f k8s/20-main-api.yaml
+          kubectl apply -f k8s/25-payments-api.yaml
+          kubectl apply -f k8s/30-main-worker.yaml
+          kubectl apply -f k8s/35-realtime-api.yaml
+          kubectl apply -f k8s/40-front.yaml
+
+          for deployment in main-api payments-api main-worker realtime-api front; do
+            kubectl patch deployment "$deployment" \
+              --namespace "$NAMESPACE" \
+              --type merge \
+              --patch '{"spec":{"template":{"spec":{"imagePullSecrets":[{"name":"ghcr-pull"}]}}}}'
+          done
+
+          kubectl set image deployment/main-api \
+            --namespace "$NAMESPACE" \
+            "main-api=ghcr.io/$repository/main.api:$tag"
+
+          kubectl set image deployment/payments-api \
+            --namespace "$NAMESPACE" \
+            "payments-api=ghcr.io/$repository/payments.api:$tag"
+
+          kubectl set image deployment/main-worker \
+            --namespace "$NAMESPACE" \
+            "main-worker=ghcr.io/$repository/main.worker:$tag"
+
+          kubectl set image deployment/realtime-api \
+            --namespace "$NAMESPACE" \
+            "realtime-api=ghcr.io/$repository/realtime.api:$tag"
+
+          kubectl set image deployment/front \
+            --namespace "$NAMESPACE" \
+            "front=ghcr.io/$repository/front:$tag"
+
+      - name: Ожидание rollout
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for deployment in main-api payments-api main-worker realtime-api front; do
+            kubectl rollout status "deployment/$deployment" \
+              --namespace "$NAMESPACE" \
+              --timeout=180s
+          done
+
+          kubectl get deployments,pods,services \
+            --namespace "$NAMESPACE"
+
+      - name: Check frontend via localhost
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --show-error --retry 10 --retry-connrefused --retry-delay 3 \
+            http://127.0.0.1:30083/
+
+  cleanup-images:
+    needs: docker
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Удаление старых версий образов (держим последние 5)
+        uses: dataaxiom/ghcr-cleanup-action@v1
+        with:
+          owner: ${{ github.repository_owner }}
+          packages: rentcontrol/main.api,rentcontrol/payments.api,rentcontrol/realtime.api,rentcontrol/main.worker,rentcontrol/front
+          keep-n-tagged: 5
+          delete-untagged: true
+          delete-partial-images: true
