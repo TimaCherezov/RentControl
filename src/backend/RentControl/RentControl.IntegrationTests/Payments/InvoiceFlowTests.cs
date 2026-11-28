@@ -1,9 +1,8 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Payments.Model.Models;
 using RentControl.Common.IntegrationEvents;
+using RentControl.IntegrationTests.Infrastructure;
 using RentControl.IntegrationTests.Payments.Infrastructure;
 
 namespace RentControl.IntegrationTests.Payments;
@@ -18,51 +17,22 @@ public class InvoiceFlowTests(PaymentsApiFixture fixture)
         const decimal amount = 2500m;
 
         var probe = new InvoiceCreatedProbe();
-        var probeHost = StartProbeHost(fixture.RabbitMqConnectionString, probe);
-        await probeHost.StartAsync();
-        try
-        {
-            var bus = probeHost.Services.GetRequiredService<IBus>();
-            await bus.Publish(new OrderCreated(bookingId, amount));
-            
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            var received = await probe.Received.WaitAsync(cts.Token);
-            Assert.Equal(bookingId, received.BookingId);
+        await using var bus = await MassTransitTestHost.StartConsumerAsync(
+            fixture.RabbitMqConnectionString,
+            "invoice-flow-tests-probe",
+            probe);
 
-            await using var db = fixture.CreateDbContext();
-            var invoice = await db.Invoices.SingleOrDefaultAsync(i => i.BookingId == bookingId, cancellationToken: cts.Token);
-            Assert.NotNull(invoice);
-            Assert.Equal(amount, invoice.Amount);
-            Assert.Equal(InvoiceStatus.Pending, invoice.Status);
-        }
-        finally
-        {
-            await probeHost.StopAsync();
-            probeHost.Dispose();
-        }
-    }
+        await bus.Publish(new OrderCreated(bookingId, amount));
 
-    private static IHost StartProbeHost(string rabbitMqConnectionString, InvoiceCreatedProbe probe)
-    {
-        var hostBuilder = Host.CreateApplicationBuilder();
-        hostBuilder.Services.AddLogging();
-        hostBuilder.Services.AddSingleton(probe);
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        var received = await probe.Received.WaitAsync(cts.Token);
+        Assert.Equal(bookingId, received.BookingId);
 
-        hostBuilder.Services.AddMassTransit(cfg =>
-        {
-            cfg.AddConsumer<InvoiceCreatedProbe>();
-
-            cfg.UsingRabbitMq((context, rmq) =>
-            {
-                rmq.Host(rabbitMqConnectionString);
-                rmq.ReceiveEndpoint("invoice-flow-tests-probe", e =>
-                {
-                    e.ConfigureConsumer<InvoiceCreatedProbe>(context);
-                });
-            });
-        });
-
-        return hostBuilder.Build();
+        await using var db = fixture.CreateDbContext();
+        var invoice = await db.Invoices.SingleOrDefaultAsync(i => i.BookingId == bookingId, cancellationToken: cts.Token);
+        Assert.NotNull(invoice);
+        Assert.Equal(amount, invoice.Amount);
+        Assert.Equal(InvoiceStatus.Pending, invoice.Status);
     }
 
     private sealed class InvoiceCreatedProbe : IConsumer<InvoiceCreated>

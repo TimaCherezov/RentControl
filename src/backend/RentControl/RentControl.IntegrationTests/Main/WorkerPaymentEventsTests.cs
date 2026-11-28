@@ -3,9 +3,8 @@ using Main.Model;
 using Main.Model.Models;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using RentControl.Common.IntegrationEvents;
+using RentControl.IntegrationTests.Infrastructure;
 using RentControl.IntegrationTests.Main.Infrastructure;
 
 namespace RentControl.IntegrationTests.Main;
@@ -19,40 +18,33 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
         var (bookingId, userId) = await SeedBookingAsync();
 
         var probe = new OrderChangedProbe();
-        var probeHost = StartProbeHost(fixture.RabbitMqConnectionString, probe);
-        await probeHost.StartAsync();
-        try
+        await using var bus = await MassTransitTestHost.StartConsumerAsync(
+            fixture.RabbitMqConnectionString,
+            "worker-events-tests-probe",
+            probe);
+
+        await bus.Publish(new InvoiceCreated(bookingId));
+        var first = await probe.NextAsync(TimeSpan.FromSeconds(30));
+        Assert.Equal(bookingId, first.BookingId);
+        Assert.Equal(userId, first.UserId);
+        Assert.Equal(nameof(BookingStatusEnum.Pending), first.Status);
+
+        await using (var db = fixture.CreateDbContext())
         {
-            var bus = probeHost.Services.GetRequiredService<IBus>();
-
-            await bus.Publish(new InvoiceCreated(bookingId));
-            var first = await probe.NextAsync(TimeSpan.FromSeconds(30));
-            Assert.Equal(bookingId, first.BookingId);
-            Assert.Equal(userId, first.UserId);
-            Assert.Equal(nameof(BookingStatusEnum.Pending), first.Status);
-
-            await using (var db = fixture.CreateDbContext())
-            {
-                var booking = await db.Bookings.AsNoTracking().SingleAsync(b => b.Id == bookingId);
-                Assert.True(booking.IsInvoiceCreated);
-            }
-
-            await bus.Publish(new PaymentSucceeded(bookingId));
-            var second = await probe.NextAsync(TimeSpan.FromSeconds(30));
-            Assert.Equal(bookingId, second.BookingId);
-            Assert.Equal(userId, second.UserId);
-            Assert.Equal(nameof(BookingStatusEnum.Confirmed), second.Status);
-
-            await using (var db = fixture.CreateDbContext())
-            {
-                var booking = await db.Bookings.AsNoTracking().SingleAsync(b => b.Id == bookingId);
-                Assert.Equal(BookingStatusEnum.Confirmed, booking.BookingStatus);
-            }
+            var booking = await db.Bookings.AsNoTracking().SingleAsync(b => b.Id == bookingId);
+            Assert.True(booking.IsInvoiceCreated);
         }
-        finally
+
+        await bus.Publish(new PaymentSucceeded(bookingId));
+        var second = await probe.NextAsync(TimeSpan.FromSeconds(30));
+        Assert.Equal(bookingId, second.BookingId);
+        Assert.Equal(userId, second.UserId);
+        Assert.Equal(nameof(BookingStatusEnum.Confirmed), second.Status);
+
+        await using (var db = fixture.CreateDbContext())
         {
-            await probeHost.StopAsync();
-            probeHost.Dispose();
+            var booking = await db.Bookings.AsNoTracking().SingleAsync(b => b.Id == bookingId);
+            Assert.Equal(BookingStatusEnum.Confirmed, booking.BookingStatus);
         }
     }
 
@@ -97,29 +89,6 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
         await db.SaveChangesAsync();
 
         return (booking.Id, user.Id);
-    }
-
-    private static IHost StartProbeHost(string rabbitMqConnectionString, OrderChangedProbe probe)
-    {
-        var hostBuilder = Host.CreateApplicationBuilder();
-        hostBuilder.Services.AddLogging();
-        hostBuilder.Services.AddSingleton(probe);
-
-        hostBuilder.Services.AddMassTransit(cfg =>
-        {
-            cfg.AddConsumer<OrderChangedProbe>();
-
-            cfg.UsingRabbitMq((context, rmq) =>
-            {
-                rmq.Host(rabbitMqConnectionString);
-                rmq.ReceiveEndpoint("worker-events-tests-probe", e =>
-                {
-                    e.ConfigureConsumer<OrderChangedProbe>(context);
-                });
-            });
-        });
-
-        return hostBuilder.Build();
     }
 
     private sealed class OrderChangedProbe : IConsumer<OrderChanged>

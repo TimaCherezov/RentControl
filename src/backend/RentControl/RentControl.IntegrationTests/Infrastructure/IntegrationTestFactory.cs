@@ -35,9 +35,10 @@ public sealed class IntegrationTestFactory<TProgram>(
             }
         }
 
-        if (configureServices is not null)
+        builder.ConfigureServices(services =>
         {
-            builder.ConfigureServices(configureServices);
-        }
+            services.WaitMassTransitUntilStarted();
+            configureServices?.Invoke(services);
+        });
     }
 }
