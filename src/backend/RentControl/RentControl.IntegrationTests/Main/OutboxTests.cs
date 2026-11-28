@@ -6,6 +6,7 @@ using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RentControl.Common.IntegrationEvents;
+using RentControl.IntegrationTests.Infrastructure;
 using RentControl.IntegrationTests.Main.Infrastructure;
 
 namespace RentControl.IntegrationTests.Main;
@@ -92,6 +93,7 @@ public class OutboxTests(MainApiFixture fixture)
     {
         var hostBuilder = Host.CreateApplicationBuilder();
         hostBuilder.Services.AddLogging();
+        hostBuilder.Services.WaitMassTransitUntilStarted();
         hostBuilder.Services.AddSingleton(probe);
 
         hostBuilder.Services.AddMassTransit(cfg =>

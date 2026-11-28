@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Realtime.Model;
 using RentControl.Common.IntegrationEvents;
+using RentControl.IntegrationTests.Infrastructure;
 using RentControl.IntegrationTests.Realtime.Infrastructure;
 
 namespace RentControl.IntegrationTests.Realtime;
@@ -62,6 +63,7 @@ public class OrderChangedConsumerTests(RealtimeApiFixture fixture)
     {
         var builder = Host.CreateApplicationBuilder();
         builder.Services.AddLogging();
+        builder.Services.WaitMassTransitUntilStarted();
 
         builder.Services.AddMassTransit(configurator =>
         {

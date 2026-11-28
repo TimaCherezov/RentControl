@@ -2,6 +2,7 @@ extern alias RealtimeApi;
 
 using RealtimeApiProgram = RealtimeApi::Program;
 
+using DotNet.Testcontainers.Builders;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Realtime.Api.Hubs;
@@ -26,7 +27,9 @@ public sealed class RealtimeApiFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        _rabbit = new RabbitMqBuilder(TestImages.RabbitMq).Build();
+        _rabbit = new RabbitMqBuilder(TestImages.RabbitMq)
+            .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Server startup complete"))
+            .Build();
         try
         {
             await _rabbit.StartAsync();

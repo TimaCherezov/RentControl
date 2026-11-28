@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Payments.Model.Models;
 using RentControl.Common.IntegrationEvents;
+using RentControl.IntegrationTests.Infrastructure;
 using RentControl.IntegrationTests.Payments.Infrastructure;
 
 namespace RentControl.IntegrationTests.Payments;
@@ -22,11 +23,22 @@ public class InvoiceFlowTests(PaymentsApiFixture fixture)
         await probeHost.StartAsync();
         try
         {
-            var bus = probeHost.Services.GetRequiredService<IBus>();
-            await bus.Publish(new OrderCreated(bookingId, amount));
-            
+            var busControl = probeHost.Services.GetRequiredService<IBusControl>();
+            await busControl.Publish(new OrderCreated(bookingId, amount));
+
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            var received = await probe.Received.WaitAsync(cts.Token);
+            InvoiceCreated received;
+            try
+            {
+                received = await probe.Received.WaitAsync(cts.Token);
+            }
+            catch (OperationCanceledException ex)
+            {
+                var health = busControl.CheckHealth();
+                throw new TimeoutException(
+                    $"InvoiceCreated не получен за 30 секунд. Probe bus health: {health.Status} ({health.Description}).",
+                    ex);
+            }
             Assert.Equal(bookingId, received.BookingId);
 
             await using var db = fixture.CreateDbContext();
@@ -46,6 +58,7 @@ public class InvoiceFlowTests(PaymentsApiFixture fixture)
     {
         var hostBuilder = Host.CreateApplicationBuilder();
         hostBuilder.Services.AddLogging();
+        hostBuilder.Services.WaitMassTransitUntilStarted();
         hostBuilder.Services.AddSingleton(probe);
 
         hostBuilder.Services.AddMassTransit(cfg =>

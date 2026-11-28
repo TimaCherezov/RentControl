@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using RentControl.Common.IntegrationEvents;
+using RentControl.IntegrationTests.Infrastructure;
 using RentControl.IntegrationTests.Main.Infrastructure;
 
 namespace RentControl.IntegrationTests.Main;
@@ -23,10 +24,10 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
         await probeHost.StartAsync();
         try
         {
-            var bus = probeHost.Services.GetRequiredService<IBus>();
+            var busControl = probeHost.Services.GetRequiredService<IBusControl>();
 
-            await bus.Publish(new InvoiceCreated(bookingId));
-            var first = await probe.NextAsync(TimeSpan.FromSeconds(30));
+            await busControl.Publish(new InvoiceCreated(bookingId));
+            var first = await NextOrThrowAsync(probe, busControl, TimeSpan.FromSeconds(30));
             Assert.Equal(bookingId, first.BookingId);
             Assert.Equal(userId, first.UserId);
             Assert.Equal(nameof(BookingStatusEnum.Pending), first.Status);
@@ -37,8 +38,8 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
                 Assert.True(booking.IsInvoiceCreated);
             }
 
-            await bus.Publish(new PaymentSucceeded(bookingId));
-            var second = await probe.NextAsync(TimeSpan.FromSeconds(30));
+            await busControl.Publish(new PaymentSucceeded(bookingId));
+            var second = await NextOrThrowAsync(probe, busControl, TimeSpan.FromSeconds(30));
             Assert.Equal(bookingId, second.BookingId);
             Assert.Equal(userId, second.UserId);
             Assert.Equal(nameof(BookingStatusEnum.Confirmed), second.Status);
@@ -99,10 +100,29 @@ public class WorkerPaymentEventsTests(MainApiFixture fixture)
         return (booking.Id, user.Id);
     }
 
+    private static async Task<OrderChanged> NextOrThrowAsync(
+        OrderChangedProbe probe,
+        IBusControl busControl,
+        TimeSpan timeout)
+    {
+        try
+        {
+            return await probe.NextAsync(timeout);
+        }
+        catch (TimeoutException ex)
+        {
+            var health = busControl.CheckHealth();
+            throw new TimeoutException(
+                $"{ex.Message} Probe bus health: {health.Status} ({health.Description}).",
+                ex);
+        }
+    }
+
     private static IHost StartProbeHost(string rabbitMqConnectionString, OrderChangedProbe probe)
     {
         var hostBuilder = Host.CreateApplicationBuilder();
         hostBuilder.Services.AddLogging();
+        hostBuilder.Services.WaitMassTransitUntilStarted();
         hostBuilder.Services.AddSingleton(probe);
 
         hostBuilder.Services.AddMassTransit(cfg =>

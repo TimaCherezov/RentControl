@@ -143,6 +143,7 @@ public sealed class MainApiFixture : IAsyncLifetime
             ["ConnectionStrings:rabbitmq"] = rabbitMqConnectionString,
         });
         builder.Services.AddLogging();
+        builder.Services.WaitMassTransitUntilStarted();
         builder.AddMainDatabase("maindb", disableRetry: true);
         builder.AddMainWorkerBus();
 
