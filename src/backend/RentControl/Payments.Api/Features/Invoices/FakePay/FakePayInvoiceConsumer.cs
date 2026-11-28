@@ -1,5 +1,6 @@
 using MassTransit;
 using Payments.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Payments.Model.Models;
 using Payments.Model.UnitOfWork;
 using RentControl.Common.IntegrationEvents;

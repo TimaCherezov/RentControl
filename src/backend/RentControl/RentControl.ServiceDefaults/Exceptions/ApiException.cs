@@ -1,4 +1,6 @@
-namespace Payments.Api.Exceptions;
+using Microsoft.AspNetCore.Http;
+
+namespace RentControl.ServiceDefaults.Exceptions;
 
 public abstract class ApiException(
     string message,

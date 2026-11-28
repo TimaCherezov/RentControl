@@ -1,4 +1,4 @@
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using MassTransit;

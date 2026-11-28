@@ -1,4 +1,4 @@
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Api.Features.Bookings.Pricing;
 using Main.Api.Features.Products.GetQuote;
 using Main.Model.Models;

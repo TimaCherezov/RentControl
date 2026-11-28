@@ -1,5 +1,5 @@
 using Main.Api.Features.Bookings;
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Model.Models;
 
 namespace RentControl.UnitTests.MainTests.Api.Bookings;

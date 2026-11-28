@@ -42,12 +42,13 @@ using Main.Api.Features.ProductUnits.Delete;
 using Main.Api.Features.ProductUnits.Get;
 using Main.Api.Features.ProductUnits.Update;
 using Main.Api.Features.Validation;
-using Main.Api.Middleware;
 using Main.Model;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Options;
+using Npgsql;
+using RentControl.ServiceDefaults.Exceptions;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -66,8 +67,22 @@ builder.Services.AddValidatorsFromAssemblyContaining<RegisterUserValidator>();
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
-builder.Services.AddExceptionHandler<ApiExceptionHandler>();
-builder.Services.AddProblemDetails();
+builder.Services.AddApiExceptionHandler(exceptions =>
+{
+    exceptions.Unwrap<RequestException>();
+    exceptions.Map<ValidationException>(ex => new ApiErrorResponse(
+        StatusCodes.Status400BadRequest,
+        ex.Errors.Select(error => new ApiError(error.PropertyName, error.ErrorMessage)).ToArray()));
+    exceptions.Map<DbUpdateException>(ex =>
+        ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.ForeignKeyViolation or PostgresErrorCodes.UniqueViolation
+        }
+            ? new ApiErrorResponse(
+                StatusCodes.Status409Conflict,
+                [new ApiError(string.Empty, "Resource cannot be modified or deleted because it is referenced or conflicts with existing data.")])
+            : null);
+});
 
 builder.Services.AddMediator(cfg =>
 {

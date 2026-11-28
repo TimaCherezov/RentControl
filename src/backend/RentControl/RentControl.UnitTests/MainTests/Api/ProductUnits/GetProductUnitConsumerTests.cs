@@ -1,4 +1,4 @@
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Api.Features.ProductUnits;
 using Main.Api.Features.ProductUnits.Get;
 using Main.Model.Models;

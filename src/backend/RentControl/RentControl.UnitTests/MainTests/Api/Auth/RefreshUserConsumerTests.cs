@@ -1,4 +1,4 @@
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Api.Features.Auth;
 using Main.Api.Features.Auth.Refresh;
 using Main.Model.Models;

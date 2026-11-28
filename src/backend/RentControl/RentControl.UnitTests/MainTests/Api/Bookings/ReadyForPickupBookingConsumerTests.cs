@@ -1,4 +1,4 @@
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Api.Features.Bookings;
 using Main.Api.Features.Bookings.ReadyForPickup;
 using Main.Model.Models;
@@ -37,7 +37,7 @@ public class ReadyForPickupBookingConsumerTests
     }
 
     [Fact]
-    public async Task Consume_WhenUserIsNotOwner_ThrowsInvalidOperationException()
+    public async Task Consume_WhenUserIsNotOwner_ThrowsForbiddenException()
     {
         var booking = new BookingBuilder().WithUserId(Guid.NewGuid()).Build();
         _bookings
@@ -46,7 +46,7 @@ public class ReadyForPickupBookingConsumerTests
         var consumer = CreateConsumer();
         var context = TestConsumeContext.For(new ReadyForPickupBookingCommand(booking.Id, Guid.NewGuid()));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => consumer.Consume(context.Object));
+        await Assert.ThrowsAsync<ForbiddenException>(() => consumer.Consume(context.Object));
     }
 
     [Fact]

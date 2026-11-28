@@ -1,4 +1,4 @@
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Api.Features.ProductImages;
 using Main.Api.Mappers;
 using Main.Model.UnitOfWork;
@@ -32,7 +32,7 @@ public class GetBookingConsumer(
 
         var userId = command.UserId;
         if (userId != booking.UserId)
-            throw new InvalidOperationException("Access to this booking is denied.");
+            throw new ForbiddenException("Access to this booking is denied.");
 
         var response = booking.ToDto(imageStorageOptions.Value);
 

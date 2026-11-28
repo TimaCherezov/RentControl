@@ -3,13 +3,15 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Payments.Api.Exceptions;
-using Payments.Api.Middleware;
+using RentControl.ServiceDefaults.Exceptions;
 
 namespace RentControl.UnitTests.PaymentsTests.Api.Middleware;
 
 public class ApiExceptionHandlerTests
 {
-    private readonly ApiExceptionHandler _handler = new(Mock.Of<ILogger<ApiExceptionHandler>>());
+    private readonly ApiExceptionHandler _handler = new(
+        Mock.Of<ILogger<ApiExceptionHandler>>(),
+        new ApiExceptionHandlerBuilder().Unwrap<RequestException>());
 
     [Fact]
     public async Task TryHandle_WhenObjectNotFound_Writes404WithError()

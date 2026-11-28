@@ -1,4 +1,4 @@
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Api.Features.Locations;
 using Main.Api.Features.Locations.Get;
 using Main.Model.Models;
