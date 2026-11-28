@@ -1,4 +1,4 @@
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Api.Features.Bookings;
 using Main.Api.Features.Bookings.Get;
 using Main.Api.Features.ProductImages;
@@ -38,7 +38,7 @@ public class GetBookingConsumerTests
     }
 
     [Fact]
-    public async Task Consume_WhenUserIsNotOwner_ThrowsInvalidOperationException()
+    public async Task Consume_WhenUserIsNotOwner_ThrowsForbiddenException()
     {
         var booking = new BookingBuilder().WithUserId(Guid.NewGuid()).Build();
         _bookings
@@ -47,7 +47,7 @@ public class GetBookingConsumerTests
         var consumer = CreateConsumer();
         var context = TestConsumeContext.For(new GetBookingCommand(booking.Id, Guid.NewGuid()));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => consumer.Consume(context.Object));
+        await Assert.ThrowsAsync<ForbiddenException>(() => consumer.Consume(context.Object));
     }
 
     [Fact]

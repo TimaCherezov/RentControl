@@ -2,6 +2,7 @@ using Main.Api.Features.Bookings;
 using Main.Api.Features.Bookings.Pricing;
 using Microsoft.Extensions.Options;
 using Main.Model.Models;
+using RentControl.ServiceDefaults.Exceptions;
 
 namespace RentControl.UnitTests.MainTests.Api.Bookings;
 
@@ -16,11 +17,11 @@ public class RentalPricingServiceTests
         CreateService().Calculate(product, StartAt, StartAt.AddHours(durationHours));
 
     [Fact]
-    public void Calculate_WhenEndNotAfterStart_ThrowsInvalidOperationException()
+    public void Calculate_WhenEndNotAfterStart_ThrowsUnprocessableEntityException()
     {
         var product = new ProductBuilder().Build();
 
-        Assert.Throws<InvalidOperationException>(
+        Assert.Throws<UnprocessableEntityException>(
             () => CreateService().Calculate(product, StartAt, StartAt));
     }
 

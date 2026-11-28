@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Payments.Api.Features.Invoices.Pay;
 using Payments.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Payments.Model.Models;
 using Payments.Model.Repositories;
 using Payments.Model.UnitOfWork;

@@ -1,4 +1,4 @@
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Api.Features.ProductImages.Update;
 using Main.Model.Models;
 using Main.Model.Repositories;

@@ -1,6 +1,6 @@
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Mapster;
 using MassTransit;
 using RentControl.Common.UnitOfWork;

@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 
 namespace Main.Api.Features.Auth.CurrentUser;
 

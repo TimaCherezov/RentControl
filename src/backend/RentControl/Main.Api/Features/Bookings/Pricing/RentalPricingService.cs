@@ -1,5 +1,6 @@
 using Main.Model.Models;
 using Microsoft.Extensions.Options;
+using RentControl.ServiceDefaults.Exceptions;
 
 namespace Main.Api.Features.Bookings.Pricing;
 
@@ -14,7 +15,7 @@ public sealed class RentalPricingService(IOptions<BookingOptions> options)
         var duration = endAt - startAt;
         if (duration <= TimeSpan.Zero)
         {
-            throw new InvalidOperationException(
+            throw new UnprocessableEntityException(
                 "EndAt must be greater than StartAt.");
         }
 

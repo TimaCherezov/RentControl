@@ -1,4 +1,4 @@
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Model.Models;
 using Main.Model.UnitOfWork;
 using MassTransit;
@@ -22,7 +22,7 @@ public class CancelBookingConsumer(IUnitOfWorkFactory<IMainUnitOfWork> uowFactor
             
             var userId = command.UserId;
             if (userId != booking.UserId)
-                throw new InvalidOperationException("Access to this booking is denied.");
+                throw new ForbiddenException("Access to this booking is denied.");
 
 			await bookingStatusService.SwitchBookingStatusAsync(
 					BookingStatusEnum.Cancelled,

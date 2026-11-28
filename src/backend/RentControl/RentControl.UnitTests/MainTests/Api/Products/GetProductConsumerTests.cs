@@ -1,4 +1,4 @@
-using Main.Api.Exceptions;
+using RentControl.ServiceDefaults.Exceptions;
 using Main.Api.Features.Bookings;
 using Main.Api.Features.ProductImages;
 using Main.Api.Features.Products;

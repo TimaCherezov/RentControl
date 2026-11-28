@@ -1,14 +1,14 @@
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Payments.Api;
 using Payments.Api.Features.Invoices;
 using Payments.Api.Features.Invoices.FakePay;
 using Payments.Api.Features.Invoices.Pay;
-using Payments.Api.Middleware;
 using Payments.Model;
-using Scalar.AspNetCore;
-
 using RentControl.ServiceDefaults;
+using RentControl.ServiceDefaults.Exceptions;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,8 +55,19 @@ builder.Services.AddHttpClient("main-api", client =>
 builder.Services.AddOpenApi();
 
 builder.Services.AddControllers();
-builder.Services.AddExceptionHandler<ApiExceptionHandler>();
-builder.Services.AddProblemDetails();
+builder.Services.AddApiExceptionHandler(exceptions =>
+{
+    exceptions.Unwrap<RequestException>();
+    exceptions.Map<DbUpdateException>(ex =>
+        ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.ForeignKeyViolation or PostgresErrorCodes.UniqueViolation
+        }
+            ? new ApiErrorResponse(
+                StatusCodes.Status409Conflict,
+                [new ApiError(string.Empty, "Resource cannot be modified or deleted because it is referenced or conflicts with existing data.")])
+            : null);
+});
 
 var app = builder.Build();
 
